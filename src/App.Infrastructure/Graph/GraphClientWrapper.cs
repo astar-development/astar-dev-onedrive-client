@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using App.Core.Interfaces;
-using App.Core.Dto;
+using App.Core.Dtos;
 using App.Core.Entities;
 
 namespace App.Infrastructure.Graph;
@@ -27,33 +27,33 @@ public sealed class GraphClientWrapper : IGraphClient
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        using var res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        res.EnsureSuccessStatusCode();
+        using HttpResponseMessage res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        _ = res.EnsureSuccessStatusCode();
 
-        await using var stream = await res.Content.ReadAsStreamAsync(ct);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        await using Stream stream = await res.Content.ReadAsStreamAsync(ct);
+        using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
 
         var items = new List<DriveItemRecord>();
-        if (doc.RootElement.TryGetProperty("value", out var arr))
+        if (doc.RootElement.TryGetProperty("value", out JsonElement arr))
         {
-            foreach (var el in arr.EnumerateArray())
+            foreach (JsonElement el in arr.EnumerateArray())
             {
                 var id = el.GetProperty("id").GetString()!;
                 var isFolder = el.TryGetProperty("folder", out _);
-                var size = el.TryGetProperty("size", out var sProp) ? sProp.GetInt64() : 0L;
-                var parentPath = el.TryGetProperty("parentReference", out var pr) && pr.TryGetProperty("path", out var p) ? p.GetString() ?? string.Empty : string.Empty;
-                var name = el.TryGetProperty("name", out var n) ? n.GetString() ?? id : id;
+                var size = el.TryGetProperty("size", out JsonElement sProp) ? sProp.GetInt64() : 0L;
+                var parentPath = el.TryGetProperty("parentReference", out JsonElement pr) && pr.TryGetProperty("path", out JsonElement p) ? p.GetString() ?? string.Empty : string.Empty;
+                var name = el.TryGetProperty("name", out JsonElement n) ? n.GetString() ?? id : id;
                 var relativePath = BuildRelativePath(parentPath, name);
-                var eTag = el.TryGetProperty("eTag", out var et) ? et.GetString() : null;
-                var cTag = el.TryGetProperty("cTag", out var ctProp) ? ctProp.GetString() : null;
-                var last = el.TryGetProperty("lastModifiedDateTime", out var lm) ? DateTimeOffset.Parse(lm.GetString()!) : DateTimeOffset.UtcNow;
+                var eTag = el.TryGetProperty("eTag", out JsonElement et) ? et.GetString() : null;
+                var cTag = el.TryGetProperty("cTag", out JsonElement ctProp) ? ctProp.GetString() : null;
+                DateTimeOffset last = el.TryGetProperty("lastModifiedDateTime", out JsonElement lm) ? DateTimeOffset.Parse(lm.GetString()!) : DateTimeOffset.UtcNow;
                 var isDeleted = el.TryGetProperty("deleted", out _);
                 items.Add(new DriveItemRecord(id, id, relativePath, eTag, cTag, size, last, isFolder, isDeleted));
             }
         }
 
-        var next = doc.RootElement.TryGetProperty("@odata.nextLink", out var nl) ? nl.GetString() : null;
-        var delta = doc.RootElement.TryGetProperty("@odata.deltaLink", out var dl) ? dl.GetString() : null;
+        var next = doc.RootElement.TryGetProperty("@odata.nextLink", out JsonElement nl) ? nl.GetString() : null;
+        var delta = doc.RootElement.TryGetProperty("@odata.deltaLink", out JsonElement dl) ? dl.GetString() : null;
         return new DeltaPage(items, next, delta);
     }
 
@@ -67,6 +67,7 @@ public sealed class GraphClientWrapper : IGraphClient
             var after = parentReferencePath[(idx + 2)..].Trim('/');
             return string.IsNullOrEmpty(after) ? name : Path.Combine(after, name);
         }
+
         return name;
     }
 
@@ -76,8 +77,8 @@ public sealed class GraphClientWrapper : IGraphClient
         var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}/content";
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        res.EnsureSuccessStatusCode();
+        HttpResponseMessage res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        _ = res.EnsureSuccessStatusCode();
         return await res.Content.ReadAsStreamAsync(ct);
     }
 
@@ -90,12 +91,12 @@ public sealed class GraphClientWrapper : IGraphClient
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         req.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
-        using var res = await _http.SendAsync(req, ct);
-        res.EnsureSuccessStatusCode();
-        await using var stream = await res.Content.ReadAsStreamAsync(ct);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+        using HttpResponseMessage res = await _http.SendAsync(req, ct);
+        _ = res.EnsureSuccessStatusCode();
+        await using Stream stream = await res.Content.ReadAsStreamAsync(ct);
+        using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
         var uploadUrl = doc.RootElement.GetProperty("uploadUrl").GetString()!;
-        var expiration = doc.RootElement.TryGetProperty("expirationDateTime", out var ex) ? DateTimeOffset.Parse(ex.GetString()!) : DateTimeOffset.UtcNow.AddHours(1);
+        DateTimeOffset expiration = doc.RootElement.TryGetProperty("expirationDateTime", out JsonElement ex) ? DateTimeOffset.Parse(ex.GetString()!) : DateTimeOffset.UtcNow.AddHours(1);
         return new UploadSessionInfo(uploadUrl, Guid.NewGuid().ToString(), expiration);
     }
 
@@ -104,10 +105,10 @@ public sealed class GraphClientWrapper : IGraphClient
         using var req = new HttpRequestMessage(HttpMethod.Put, session.UploadUrl);
         req.Content = new StreamContent(chunk);
         req.Content.Headers.Add("Content-Range", $"bytes {rangeStart}-{rangeEnd}/*");
-        using var res = await _http.SendAsync(req, ct);
+        using HttpResponseMessage res = await _http.SendAsync(req, ct);
         // Graph returns 201/200 when upload completes, 202 for accepted chunk
         if (!res.IsSuccessStatusCode)
-            res.EnsureSuccessStatusCode();
+            _ = res.EnsureSuccessStatusCode();
     }
 
     public async Task DeleteDriveItemAsync(string driveItemId, CancellationToken ct)
@@ -116,8 +117,8 @@ public sealed class GraphClientWrapper : IGraphClient
         var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}";
         using var req = new HttpRequestMessage(HttpMethod.Delete, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        using var res = await _http.SendAsync(req, ct);
+        using HttpResponseMessage res = await _http.SendAsync(req, ct);
         if (res.StatusCode != System.Net.HttpStatusCode.NoContent && res.StatusCode != System.Net.HttpStatusCode.NotFound)
-            res.EnsureSuccessStatusCode();
+            _ = res.EnsureSuccessStatusCode();
     }
 }

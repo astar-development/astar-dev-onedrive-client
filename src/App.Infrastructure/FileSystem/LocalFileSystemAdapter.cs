@@ -1,5 +1,5 @@
 using App.Core.Interfaces;
-using App.Core.Dto;
+using App.Core.Dtos;
 
 namespace App.Infrastructure.Filesystem;
 
@@ -20,8 +20,8 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
     public async Task WriteFileAsync(string relativePath, Stream content, CancellationToken ct)
     {
         var full = FullPath(relativePath);
-        Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-        await using var fs = File.Create(full);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+        await using FileStream fs = File.Create(full);
         await content.CopyToAsync(fs, ct);
     }
 
@@ -29,6 +29,7 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
     {
         var full = FullPath(relativePath);
         if (!File.Exists(full)) return Task.FromResult<Stream?>(null);
+
         return Task.FromResult<Stream?>(File.OpenRead(full));
     }
 
@@ -36,6 +37,7 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
     {
         var full = FullPath(relativePath);
         if (File.Exists(full)) File.Delete(full);
+        
         return Task.CompletedTask;
     }
 
@@ -49,6 +51,7 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
             var rel = Path.GetRelativePath(_root, file);
             list.Add(new LocalFileInfo(rel, fi.Length, fi.LastWriteTimeUtc, null));
         }
+
         return Task.FromResult<IEnumerable<LocalFileInfo>>(list);
     }
 }

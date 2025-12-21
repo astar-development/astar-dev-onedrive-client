@@ -1,0 +1,6 @@
+﻿{
+  "relativePath": "MockRelativePath",
+  "size": 12345,
+  "lastWriteUtc": "2025-12-21T01:02:03+00:00",
+  "hash": "MockHash"
+}

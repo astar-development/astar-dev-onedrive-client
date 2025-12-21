@@ -1,8 +1,8 @@
-using App.Core.Dto;
+using App.Core.Dtos;
 using App.Core.Entities;
 using AStar.Dev.Utilities;
 
-namespace App.Core.Tests.Unit.Dto;
+namespace App.Core.Tests.Unit.Dtos;
 
 public class DeltaPageShould
 {

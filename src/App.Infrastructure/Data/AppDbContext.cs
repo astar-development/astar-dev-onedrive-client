@@ -16,10 +16,10 @@ public sealed class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder mb)
     {
         // Explicit per-entity configuration
-        mb.ApplyConfiguration(new DriveItemRecordConfiguration());
-        mb.ApplyConfiguration(new LocalFileRecordConfiguration());
-        mb.ApplyConfiguration(new DeltaTokenConfiguration());
-        mb.ApplyConfiguration(new TransferLogConfiguration());
+        _ = mb.ApplyConfiguration(new DriveItemRecordConfiguration());
+        _ = mb.ApplyConfiguration(new LocalFileRecordConfiguration());
+        _ = mb.ApplyConfiguration(new DeltaTokenConfiguration());
+        _ = mb.ApplyConfiguration(new TransferLogConfiguration());
 
         // Apply SQLite-friendly conversions for the four entities
         mb.UseSqliteFriendlyConversions();

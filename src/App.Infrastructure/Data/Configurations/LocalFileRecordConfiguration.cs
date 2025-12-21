@@ -10,14 +10,14 @@ public sealed class LocalFileRecordConfiguration : IEntityTypeConfiguration<Loca
 {
     public void Configure(EntityTypeBuilder<LocalFileRecord> b)
     {
-        b.ToTable("LocalFiles");
-        b.HasKey(l => l.Id);
+        _ = b.ToTable("LocalFiles");
+        _ = b.HasKey(l => l.Id);
 
         if (PropertyExists(typeof(LocalFileRecord), "RelativePath"))
-            b.Property("RelativePath").IsRequired();
+            _ = b.Property("RelativePath").IsRequired();
 
         if (PropertyExists(typeof(LocalFileRecord), "RelativePath"))
-            b.HasIndex("RelativePath");
+            _ = b.HasIndex("RelativePath");
     }
 
     static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;

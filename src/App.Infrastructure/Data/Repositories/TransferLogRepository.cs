@@ -25,29 +25,29 @@ public sealed class TransferLogRepository
         await using var db = new AppDbContext(_options);
 
         // 1) Check local ChangeTracker for an already tracked instance
-        var local = db.ChangeTracker.Entries<TransferLog>()
+        TransferLog? local = db.ChangeTracker.Entries<TransferLog>()
                       .FirstOrDefault(e => e.Entity.Id == detached.Id)?.Entity;
 
         if (local != null)
         {
             // Update tracked instance
             db.Entry(local).CurrentValues.SetValues(detached);
-            await db.SaveChangesAsync();
+            _ = await db.SaveChangesAsync();
             return;
         }
 
         // 2) Try to load from DB (tracked after query)
-        var existing = await db.TransferLogs.FindAsync(detached.Id);
+        TransferLog? existing = await db.TransferLogs.FindAsync(detached.Id);
         if (existing != null)
         {
             db.Entry(existing).CurrentValues.SetValues(detached);
-            await db.SaveChangesAsync();
+            _ = await db.SaveChangesAsync();
             return;
         }
 
         // 3) Not found — safe to add as new
-        db.TransferLogs.Add(detached);
-        await db.SaveChangesAsync();
+        _ = db.TransferLogs.Add(detached);
+        _ = await db.SaveChangesAsync();
     }
 
     /// <summary>Simple read helper</summary>

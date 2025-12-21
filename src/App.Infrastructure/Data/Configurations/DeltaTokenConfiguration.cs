@@ -10,12 +10,12 @@ public sealed class DeltaTokenConfiguration : IEntityTypeConfiguration<DeltaToke
 {
     public void Configure(EntityTypeBuilder<DeltaToken> b)
     {
-        b.ToTable("DeltaTokens");
-        b.HasKey(t => t.Id);
+        _ = b.ToTable("DeltaTokens");
+        _ = b.HasKey(t => t.Id);
 
         // We don't assume TokenValue exists; check first.
         if (PropertyExists(typeof(DeltaToken), "TokenValue"))
-            b.Property("TokenValue").HasColumnType("TEXT");
+            _ = b.Property("TokenValue").HasColumnType("TEXT");
 
         // If there are timestamp properties (CreatedAt, ExpiresAt), conversions are applied by UseSqliteFriendlyConversions
     }

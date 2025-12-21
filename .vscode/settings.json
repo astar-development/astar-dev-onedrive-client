@@ -15,6 +15,7 @@
   "coverage-gutters.decorations.uncoveredLineColor": "rgba(255, 0, 0, 0.20)",
   "cSpell.words": [
     "Avalonia",
+    "Dtos",
     "Kiota",
     "microsoftonline",
     "Msal",

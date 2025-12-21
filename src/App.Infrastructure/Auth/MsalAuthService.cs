@@ -20,7 +20,7 @@ public sealed class MsalAuthService : IAuthService
 
     public async Task SignInAsync(CancellationToken ct)
     {
-        var result = await _pca.AcquireTokenInteractive(_scopes).ExecuteAsync(ct);
+        AuthenticationResult result = await _pca.AcquireTokenInteractive(_scopes).ExecuteAsync(ct);
         _account = result.Account;
     }
 
@@ -34,7 +34,7 @@ public sealed class MsalAuthService : IAuthService
     public async Task<string> GetAccessTokenAsync(CancellationToken ct)
     {
         if (_account is null) throw new InvalidOperationException("Not signed in");
-        var result = await _pca.AcquireTokenSilent(_scopes, _account).ExecuteAsync(ct);
+        AuthenticationResult result = await _pca.AcquireTokenSilent(_scopes, _account).ExecuteAsync(ct);
         return result.AccessToken;
     }
 }

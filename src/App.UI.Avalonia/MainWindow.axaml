@@ -6,6 +6,8 @@
         Title="OneDrive Sync"
         x:Class="App.UI.Avalonia.MainWindow">
   <DockPanel>
+  
+  <Border DockPanel.Dock="Top" Padding="16">
     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
       <Button Content="Sign In" Command="{Binding SignInCommand}" Margin="4"/>
       <Button Content="Initial Full Sync" Command="{Binding InitialSyncCommand}" Margin="4"/>
@@ -16,27 +18,32 @@
       <TextBlock Text="Batch" VerticalAlignment="Center" Margin="8,0,0,0"/>
       <NumericUpDown Minimum="1" Maximum="500" Value="{Binding BatchSize}" Width="80" Margin="4"/>
     </StackPanel>
+  </Border>
 
-    <Grid Margin="8">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="2*"/>
-        <ColumnDefinition Width="3*"/>
-      </Grid.ColumnDefinitions>
+    <Border DockPanel.Dock="Top" Padding="16">
+      <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="2*"/>
+          <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
 
-      <StackPanel Grid.Column="0" Margin="8">
-        <TextBlock Text="Sync Stats" FontWeight="Bold" Margin="0,0,0,8"/>
-        <TextBlock Text="{Binding SyncStatus}" Margin="0,0,0,4"/>
-        <TextBlock Text="Pending Downloads:"/>
-        <TextBlock Text="{Binding PendingDownloads}" Margin="0,0,0,8"/>
-        <TextBlock Text="Pending Uploads:"/>
-        <TextBlock Text="{Binding PendingUploads}" Margin="0,0,0,8"/>
-        <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" Height="20" Margin="0,8,0,8"/>
-      </StackPanel>
+        <StackPanel Grid.Column="0" Margin="8">
+          <TextBlock Text="Sync Stats" FontWeight="Bold" Margin="0,0,0,8"/>
+          <TextBlock Text="{Binding SyncStatus}" Margin="0,0,0,4"/>
+          <TextBlock Text="Pending Downloads:"/>
+          <TextBlock Text="{Binding PendingDownloads}" Margin="0,0,0,8"/>
+          <TextBlock Text="Pending Uploads:"/>
+          <TextBlock Text="{Binding PendingUploads}" Margin="0,0,0,8"/>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" Height="20" Margin="0,8,0,8"/>
+        </StackPanel>
 
-      <StackPanel Grid.Column="1" Margin="8">
-        <TextBlock Text="Recent Transfers" FontWeight="Bold" Margin="0,0,0,8"/>
-        <ListBox ItemsSource="{Binding RecentTransfers}" Height="400"/>
-      </StackPanel>
-    </Grid>
+        <StackPanel Grid.Column="1" Margin="8">
+          <TextBlock Text="Recent Transfers" FontWeight="Bold" Margin="0,0,0,8"/>
+          <ListBox ItemsSource="{Binding RecentTransfers}" Height="400"/>
+        </StackPanel>
+
+      </Grid>
+    </Border>
+
   </DockPanel>
 </Window>

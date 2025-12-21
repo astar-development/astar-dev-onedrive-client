@@ -8,7 +8,7 @@ public static class DbInitializer
     {
         // Ensure DB created and enable WAL for better concurrency
         db.Database.OpenConnection();
-        db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
+        _ = db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
         db.Database.Migrate();
     }
 }

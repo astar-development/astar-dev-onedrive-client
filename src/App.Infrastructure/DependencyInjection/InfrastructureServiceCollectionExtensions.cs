@@ -13,22 +13,22 @@ public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, string sqliteConnectionString, string localRoot, string msalClientId)
     {
-        services.AddDbContext<AppDbContext>(opts => opts.UseSqlite(sqliteConnectionString));
-        services.AddScoped<ISyncRepository, EfSyncRepository>();
+        _ = services.AddDbContext<AppDbContext>(opts => opts.UseSqlite(sqliteConnectionString));
+        _ = services.AddScoped<ISyncRepository, EfSyncRepository>();
 
-        services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalClientId));
-        services.AddHttpClient<IGraphClient, GraphClientWrapper>()
+        _ = services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalClientId));
+        _ = services.AddHttpClient<IGraphClient, GraphClientWrapper>()
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
 
-        services.AddSingleton<IFileSystemAdapter>(_ => new LocalFileSystemAdapter(localRoot));
+        _ = services.AddSingleton<IFileSystemAdapter>(_ => new LocalFileSystemAdapter(localRoot));
 
         // Optional: register DbInitializer action
-        services.AddSingleton<Action<IServiceProvider>>(sp =>
+        _ = services.AddSingleton<Action<IServiceProvider>>(sp =>
         {
             return provider =>
             {
-                using var scope = provider.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                using IServiceScope scope = provider.CreateScope();
+                AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 DbInitializer.EnsureDatabaseCreatedAndConfigured(db);
             };
         });

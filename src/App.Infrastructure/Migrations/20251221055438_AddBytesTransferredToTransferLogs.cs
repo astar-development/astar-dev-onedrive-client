@@ -11,32 +11,32 @@ namespace App.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "StartedUtc",
                 table: "TransferLogs",
                 newName: "StartedUtc_Ticks");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "CompletedUtc",
                 table: "TransferLogs",
                 newName: "CompletedUtc_Ticks");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "LastWriteUtc",
                 table: "LocalFiles",
                 newName: "LastWriteUtc_Ticks");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "LastModifiedUtc",
                 table: "DriveItems",
                 newName: "LastModifiedUtc_Ticks");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "LastSyncedUtc",
                 table: "DeltaTokens",
                 newName: "LastSyncedUtc_Ticks");
 
-            migrationBuilder.AlterColumn<long>(
+            _ = migrationBuilder.AlterColumn<long>(
                 name: "StartedUtc_Ticks",
                 table: "TransferLogs",
                 type: "INTEGER",
@@ -44,7 +44,7 @@ namespace App.Infrastructure.Migrations
                 oldClrType: typeof(DateTimeOffset),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<long>(
+            _ = migrationBuilder.AlterColumn<long>(
                 name: "CompletedUtc_Ticks",
                 table: "TransferLogs",
                 type: "INTEGER",
@@ -53,13 +53,13 @@ namespace App.Infrastructure.Migrations
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AddColumn<long>(
+            _ = migrationBuilder.AddColumn<long>(
                 name: "BytesTransferred",
                 table: "TransferLogs",
                 type: "INTEGER",
                 nullable: true);
 
-            migrationBuilder.AlterColumn<long>(
+            _ = migrationBuilder.AlterColumn<long>(
                 name: "LastWriteUtc_Ticks",
                 table: "LocalFiles",
                 type: "INTEGER",
@@ -67,7 +67,7 @@ namespace App.Infrastructure.Migrations
                 oldClrType: typeof(DateTimeOffset),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<long>(
+            _ = migrationBuilder.AlterColumn<long>(
                 name: "LastModifiedUtc_Ticks",
                 table: "DriveItems",
                 type: "INTEGER",
@@ -75,7 +75,7 @@ namespace App.Infrastructure.Migrations
                 oldClrType: typeof(DateTimeOffset),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<long>(
+            _ = migrationBuilder.AlterColumn<long>(
                 name: "LastSyncedUtc_Ticks",
                 table: "DeltaTokens",
                 type: "INTEGER",
@@ -87,36 +87,36 @@ namespace App.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
+            _ = migrationBuilder.DropColumn(
                 name: "BytesTransferred",
                 table: "TransferLogs");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "StartedUtc_Ticks",
                 table: "TransferLogs",
                 newName: "StartedUtc");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "CompletedUtc_Ticks",
                 table: "TransferLogs",
                 newName: "CompletedUtc");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "LastWriteUtc_Ticks",
                 table: "LocalFiles",
                 newName: "LastWriteUtc");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "LastModifiedUtc_Ticks",
                 table: "DriveItems",
                 newName: "LastModifiedUtc");
 
-            migrationBuilder.RenameColumn(
+            _ = migrationBuilder.RenameColumn(
                 name: "LastSyncedUtc_Ticks",
                 table: "DeltaTokens",
                 newName: "LastSyncedUtc");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
+            _ = migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "StartedUtc",
                 table: "TransferLogs",
                 type: "TEXT",
@@ -124,7 +124,7 @@ namespace App.Infrastructure.Migrations
                 oldClrType: typeof(long),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
+            _ = migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "CompletedUtc",
                 table: "TransferLogs",
                 type: "TEXT",
@@ -133,7 +133,7 @@ namespace App.Infrastructure.Migrations
                 oldType: "INTEGER",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
+            _ = migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "LastWriteUtc",
                 table: "LocalFiles",
                 type: "TEXT",
@@ -141,7 +141,7 @@ namespace App.Infrastructure.Migrations
                 oldClrType: typeof(long),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
+            _ = migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "LastModifiedUtc",
                 table: "DriveItems",
                 type: "TEXT",
@@ -149,7 +149,7 @@ namespace App.Infrastructure.Migrations
                 oldClrType: typeof(long),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
+            _ = migrationBuilder.AlterColumn<DateTimeOffset>(
                 name: "LastSyncedUtc",
                 table: "DeltaTokens",
                 type: "TEXT",

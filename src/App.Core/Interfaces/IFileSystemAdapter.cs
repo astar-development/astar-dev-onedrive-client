@@ -1,4 +1,4 @@
-using App.Core.Dto;
+using App.Core.Dtos;
 
 namespace App.Core.Interfaces;
 

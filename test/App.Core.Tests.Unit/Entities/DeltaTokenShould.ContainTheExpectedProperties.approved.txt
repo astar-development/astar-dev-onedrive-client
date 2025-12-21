@@ -1,0 +1,5 @@
+﻿{
+  "id": "MockId",
+  "token": "MockToken",
+  "lastSyncedUtc": "2025-12-21T01:02:03+00:00"
+}

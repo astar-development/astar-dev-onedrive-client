@@ -1,0 +1,5 @@
+﻿{
+  "uploadUrl": "MockUploadUrl",
+  "sessionId": "MockSessionId",
+  "expiresAt": "2025-12-21T01:02:03+00:00"
+}

@@ -11,7 +11,7 @@ namespace App.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "DeltaTokens",
                 columns: table => new
                 {
@@ -21,10 +21,10 @@ namespace App.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DeltaTokens", x => x.Id);
+                    _ = table.PrimaryKey("PK_DeltaTokens", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "DriveItems",
                 columns: table => new
                 {
@@ -40,10 +40,10 @@ namespace App.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DriveItems", x => x.Id);
+                    _ = table.PrimaryKey("PK_DriveItems", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "LocalFiles",
                 columns: table => new
                 {
@@ -56,10 +56,10 @@ namespace App.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LocalFiles", x => x.Id);
+                    _ = table.PrimaryKey("PK_LocalFiles", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
+            _ = migrationBuilder.CreateTable(
                 name: "TransferLogs",
                 columns: table => new
                 {
@@ -73,15 +73,15 @@ namespace App.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TransferLogs", x => x.Id);
+                    _ = table.PrimaryKey("PK_TransferLogs", x => x.Id);
                 });
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_DriveItems_DriveItemId",
                 table: "DriveItems",
                 column: "DriveItemId");
 
-            migrationBuilder.CreateIndex(
+            _ = migrationBuilder.CreateIndex(
                 name: "IX_LocalFiles_RelativePath",
                 table: "LocalFiles",
                 column: "RelativePath");
@@ -90,16 +90,16 @@ namespace App.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "DeltaTokens");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "DriveItems");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "LocalFiles");
 
-            migrationBuilder.DropTable(
+            _ = migrationBuilder.DropTable(
                 name: "TransferLogs");
         }
     }

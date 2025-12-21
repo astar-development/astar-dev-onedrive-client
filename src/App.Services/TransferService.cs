@@ -3,6 +3,7 @@ using App.Core.Entities;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
+using App.Core.Dtos;
 
 namespace App.Services;
 
@@ -39,7 +40,7 @@ public sealed class TransferService
         while (!ct.IsCancellationRequested)
         {
             var items = (await _repo.GetPendingDownloadsAsync(_settings.BatchSize, ct)).ToList();
-            if (!items.Any()) break;
+            if (items.Count == 0) break;
 
             var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct)).ToList();
             await Task.WhenAll(tasks);
@@ -47,9 +48,7 @@ public sealed class TransferService
     }
 
     private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct)
-    {
-        await _retryPolicy.ExecuteAsync(async ct2 => await DownloadItemAsync(item, ct2), ct);
-    }
+        => await _retryPolicy.ExecuteAsync(async ct2 => await DownloadItemAsync(item, ct2), ct);
 
     private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
     {
@@ -58,10 +57,10 @@ public sealed class TransferService
         await _repo.LogTransferAsync(log, ct);
         try
         {
-            await using var stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
+            await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
             await _fs.WriteFileAsync(item.RelativePath, stream, ct);
             await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
-            var fileInfo = _fs.GetFileInfo(item.RelativePath);
+            FileInfo fileInfo = _fs.GetFileInfo(item.RelativePath);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length};
             await _repo.LogTransferAsync(log, ct);
             _logger.LogInformation("Downloaded {Path}", item.RelativePath);
@@ -74,7 +73,7 @@ public sealed class TransferService
         }
         finally
         {
-            _downloadSemaphore.Release();
+            _ = _downloadSemaphore.Release();
         }
     }
 
@@ -85,7 +84,7 @@ public sealed class TransferService
     {
         _logger.LogInformation("Processing pending uploads");
         var uploads = (await _repo.GetPendingUploadsAsync(_settings.BatchSize, ct)).ToList();
-        foreach (var local in uploads)
+        foreach (LocalFileRecord? local in uploads)
         {
             await _retryPolicy.ExecuteAsync(async ct2 => await UploadLocalFileAsync(local, ct2), ct);
         }
@@ -99,16 +98,16 @@ public sealed class TransferService
         {
             var parent = Path.GetDirectoryName(local.RelativePath) ?? "/";
             var fileName = Path.GetFileName(local.RelativePath);
-            var session = await _graph.CreateUploadSessionAsync(parent, fileName, ct);
+            UploadSessionInfo session = await _graph.CreateUploadSessionAsync(parent, fileName, ct);
 
-            await using var stream = await _fs.OpenReadAsync(local.RelativePath, ct) ?? throw new FileNotFoundException(local.RelativePath);
+            await using Stream stream = await _fs.OpenReadAsync(local.RelativePath, ct) ?? throw new FileNotFoundException(local.RelativePath);
             const int chunkSize = 320 * 1024; // 320KB
             long uploaded = 0;
             while (uploaded < stream.Length)
             {
                 var toRead = (int)Math.Min(chunkSize, stream.Length - uploaded);
                 var buffer = new byte[toRead];
-                stream.Seek(uploaded, SeekOrigin.Begin);
+                _ = stream.Seek(uploaded, SeekOrigin.Begin);
                 var read = await stream.ReadAsync(buffer.AsMemory(0, toRead), ct);
                 await using var ms = new MemoryStream(buffer, 0, read, writable: false);
                 await _graph.UploadChunkAsync(session, ms, uploaded, uploaded + read - 1, ct);

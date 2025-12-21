@@ -10,15 +10,15 @@ public sealed class DriveItemRecordConfiguration : IEntityTypeConfiguration<Driv
 {
     public void Configure(EntityTypeBuilder<DriveItemRecord> b)
     {
-        b.ToTable("DriveItems");
-        b.HasKey(d => d.Id);
+        _ = b.ToTable("DriveItems");
+        _ = b.HasKey(d => d.Id);
 
         // Use reflection to avoid compile-time errors if the property doesn't exist
         if (PropertyExists(typeof(DriveItemRecord), "RelativePath"))
-            b.Property("RelativePath").IsRequired();
+            _ = b.Property("RelativePath").IsRequired();
 
         if (PropertyExists(typeof(DriveItemRecord), "DriveItemId"))
-            b.HasIndex("DriveItemId");
+            _ = b.HasIndex("DriveItemId");
     }
 
     static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;

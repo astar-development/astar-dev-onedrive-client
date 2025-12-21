@@ -19,35 +19,35 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var services = new ServiceCollection();
-        services.AddLogging(cfg => cfg.AddConsole());
+        _ = services.AddLogging(cfg => cfg.AddConsole());
 
         // Infrastructure registration
         var dbPath = "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
         var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDriveSync"); // AND THIS
         var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6e"; // CONFIG
-        services.AddInfrastructure(dbPath, localRoot, msalClientId);
+        _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
         // App services
-        services.AddSyncServices();
+        _ = services.AddSyncServices();
 
         // UI services and viewmodels
-        services.AddSingleton<MainWindow>();
-        services.AddSingleton<MainWindowViewModel>();
-        services.AddSingleton<SettingsViewModel>();
-        services.AddSingleton<DashboardViewModel>();
+        _ = services.AddSingleton<MainWindow>();
+        _ = services.AddSingleton<MainWindowViewModel>();
+        _ = services.AddSingleton<SettingsViewModel>();
+        _ = services.AddSingleton<DashboardViewModel>();
 
         // Sync settings
-        services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));
+        _ = services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));
 
         _services = services.BuildServiceProvider();
 
         // Ensure DB created and configured
-        var initializer = _services.GetRequiredService<Action<IServiceProvider>>();
+        Action<IServiceProvider> initializer = _services.GetRequiredService<Action<IServiceProvider>>();
         initializer(_services);
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var main = _services.GetRequiredService<MainWindow>();
+            MainWindow main = _services.GetRequiredService<MainWindow>();
             desktop.MainWindow = main;
         }
 

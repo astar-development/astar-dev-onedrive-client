@@ -10,15 +10,15 @@ public sealed class TransferLogConfiguration : IEntityTypeConfiguration<Transfer
 {
     public void Configure(EntityTypeBuilder<TransferLog> b)
     {
-        b.ToTable("TransferLogs");
-        b.HasKey(t => t.Id);
+        _ = b.ToTable("TransferLogs");
+        _ = b.HasKey(t => t.Id);
 
         if (PropertyExists(typeof(TransferLog), "Status"))
-            b.Property("Status").HasColumnType("TEXT");
+            _ = b.Property("Status").HasColumnType("TEXT");
 
         // BytesTransferred may not exist on your TransferLog; check before mapping
         if (PropertyExists(typeof(TransferLog), "BytesTransferred"))
-            b.Property("BytesTransferred").HasColumnType("INTEGER");
+            _ = b.Property("BytesTransferred").HasColumnType("INTEGER");
     }
 
     static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;

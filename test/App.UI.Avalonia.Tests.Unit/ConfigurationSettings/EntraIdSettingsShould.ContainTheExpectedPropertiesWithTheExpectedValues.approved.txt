@@ -1,0 +1,9 @@
+﻿{
+  "clientId": "TestClientId",
+  "tenantId": "TestTenantId",
+  "scopes": [
+    "TestScope",
+    "TestScope1"
+  ],
+  "redirectUri": "TestRedirectUri"
+}

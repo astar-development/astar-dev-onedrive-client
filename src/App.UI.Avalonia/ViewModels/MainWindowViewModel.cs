@@ -20,20 +20,16 @@ public sealed class MainWindowViewModel : ViewModelBase
     public ReactiveCommand<Unit, Unit> IncrementalSyncCommand { get; }
 
     public ObservableCollection<string> RecentTransfers { get; } = new();
-    public int PendingDownloads { get => _pendingDownloads; set => this.RaiseAndSetIfChanged(ref _pendingDownloads, value); }
-    public int PendingUploads { get => _pendingUploads; set => this.RaiseAndSetIfChanged(ref _pendingUploads, value); }
-    public string SyncStatus { get => _syncStatus; set => this.RaiseAndSetIfChanged(ref _syncStatus, value); }
-    public double ProgressPercent { get => _progressPercent; set => this.RaiseAndSetIfChanged(ref _progressPercent, value); }
+    public int PendingDownloads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
+    public int PendingUploads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
+    public string SyncStatus { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "Idle";
+    public double ProgressPercent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
-    public bool UseDarkTheme { get => _useDarkTheme; set { this.RaiseAndSetIfChanged(ref _useDarkTheme, value); ApplyTheme(); } }
-    public int ParallelDownloads { get => _parallelDownloads; set { this.RaiseAndSetIfChanged(ref _parallelDownloads, value); UpdateSettings(); } }
-    public int BatchSize { get => _batchSize; set { this.RaiseAndSetIfChanged(ref _batchSize, value); UpdateSettings(); } }
+    public bool UseDarkTheme { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); ApplyTheme(); } }
+    public int ParallelDownloads { get => _parallelDownloads; set { _ = this.RaiseAndSetIfChanged(ref _parallelDownloads, value); UpdateSettings(); } }
+    public int BatchSize { get => _batchSize; set { _ = this.RaiseAndSetIfChanged(ref _batchSize, value); UpdateSettings(); } }
 
-    private int _pendingDownloads;
-    private int _pendingUploads;
-    private string _syncStatus = "Idle";
-    private double _progressPercent;
-    private bool _useDarkTheme;
+
     private int _parallelDownloads;
     private int _batchSize;
 

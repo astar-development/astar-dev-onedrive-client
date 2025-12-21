@@ -1,6 +1,7 @@
 using App.Core.Interfaces;
 using App.Core.Entities;
 using Microsoft.Extensions.Logging;
+using App.Core.Dtos;
 
 namespace App.Services;
 
@@ -31,7 +32,7 @@ public sealed class SyncEngine
 
         do
         {
-            var page = await _graph.GetDriveDeltaPageAsync(nextOrDelta, ct);
+            DeltaPage page = await _graph.GetDriveDeltaPageAsync(nextOrDelta, ct);
             await _repo.ApplyDriveItemsAsync(page.Items, ct);
             nextOrDelta = page.NextLink;
             finalDelta = page.DeltaLink ?? finalDelta;
@@ -57,8 +58,8 @@ public sealed class SyncEngine
     public async Task IncrementalSyncAsync(CancellationToken ct)
     {
         _logger.LogInformation("Starting incremental sync");
-        var token = await _repo.GetDeltaTokenAsync(ct) ?? throw new InvalidOperationException("Delta token missing; run initial sync first.");
-        var page = await _graph.GetDriveDeltaPageAsync(token.Token, ct);
+        DeltaToken token = await _repo.GetDeltaTokenAsync(ct) ?? throw new InvalidOperationException("Delta token missing; run initial sync first.");
+        DeltaPage page = await _graph.GetDriveDeltaPageAsync(token.Token, ct);
         await _repo.ApplyDriveItemsAsync(page.Items, ct);
 
         if (!string.IsNullOrEmpty(page.DeltaLink))
