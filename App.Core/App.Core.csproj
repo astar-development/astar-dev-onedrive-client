@@ -1,0 +1,9 @@
+﻿<!-- File: src/App.Core/App.Core.csproj -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+</Project>
