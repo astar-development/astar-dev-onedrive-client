@@ -1,0 +1,19 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Styles.Resources>
+    <Color x:Key="BackgroundColor">#FFFFFFFF</Color>
+    <Color x:Key="ForegroundColor">#FF000000</Color>
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{DynamicResource BackgroundColor}"/>
+    <SolidColorBrush x:Key="ForegroundBrush" Color="{DynamicResource ForegroundColor}"/>
+  </Styles.Resources>
+
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
+  </Style>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+  </Style>
+
+</Styles>

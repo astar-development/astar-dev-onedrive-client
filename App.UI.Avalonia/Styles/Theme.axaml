@@ -1,7 +1,0 @@
-<ResourceDictionary xmlns="https://github.com/avaloniaui">
-  <Color x:Key="BackgroundColor">#FFFFFFFF</Color>
-  <Color x:Key="ForegroundColor">#FF000000</Color>
-  <Style Selector="TextBlock">
-    <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}"/>
-  </Style>
-</ResourceDictionary>
