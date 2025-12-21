@@ -21,8 +21,6 @@ class Program
 
     private static ILogger<Program> LocalLogger = null!;
 
-    internal static IConfiguration Configuration = null!;
-
     public static async Task Main(string[] args)
     {
         var applicationName = "AStar.Dev.OneDrive.Client"; // Default name in case of failure before assembly load
@@ -62,11 +60,7 @@ class Program
                 _ = cfg.AddJsonFile("appsettings.json", false, false);
                 _ = cfg.AddUserSecrets<App>(true);
             })
-            .ConfigureServices((ctx, services) =>
-            {
-                Configuration = ctx.Configuration;
-                HostExtensions.ConfigureApplicationServices(ctx, services);
-            });
+            .ConfigureServices(HostExtensions.ConfigureApplicationServices);
 
     private static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
