@@ -1,7 +1,7 @@
 using System.Reflection;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using AStar.Dev.OneDrive.Client.Core.Entities;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Configurations;
 
@@ -13,10 +13,10 @@ public sealed class DriveItemRecordConfiguration : IEntityTypeConfiguration<Driv
         _ = b.HasKey(d => d.Id);
 
         // Use reflection to avoid compile-time errors if the property doesn't exist
-        if (PropertyExists(typeof(DriveItemRecord), "RelativePath"))
+        if(PropertyExists(typeof(DriveItemRecord), "RelativePath"))
             _ = b.Property("RelativePath").IsRequired();
 
-        if (PropertyExists(typeof(DriveItemRecord), "DriveItemId"))
+        if(PropertyExists(typeof(DriveItemRecord), "DriveItemId"))
             _ = b.HasIndex("DriveItemId");
     }
 

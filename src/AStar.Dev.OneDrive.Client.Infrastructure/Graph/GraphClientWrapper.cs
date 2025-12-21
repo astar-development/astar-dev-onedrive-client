@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Interfaces;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 
@@ -34,9 +34,9 @@ public sealed class GraphClientWrapper : IGraphClient
         using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
 
         var items = new List<DriveItemRecord>();
-        if (doc.RootElement.TryGetProperty("value", out JsonElement arr))
+        if(doc.RootElement.TryGetProperty("value", out JsonElement arr))
         {
-            foreach (JsonElement el in arr.EnumerateArray())
+            foreach(JsonElement el in arr.EnumerateArray())
             {
                 var id = el.GetProperty("id").GetString()!;
                 var isFolder = el.TryGetProperty("folder", out _);
@@ -60,9 +60,10 @@ public sealed class GraphClientWrapper : IGraphClient
     private static string BuildRelativePath(string parentReferencePath, string name)
     {
         // parentReference.path looks like "/drive/root:/Folder/SubFolder"
-        if (string.IsNullOrEmpty(parentReferencePath)) return name;
+        if(string.IsNullOrEmpty(parentReferencePath))
+            return name;
         var idx = parentReferencePath.IndexOf(":/", StringComparison.Ordinal);
-        if (idx >= 0)
+        if(idx >= 0)
         {
             var after = parentReferencePath[(idx + 2)..].Trim('/');
             return string.IsNullOrEmpty(after) ? name : Path.Combine(after, name);
@@ -107,7 +108,7 @@ public sealed class GraphClientWrapper : IGraphClient
         req.Content.Headers.Add("Content-Range", $"bytes {rangeStart}-{rangeEnd}/*");
         using HttpResponseMessage res = await _http.SendAsync(req, ct);
         // Graph returns 201/200 when upload completes, 202 for accepted chunk
-        if (!res.IsSuccessStatusCode)
+        if(!res.IsSuccessStatusCode)
             _ = res.EnsureSuccessStatusCode();
     }
 
@@ -118,7 +119,7 @@ public sealed class GraphClientWrapper : IGraphClient
         using var req = new HttpRequestMessage(HttpMethod.Delete, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using HttpResponseMessage res = await _http.SendAsync(req, ct);
-        if (res.StatusCode != System.Net.HttpStatusCode.NoContent && res.StatusCode != System.Net.HttpStatusCode.NotFound)
+        if(res.StatusCode is not System.Net.HttpStatusCode.NoContent and not System.Net.HttpStatusCode.NotFound)
             _ = res.EnsureSuccessStatusCode();
     }
 }

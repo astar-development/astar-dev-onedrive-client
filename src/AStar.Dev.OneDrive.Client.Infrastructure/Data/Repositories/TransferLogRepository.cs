@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 
@@ -25,7 +25,7 @@ public sealed class TransferLogRepository
         TransferLog? local = db.ChangeTracker.Entries<TransferLog>()
                       .FirstOrDefault(e => e.Entity.Id == detached.Id)?.Entity;
 
-        if (local != null)
+        if(local != null)
         {
             // Update tracked instance
             db.Entry(local).CurrentValues.SetValues(detached);
@@ -35,7 +35,7 @@ public sealed class TransferLogRepository
 
         // 2) Try to load from DB (tracked after query)
         TransferLog? existing = await db.TransferLogs.FindAsync(detached.Id);
-        if (existing != null)
+        if(existing != null)
         {
             db.Entry(existing).CurrentValues.SetValues(detached);
             _ = await db.SaveChangesAsync();

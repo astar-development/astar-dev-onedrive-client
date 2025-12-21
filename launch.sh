@@ -14,7 +14,7 @@ if ! command -v dotnet-ef >/dev/null 2>&1; then
   export PATH="$PATH:$HOME/.dotnet/tools"
 fi
 
-dotnet ef database update --project src/App.Infrastructure --startup-project src/AStar.Dev.OneDrive.Client
+dotnet ef database update --project src/AStar.Dev.OneDrive.Client.Infrastructure --startup-project src/AStar.Dev.OneDrive.Client
 
 echo "Running AStar.Dev.OneDrive.Client..."
 dotnet run --project src/AStar.Dev.OneDrive.Client -c Debug

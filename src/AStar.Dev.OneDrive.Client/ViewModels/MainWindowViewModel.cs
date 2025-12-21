@@ -29,7 +29,6 @@ public sealed class MainWindowViewModel : ViewModelBase
     public int ParallelDownloads { get => _parallelDownloads; set { _ = this.RaiseAndSetIfChanged(ref _parallelDownloads, value); UpdateSettings(); } }
     public int BatchSize { get => _batchSize; set { _ = this.RaiseAndSetIfChanged(ref _batchSize, value); UpdateSettings(); } }
 
-
     private int _parallelDownloads;
     private int _batchSize;
 

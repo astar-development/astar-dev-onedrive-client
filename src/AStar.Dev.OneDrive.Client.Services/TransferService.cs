@@ -1,9 +1,9 @@
-using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
-using AStar.Dev.OneDrive.Client.Core.Dtos;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
@@ -37,10 +37,11 @@ public sealed class TransferService
     public async Task ProcessPendingDownloadsAsync(CancellationToken ct)
     {
         _logger.LogInformation("Processing pending downloads");
-        while (!ct.IsCancellationRequested)
+        while(!ct.IsCancellationRequested)
         {
             var items = (await _repo.GetPendingDownloadsAsync(_settings.BatchSize, ct)).ToList();
-            if (items.Count == 0) break;
+            if(items.Count == 0)
+                break;
 
             var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct)).ToList();
             await Task.WhenAll(tasks);
@@ -61,14 +62,14 @@ public sealed class TransferService
             await _fs.WriteFileAsync(item.RelativePath, stream, ct);
             await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
             FileInfo fileInfo = _fs.GetFileInfo(item.RelativePath);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length};
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length };
             await _repo.LogTransferAsync(log, ct);
             _logger.LogInformation("Downloaded {Path}", item.RelativePath);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Download failed for {Id}", item.Id);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0};
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
         }
         finally
@@ -84,7 +85,7 @@ public sealed class TransferService
     {
         _logger.LogInformation("Processing pending uploads");
         var uploads = (await _repo.GetPendingUploadsAsync(_settings.BatchSize, ct)).ToList();
-        foreach (LocalFileRecord? local in uploads)
+        foreach(LocalFileRecord? local in uploads)
         {
             await _retryPolicy.ExecuteAsync(async ct2 => await UploadLocalFileAsync(local, ct2), ct);
         }
@@ -103,7 +104,7 @@ public sealed class TransferService
             await using Stream stream = await _fs.OpenReadAsync(local.RelativePath, ct) ?? throw new FileNotFoundException(local.RelativePath);
             const int chunkSize = 320 * 1024; // 320KB
             long uploaded = 0;
-            while (uploaded < stream.Length)
+            while(uploaded < stream.Length)
             {
                 var toRead = (int)Math.Min(chunkSize, stream.Length - uploaded);
                 var buffer = new byte[toRead];
@@ -119,7 +120,7 @@ public sealed class TransferService
             await _repo.LogTransferAsync(log, ct);
             _logger.LogInformation("Uploaded {Path}", local.RelativePath);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Upload failed for {Id}", local.Id);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };

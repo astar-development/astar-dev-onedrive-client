@@ -16,7 +16,7 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
         var fi = new FileInfo(full);
         return fi;
     }
-    
+
     public async Task WriteFileAsync(string relativePath, Stream content, CancellationToken ct)
     {
         var full = FullPath(relativePath);
@@ -28,24 +28,24 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
     public Task<Stream?> OpenReadAsync(string relativePath, CancellationToken ct)
     {
         var full = FullPath(relativePath);
-        if (!File.Exists(full)) return Task.FromResult<Stream?>(null);
-
-        return Task.FromResult<Stream?>(File.OpenRead(full));
+        return !File.Exists(full) ? Task.FromResult<Stream?>(null) : Task.FromResult<Stream?>(File.OpenRead(full));
     }
 
     public Task DeleteFileAsync(string relativePath, CancellationToken ct)
     {
         var full = FullPath(relativePath);
-        if (File.Exists(full)) File.Delete(full);
-        
+        if(File.Exists(full))
+            File.Delete(full);
+
         return Task.CompletedTask;
     }
 
     public Task<IEnumerable<LocalFileInfo>> EnumerateFilesAsync(CancellationToken ct)
     {
         var list = new List<LocalFileInfo>();
-        if (!Directory.Exists(_root)) return Task.FromResult<IEnumerable<LocalFileInfo>>(list.AsEnumerable());
-        foreach (var file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories))
+        if(!Directory.Exists(_root))
+            return Task.FromResult<IEnumerable<LocalFileInfo>>(list.AsEnumerable());
+        foreach(var file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories))
         {
             var fi = new FileInfo(file);
             var rel = Path.GetRelativePath(_root, file);

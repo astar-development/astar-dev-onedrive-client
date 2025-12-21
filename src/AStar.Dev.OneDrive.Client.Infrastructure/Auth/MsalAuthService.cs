@@ -1,5 +1,5 @@
-using Microsoft.Identity.Client;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using Microsoft.Identity.Client;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Auth;
 
@@ -11,12 +11,9 @@ public sealed class MsalAuthService : IAuthService
 
     public bool IsSignedIn => _account is not null;
 
-    public MsalAuthService(string clientId)
-    {
-        _pca = PublicClientApplicationBuilder.Create(clientId)
+    public MsalAuthService(string clientId) => _pca = PublicClientApplicationBuilder.Create(clientId)
             .WithRedirectUri("http://localhost")
             .Build();
-    }
 
     public async Task SignInAsync(CancellationToken ct)
     {
@@ -26,14 +23,16 @@ public sealed class MsalAuthService : IAuthService
 
     public async Task SignOutAsync(CancellationToken ct)
     {
-        if (_account is null) return;
+        if(_account is null)
+            return;
         await _pca.RemoveAsync(_account);
         _account = null;
     }
 
     public async Task<string> GetAccessTokenAsync(CancellationToken ct)
     {
-        if (_account is null) throw new InvalidOperationException("Not signed in");
+        if(_account is null)
+            throw new InvalidOperationException("Not signed in");
         AuthenticationResult result = await _pca.AcquireTokenSilent(_scopes, _account).ExecuteAsync(ct);
         return result.AccessToken;
     }

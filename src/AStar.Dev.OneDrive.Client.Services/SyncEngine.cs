@@ -1,7 +1,7 @@
-using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using AStar.Dev.OneDrive.Client.Core.Entities;
-using Microsoft.Extensions.Logging;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
@@ -37,9 +37,9 @@ public sealed class SyncEngine
             nextOrDelta = page.NextLink;
             finalDelta = page.DeltaLink ?? finalDelta;
             _logger.LogInformation("Applied page: items={Count} next={Next}", page.Items.Count(), page.NextLink is not null);
-        } while (!string.IsNullOrEmpty(nextOrDelta) && !ct.IsCancellationRequested);
+        } while(!string.IsNullOrEmpty(nextOrDelta) && !ct.IsCancellationRequested);
 
-        if (!string.IsNullOrEmpty(finalDelta))
+        if(!string.IsNullOrEmpty(finalDelta))
         {
             var token = new DeltaToken(Guid.NewGuid().ToString(), finalDelta, DateTimeOffset.UtcNow);
             await _repo.SaveOrUpdateDeltaTokenAsync(token, ct);
@@ -62,7 +62,7 @@ public sealed class SyncEngine
         DeltaPage page = await _graph.GetDriveDeltaPageAsync(token.Token, ct);
         await _repo.ApplyDriveItemsAsync(page.Items, ct);
 
-        if (!string.IsNullOrEmpty(page.DeltaLink))
+        if(!string.IsNullOrEmpty(page.DeltaLink))
         {
             await _repo.SaveOrUpdateDeltaTokenAsync(token with { Token = page.DeltaLink, LastSyncedUtc = DateTimeOffset.UtcNow }, ct);
             _logger.LogInformation("Updated delta token");

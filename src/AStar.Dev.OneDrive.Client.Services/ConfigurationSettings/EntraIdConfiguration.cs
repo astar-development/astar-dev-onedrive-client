@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.ConfigurationSettings;
+namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 
 /// <summary>
 ///     Represents the Entra ID settings used for configuring the OneDrive client.

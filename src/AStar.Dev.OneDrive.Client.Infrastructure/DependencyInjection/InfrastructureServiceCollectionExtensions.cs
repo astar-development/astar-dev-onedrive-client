@@ -1,11 +1,11 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using AStar.Dev.OneDrive.Client.Infrastructure.Data;
-using AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 using AStar.Dev.OneDrive.Client.Infrastructure.Auth;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
+using AStar.Dev.OneDrive.Client.Infrastructure.Graph;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 
@@ -23,15 +23,12 @@ public static class InfrastructureServiceCollectionExtensions
         _ = services.AddSingleton<IFileSystemAdapter>(_ => new LocalFileSystemAdapter(localRoot));
 
         // Optional: register DbInitializer action
-        _ = services.AddSingleton<Action<IServiceProvider>>(sp =>
-        {
-            return provider =>
+        _ = services.AddSingleton<Action<IServiceProvider>>(sp => provider =>
             {
                 using IServiceScope scope = provider.CreateScope();
                 AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 DbInitializer.EnsureDatabaseCreatedAndConfigured(db);
-            };
-        });
+            });
 
         return services;
     }

@@ -1,24 +1,24 @@
 ﻿using System.Reflection;
+using AStar.Dev.OneDrive.Client.Core.Utilities;
+using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
+using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
+using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 using Avalonia.ReactiveUI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using static AStar.Dev.Logging.Extensions.Serilog.SerilogExtensions;
 using static AStar.Dev.Logging.Extensions.Messages.AStarLog.Application;
-using Microsoft.Extensions.Configuration;
-using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
-using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
-using AStar.Dev.OneDrive.Client.Core.Utilities;
-using AStar.Dev.OneDrive.Client.ViewModels;
+using static AStar.Dev.Logging.Extensions.Serilog.SerilogExtensions;
 
 namespace AStar.Dev.OneDrive.Client;
 
 class Program
 {
     protected Program() { }
-    
+
     private static ILogger<Program> LocalLogger = null!;
 
     public static async Task Main(string[] args)
@@ -32,7 +32,7 @@ class Program
             using IHost host = CreateHostBuilder(args).Build();
             Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();
-            ApplicationStarted(LocalLogger, applicationName);
+            //ApplicationStarted(LocalLogger, applicationName);
             _ = BuildAvaloniaApp()
                     .StartWithClassicDesktopLifetime(args);
         }
@@ -52,10 +52,9 @@ class Program
         => Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((ctx, cfg) =>
             {
-                _ = cfg.AddJsonFile("appsettings.json", true, false);
+                _ = cfg.AddJsonFile("appsettings.json", false, false);
                 _ = cfg.AddUserSecrets<App>(true);
             })
-            //.UseSerilog((ctx, services, loggerConfig) => _ = loggerConfig.ConfigureAStarDevelopmentLoggingDefaults(ctx.Configuration))
             .ConfigureServices((ctx, services) =>
             {
                 // Infrastructure registration
@@ -65,7 +64,7 @@ class Program
                 _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
                 // App services
-                _ = services.AddSyncServices();
+                _ = services.AddSyncServices(ctx.Configuration);
 
                 // UI services and viewmodels
                 _ = services.AddSingleton<MainWindow>();
@@ -74,9 +73,9 @@ class Program
                 _ = services.AddSingleton<DashboardViewModel>();
 
                 // Sync settings
-                _ = services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));
+                //_ = services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));
                 ServiceProvider servicesProvider = services.BuildServiceProvider();
-            LocalLogger = servicesProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
+                // LocalLogger = servicesProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
                 Action<IServiceProvider> initializer = servicesProvider.GetRequiredService<Action<IServiceProvider>>();
                 initializer(servicesProvider);
             });

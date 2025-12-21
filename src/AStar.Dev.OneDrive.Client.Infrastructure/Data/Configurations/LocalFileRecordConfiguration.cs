@@ -1,7 +1,7 @@
 using System.Reflection;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using AStar.Dev.OneDrive.Client.Core.Entities;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Configurations;
 
@@ -12,10 +12,10 @@ public sealed class LocalFileRecordConfiguration : IEntityTypeConfiguration<Loca
         _ = b.ToTable("LocalFiles");
         _ = b.HasKey(l => l.Id);
 
-        if (PropertyExists(typeof(LocalFileRecord), "RelativePath"))
+        if(PropertyExists(typeof(LocalFileRecord), "RelativePath"))
             _ = b.Property("RelativePath").IsRequired();
 
-        if (PropertyExists(typeof(LocalFileRecord), "RelativePath"))
+        if(PropertyExists(typeof(LocalFileRecord), "RelativePath"))
             _ = b.HasIndex("RelativePath");
     }
 

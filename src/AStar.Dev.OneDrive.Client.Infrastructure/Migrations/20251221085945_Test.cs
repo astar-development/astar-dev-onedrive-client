@@ -2,21 +2,20 @@
 
 #nullable disable
 
-namespace AStar.Dev.OneDrive.Client.Infrastructure.Migrations
+namespace AStar.Dev.OneDrive.Client.Infrastructure.Migrations;
+
+/// <inheritdoc />
+public partial class Test : Migration
 {
     /// <inheritdoc />
-    public partial class Test : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
 
-        }
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
 
-        }
     }
 }

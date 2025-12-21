@@ -26,6 +26,12 @@
   </PackageReference>
   </ItemGroup>
 
+	<ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+</ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="../nuget-packages/AStar.Dev.Logging.Extensions.Serilog/AStar.Dev.Logging.Extensions.Serilog.csproj" />
     <ProjectReference Include="../nuget-packages/AStar.Dev.Logging.Extensions/AStar.Dev.Logging.Extensions.csproj" />
