@@ -21,7 +21,7 @@ class Program
 
     private static ILogger<Program> LocalLogger = null!;
 
-    private static IConfiguration config = null!;
+    internal static IConfiguration Configuration = null!;
 
     public static async Task Main(string[] args)
     {
@@ -34,7 +34,9 @@ class Program
             using IHost host = CreateHostBuilder(args).Build();
             Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();
-            //ApplicationStarted(LocalLogger, applicationName);
+            ILogger<Program> logger = host.Services.GetRequiredService<ILogger<Program>>();
+            LocalLogger = host.Services.GetRequiredService<ILogger<Program>>();
+            ApplicationStarted(LocalLogger, applicationName);
 
             _ = BuildAvaloniaApp()
                     .StartWithClassicDesktopLifetime(args);
@@ -61,7 +63,7 @@ class Program
             })
             .ConfigureServices((ctx, services) =>
             {
-                config = ctx.Configuration;
+                Configuration = ctx.Configuration;
                 // Infrastructure registration
                 var dbPath = "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
                 var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDriveSync"); // AND THIS
@@ -69,7 +71,7 @@ class Program
                 _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
                 // App services
-                _ = services.AddSyncServices(ctx.Configuration);
+                //_ = services.AddSyncServices(ctx.Configuration);
 
                 // UI services and viewmodels
                 _ = services.AddSingleton<MainWindow>();
