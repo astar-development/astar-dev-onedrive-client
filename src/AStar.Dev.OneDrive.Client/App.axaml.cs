@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client;
 
-public partial class App(IConfiguration config) : Application
+public partial class App : Application
 {
     private IServiceProvider? _services;
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -28,7 +28,7 @@ public partial class App(IConfiguration config) : Application
         _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
         // App services
-        _ = services.AddSyncServices(config);
+        _ = services.AddSyncServices();
 
         // UI services and viewmodels
         _ = services.AddSingleton<MainWindow>();

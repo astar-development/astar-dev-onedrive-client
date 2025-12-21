@@ -36,9 +36,7 @@ class Program
             await host.StartAsync();
             //ApplicationStarted(LocalLogger, applicationName);
 
-            App app = host.Services.GetRequiredService<App>();
-
-            _ = BuildAvaloniaApp(app)
+            _ = BuildAvaloniaApp()
                     .StartWithClassicDesktopLifetime(args);
         }
         catch(Exception ex)
@@ -74,7 +72,6 @@ class Program
                 _ = services.AddSyncServices(ctx.Configuration);
 
                 // UI services and viewmodels
-                _ = services.AddSingleton<App>();
                 _ = services.AddSingleton<MainWindow>();
                 _ = services.AddSingleton<MainWindowViewModel>();
                 _ = services.AddSingleton<SettingsViewModel>();
@@ -88,8 +85,8 @@ class Program
                 initializer(servicesProvider);
             });
 
-    private static AppBuilder BuildAvaloniaApp(App app)
-        => AppBuilder.Configure(()=> app)
+    private static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .LogToTrace()
             .UseReactiveUI();
