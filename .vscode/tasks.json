@@ -8,7 +8,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/src/App.UI.Avalonia/App.UI.Avalonia.csproj",
+        "${workspaceFolder}/src/AStar.Dev.OneDrive.Client/AStar.Dev.OneDrive.Client.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary"
       ],

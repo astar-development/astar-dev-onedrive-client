@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
-namespace AStar.Dev.Logging.Extensions;
+
+namespace AStar.Dev.Logging.Extensions.Messages;
 
 public static partial class AStarLog
 {

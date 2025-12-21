@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace AStar.Dev.Utilities;
+﻿namespace AStar.Dev.Utilities;
 
 /// <summary>
 /// </summary>

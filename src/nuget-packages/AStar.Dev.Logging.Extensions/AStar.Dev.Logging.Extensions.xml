@@ -163,12 +163,12 @@
                 The original instance of <see cref="T:Microsoft.Extensions.Hosting.HostApplicationBuilder" /> for further method chaining.
             </returns>
         </member>
-        <member name="T:AStar.Dev.Logging.Extensions.AStarLog">
+        <member name="T:AStar.Dev.Logging.Extensions.Messages.AStarLog">
             <summary>
             Provides strongly-typed logging methods for common HTTP status codes and errors in AStar applications.
             </summary>
         </member>
-        <member name="T:AStar.Dev.Logging.Extensions.AStarLog.Application">
+        <member name="T:AStar.Dev.Logging.Extensions.Messages.AStarLog.Application">
             <summary>
             Provides logging methods for application lifecycle events, including startup, shutdown, and error conditions.
             </summary>
@@ -178,7 +178,7 @@
             tracking across the application. This class is thread-safe and can be used from any context where logging is
             required.</remarks>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Application.ApplicationFailedToStart(Microsoft.Extensions.Logging.ILogger,System.String,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Application.ApplicationFailedToStart(Microsoft.Extensions.Logging.ILogger,System.String,System.String)">
             <summary>
             Logs an error for an Internal Server Error (500) at the specified path.
             </summary>
@@ -186,98 +186,98 @@
             <param name="appName">The name of the application that failed to start.</param>
             <param name="exceptionMessage">The exception message that caused the failure.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Application.ApplicationStarted(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Application.ApplicationStarted(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a debug message indicating that the application has started.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="appName">The name of the application that started.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Application.ApplicationStopped(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Application.ApplicationStopped(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a debug message indicating that the application has stopped.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="appName">The name of the application that stopped.</param>
         </member>
-        <member name="T:AStar.Dev.Logging.Extensions.AStarLog.Web">
+        <member name="T:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web">
             <summary>
             Provides static methods and utilities for web-related operations.
             </summary>
             <remarks>This class serves as a central entry point for web functionality. All members are static and
             can be accessed without instantiating the class.</remarks>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.BadRequest(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.BadRequest(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for a Bad Request (400) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that caused the bad request.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.Unauthorized(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.Unauthorized(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for an Unauthorized (401) request at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that was unauthorized.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.Forbidden(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.Forbidden(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for a Forbidden (403) request at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that was forbidden.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.NotFound(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.NotFound(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for a Not Found (404) request at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that was not found.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.Conflict(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.Conflict(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for a Conflict (409) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that caused the conflict.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.UnprocessableEntity(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.UnprocessableEntity(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for an Unprocessable Entity (422) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that was unprocessable.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.TooManyRequests(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.TooManyRequests(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs a warning for Too Many Requests (429) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that received too many requests.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.InternalServerError(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.InternalServerError(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs an error for an Internal Server Error (500) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that caused the internal server error.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.BadGateway(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.BadGateway(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs an error for a Bad Gateway (502) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that caused the bad gateway error.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.ServiceUnavailable(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.ServiceUnavailable(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs an error for a Service Unavailable (503) at the specified path.
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="path">The request path that was unavailable.</param>
         </member>
-        <member name="M:AStar.Dev.Logging.Extensions.AStarLog.Web.GatewayTimeout(Microsoft.Extensions.Logging.ILogger,System.String)">
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web.GatewayTimeout(Microsoft.Extensions.Logging.ILogger,System.String)">
             <summary>
             Logs an error for a Gateway Timeout (504) at the specified path.
             </summary>

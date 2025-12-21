@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "dotnet: build",
-            "program": "${workspaceFolder}/src/App.UI.Avalonia/bin/Debug/net10.0/App.UI.Avalonia.dll",
+            "program": "${workspaceFolder}/src/AStar.Dev.OneDrive.Client/bin/Debug/net10.0/AStar.Dev.OneDrive.Client.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

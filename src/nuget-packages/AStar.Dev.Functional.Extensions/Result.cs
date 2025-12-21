@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace AStar.Dev.Functional.Extensions;
+﻿namespace AStar.Dev.Functional.Extensions;
 
 /// <summary>
 ///     Represents a discriminated union of success or failure.

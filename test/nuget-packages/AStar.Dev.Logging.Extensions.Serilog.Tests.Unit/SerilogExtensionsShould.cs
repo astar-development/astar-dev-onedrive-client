@@ -1,8 +1,7 @@
-using AStar.Dev.Logging.Extensions.Serilog;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
-namespace AStar.Dev.Utilities.Serilog.Tests.Unit;
+namespace AStar.Dev.Logging.Extensions.Serilog.Tests.Unit;
 
 public class SerilogExtensionsShould
 {
