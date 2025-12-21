@@ -23,7 +23,7 @@ public partial class App : Application
 
         // Infrastructure registration
         var dbPath = "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
-        var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OneDriveSync");
+        var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDriveSync"); // AND THIS
         var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6e"; // CONFIG
         services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
