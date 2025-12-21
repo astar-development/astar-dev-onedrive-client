@@ -54,21 +54,22 @@ public sealed class TransferService
     private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
     {
         await _downloadSemaphore.WaitAsync(ct);
-        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, null);
+        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
         await _repo.LogTransferAsync(log, ct);
         try
         {
             await using var stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
             await _fs.WriteFileAsync(item.RelativePath, stream, ct);
             await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success };
+            var fileInfo = _fs.GetFileInfo(item.RelativePath);
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length};
             await _repo.LogTransferAsync(log, ct);
             _logger.LogInformation("Downloaded {Path}", item.RelativePath);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Download failed for {Id}", item.Id);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message };
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0};
             await _repo.LogTransferAsync(log, ct);
         }
         finally
@@ -92,7 +93,7 @@ public sealed class TransferService
 
     private async Task UploadLocalFileAsync(LocalFileRecord local, CancellationToken ct)
     {
-        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Upload, local.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, null);
+        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Upload, local.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, null);
         await _repo.LogTransferAsync(log, ct);
         try
         {
@@ -115,14 +116,14 @@ public sealed class TransferService
             }
 
             await _repo.MarkLocalFileStateAsync(local.Id, SyncState.Uploaded, ct);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success };
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = stream.Length };
             await _repo.LogTransferAsync(log, ct);
             _logger.LogInformation("Uploaded {Path}", local.RelativePath);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Upload failed for {Id}", local.Id);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message };
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
         }
     }

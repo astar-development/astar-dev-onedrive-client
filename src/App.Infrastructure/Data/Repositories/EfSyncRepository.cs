@@ -72,6 +72,13 @@ public sealed class EfSyncRepository : ISyncRepository
 
     public async Task LogTransferAsync(TransferLog log, CancellationToken ct)
     {
+        var existing = await _db.TransferLogs.FindAsync(new object[] { log.Id }, ct);
+        if (existing is not null)
+        {
+            _db.Entry(existing).CurrentValues.SetValues(log);
+            await _db.SaveChangesAsync(ct);
+            return;
+        }
         _db.TransferLogs.Add(log);
         await _db.SaveChangesAsync(ct);
     }

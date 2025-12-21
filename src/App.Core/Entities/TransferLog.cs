@@ -7,6 +7,7 @@ public sealed record TransferLog(
     DateTimeOffset StartedUtc,
     DateTimeOffset? CompletedUtc,
     TransferStatus Status,
+    long? BytesTransferred,
     string? Error
 );
 

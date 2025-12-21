@@ -10,6 +10,13 @@ public sealed class LocalFileSystemAdapter : IFileSystemAdapter
 
     private string FullPath(string relative) => Path.Combine(_root, relative.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
+    public FileInfo GetFileInfo(string relativePath)
+    {
+        var full = FullPath(relativePath);
+        var fi = new FileInfo(full);
+        return fi;
+    }
+    
     public async Task WriteFileAsync(string relativePath, Stream content, CancellationToken ct)
     {
         var full = FullPath(relativePath);
