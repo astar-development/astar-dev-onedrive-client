@@ -34,6 +34,7 @@ class Program
             using IHost host = CreateHostBuilder(args).Build();
             Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();
+            App.Services = host.Services;
             ILogger<Program> logger = host.Services.GetRequiredService<ILogger<Program>>();
             LocalLogger = host.Services.GetRequiredService<ILogger<Program>>();
             ApplicationStarted(LocalLogger, applicationName);
@@ -71,7 +72,7 @@ class Program
                 _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
                 // App services
-                //_ = services.AddSyncServices(ctx.Configuration);
+                _ = services.AddSyncServices(ctx.Configuration);
 
                 // UI services and viewmodels
                 _ = services.AddSingleton<MainWindow>();
