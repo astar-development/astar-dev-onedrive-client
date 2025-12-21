@@ -9,17 +9,21 @@
 
     <!-- Enable Avalonia build targets; do NOT add explicit AvaloniaResource entries -->
     <UseAvalonia>true</UseAvalonia>
-    <AvaloniaUsePrecompiledXaml>true</AvaloniaUsePrecompiledXaml>
+    <AvaloniaUsePrecompiledXaml>false</AvaloniaUsePrecompiledXaml>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.10" />
+    <PackageReference Include="Avalonia" Version="11.3.9" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.10" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.10" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.9" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.1" />
     <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" PrivateAssets="all" />
+  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1">
+    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    <PrivateAssets>all</PrivateAssets>
+  </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -27,4 +31,10 @@
     <ProjectReference Include="..\App.Infrastructure\App.Infrastructure.csproj" />
     <ProjectReference Include="..\App.Services\App.Services.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="Styles\**" />
+  </ItemGroup>
+  
 </Project>

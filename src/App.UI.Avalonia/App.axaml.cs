@@ -24,7 +24,7 @@ public partial class App : Application
         // Infrastructure registration
         var dbPath = "Data Source=app.db";
         var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OneDriveSync");
-        var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6edo";
+        var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6e";
         services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
         // App services

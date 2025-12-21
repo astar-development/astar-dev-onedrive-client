@@ -1,15 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:fluent="clr-namespace:Avalonia.Themes.Fluent;assembly=Avalonia.Themes.Fluent"
              x:Class="App.UI.Avalonia.App">
-  <Application.Styles>
-    <!-- Register the Fluent theme element so core resources like !AvaloniaResources are available -->
-    <fluent:FluentTheme Mode="Light" />
-
-    <!-- Default control styles that depend on the theme -->
-    <StyleInclude Source="avares://Avalonia.Controls/Styles/Default.xaml" />
-
-    <!-- App-specific styles -->
-    <StyleInclude Source="avares://App.UI.Avalonia/Styles/Theme.axaml" />
-  </Application.Styles>
+    <Application.Styles>
+        <FluentTheme /><FluentTheme />
+    </Application.Styles>
 </Application>
