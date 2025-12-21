@@ -21,6 +21,8 @@ class Program
 
     private static ILogger<Program> LocalLogger = null!;
 
+    private static IConfiguration config = null!;
+
     public static async Task Main(string[] args)
     {
         var applicationName = "AStar.Dev.OneDrive.Client"; // Default name in case of failure before assembly load
@@ -33,7 +35,10 @@ class Program
             Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();
             //ApplicationStarted(LocalLogger, applicationName);
-            _ = BuildAvaloniaApp()
+
+            App app = host.Services.GetRequiredService<App>();
+
+            _ = BuildAvaloniaApp(app)
                     .StartWithClassicDesktopLifetime(args);
         }
         catch(Exception ex)
@@ -52,11 +57,13 @@ class Program
         => Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((ctx, cfg) =>
             {
+                _ = cfg.SetBasePath(AppContext.BaseDirectory);
                 _ = cfg.AddJsonFile("appsettings.json", false, false);
                 _ = cfg.AddUserSecrets<App>(true);
             })
             .ConfigureServices((ctx, services) =>
             {
+                config = ctx.Configuration;
                 // Infrastructure registration
                 var dbPath = "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
                 var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDriveSync"); // AND THIS
@@ -67,6 +74,7 @@ class Program
                 _ = services.AddSyncServices(ctx.Configuration);
 
                 // UI services and viewmodels
+                _ = services.AddSingleton<App>();
                 _ = services.AddSingleton<MainWindow>();
                 _ = services.AddSingleton<MainWindowViewModel>();
                 _ = services.AddSingleton<SettingsViewModel>();
@@ -80,8 +88,8 @@ class Program
                 initializer(servicesProvider);
             });
 
-    private static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    private static AppBuilder BuildAvaloniaApp(App app)
+        => AppBuilder.Configure(()=> app)
             .UsePlatformDetect()
             .LogToTrace()
             .UseReactiveUI();

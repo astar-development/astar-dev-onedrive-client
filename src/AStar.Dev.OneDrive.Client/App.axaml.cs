@@ -5,15 +5,15 @@ using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client;
 
-public partial class App : Application
+public partial class App(IConfiguration config) : Application
 {
     private IServiceProvider? _services;
-
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
@@ -28,7 +28,7 @@ public partial class App : Application
         _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
         // App services
-        _ = services.AddSyncServices();
+        _ = services.AddSyncServices(config);
 
         // UI services and viewmodels
         _ = services.AddSingleton<MainWindow>();
