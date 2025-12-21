@@ -22,9 +22,9 @@ public partial class App : Application
         services.AddLogging(cfg => cfg.AddConsole());
 
         // Infrastructure registration
-        var dbPath = "Data Source=app.db";
+        var dbPath = "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
         var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OneDriveSync");
-        var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6e";
+        var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6e"; // CONFIG
         services.AddInfrastructure(dbPath, localRoot, msalClientId);
 
         // App services

@@ -15,7 +15,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
             .AddEnvironmentVariables();
 
         var config = builder.Build();
-        var conn = config.GetConnectionString("DefaultConnection") ?? "Data Source=app.db";
+        var conn = config.GetConnectionString("DefaultConnection") ?? "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
 
         var options = new DbContextOptionsBuilder<AppDbContext>();
         options.UseSqlite(conn);
