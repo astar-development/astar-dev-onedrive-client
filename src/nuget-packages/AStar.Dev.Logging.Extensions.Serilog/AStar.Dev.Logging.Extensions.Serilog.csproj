@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Authors>AStar Development, Jason Barden</Authors>
+        <Company>AStar Development</Company>
+        <Copyright>AStar Development, 2025</Copyright>
+        <Description>A collection of useful utilities for Serilog that do not fit within any of the other, more targeted, AStar Dev NuGet packages.</Description>
+        <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <IncludeSymbols>true</IncludeSymbols>
+        <IsPackable>true</IsPackable>
+        <PackageIcon>astar.png</PackageIcon>
+        <PackageId>AStar.Dev.Logging.Extensions.Serilog</PackageId>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/astar-development/astar-dev-utilities-serilog</PackageProjectUrl>
+        <PackageReadmeFile>Readme.md</PackageReadmeFile>
+        <PackageReleaseNotes>Initial package.</PackageReleaseNotes>
+        <PackageTags>AStar C# Utilities</PackageTags>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/astar-development/astar-dev-utilities-serilog.git</RepositoryUrl>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Title>AStar Dev Utilities Serilog</Title>
+        <Version>0.1.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
+        <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1"/>
+        <PackageReference Include="Serilog.Sinks.File" Version="7.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="astar.png" Pack="true" CopyToOutputDirectory="Always" PackagePath=""/>
+        <None Update="LICENSE" Pack="true" CopyToOutputDirectory="Always" PackagePath=""/>
+    </ItemGroup>
+
+</Project>

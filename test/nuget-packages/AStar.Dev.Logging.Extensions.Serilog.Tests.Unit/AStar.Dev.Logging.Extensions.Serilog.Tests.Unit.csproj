@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<IsPackable>false</IsPackable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>true</ImplicitUsings>
+		<OutputType>Exe</OutputType>
+		<RunSettingsFilePath>C:\repos\astar-development\astar-dev-onedrive-client\test\nuget-packages\AStar.Dev.Logging.Extensions.Serilog.Tests.Unit\bin\Debug\net10.0\fine-code-coverage\coverage-tool-output\AStar.Dev.Logging.Extensions.Serilog.Tests.Unit-fcc-mscodecoverage-generated.runsettings</RunSettingsFilePath>
+	</PropertyGroup>
+
+	<ItemGroup>
+        <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit" />
+		<Using Include="Shouldly" />
+		<Using Include="JetBrains.Annotations" />
+	</ItemGroup>
+
+    <ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="6.0.4">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+		<PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
+        <PackageReference Include="Shouldly" Version="4.3.0" />
+		<PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" Version="22.1.0" />
+        <PackageReference Include="xunit.v3" Version="3.2.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Logging.Extensions.Serilog\AStar.Dev.Logging.Extensions.Serilog.csproj" />
+    </ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<NoWarn>1701;1702;IDE0058;</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<NoWarn>1701;1702;IDE0058;</NoWarn>
+	</PropertyGroup>
+
+</Project>

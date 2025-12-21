@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AStar.Dev.Utilities.Serilog</name>
+    </assembly>
+    <members>
+        <member name="T:AStar.Dev.Utilities.Serilog.SerilogExtensions">
+            <summary>
+                Provides extension methods to simplify the creation and configuration of Serilog loggers.
+            </summary>
+        </member>
+        <member name="M:AStar.Dev.Utilities.Serilog.SerilogExtensions.CreateMinimalLogger">
+            <summary>
+                Creates and configures a minimal Serilog logger with a debug-level log threshold that outputs to the console.
+            </summary>
+            <returns>An instance of <see cref="T:Serilog.ILogger" /> configured with a minimal setup.</returns>
+        </member>
+        <member name="M:AStar.Dev.Utilities.Serilog.SerilogExtensions.ConfigureAstarDefaults(Serilog.LoggerConfiguration,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Configures a <see cref="T:Serilog.LoggerConfiguration"/> with the default AStar settings and sinks.
+            </summary>
+            <param name="config">The logger configuration to update.</param>
+            <param name="configuration">Application configuration to read Serilog settings from.</param>
+            <returns>The same <see cref="T:Serilog.LoggerConfiguration"/> for chaining.</returns>
+        </member>
+    </members>
+</doc>

@@ -1,12 +1,100 @@
+
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "dotnet",
-			"task": "build",
-			"group": "build",
-			"problemMatcher": [],
-			"label": "dotnet: build"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build AStar Dev OneDrive Client",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/App.UI.Avalonia/App.UI.Avalonia.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
+    {
+      // Ensure output folder exists (Linux/macOS default)
+      "label": "Prepare Coverage Output",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "mkdir -p '${workspaceFolder}/coverage-report'"],
+      "windows": {
+        "command": "powershell",
+        "args": [
+          "-NoProfile",
+          "New-Item -ItemType Directory -Force -Path '${workspaceFolder}/coverage-report' | Out-Null"
+        ]
+      },
+      "problemMatcher": []
+    },
+
+    {
+      // Run ALL tests from your .slnx with the Coverlet data collector
+      // Writes coverage.cobertura.xml under each TestResults/<GUID>/ folder
+      "label": "Run Tests (XPlat Collector)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/AStar.Dev.OneDrive.Sync.slnx",
+        "--collect:XPlat Code Coverage",
+        "--settings",
+        "coverage.runsettings"
+      ],
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true }
+    },
+
+    
+{
+  "label": "Generate Coverage (LCOV + HTML)",
+  "type": "shell",
+  "dependsOn": ["Prepare Coverage Output", "Run Tests (XPlat Collector)"],
+
+  // Linux/macOS default
+  "command": "bash",
+  "args": [
+    "-lc",
+    "reportgenerator -reports:\"${workspaceFolder}/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"${workspaceFolder}/coverage-report\" -reporttypes:\"HtmlInline;lcov\""
+  ],
+
+  // Windows override — note the quotes to keep ';lcov' inside the same argument
+  "windows": {
+    "command": "powershell",
+    "args": [
+      "-NoProfile",
+      "reportgenerator -reports:\"${workspaceFolder}/**/TestResults/**/coverage.cobertura.xml\" -targetdir:\"${workspaceFolder}/coverage-report\" -reporttypes:\"HtmlInline;lcov\""
+    ]
+  },
+
+  "problemMatcher": []
+},
+
+    {
+      // Optional convenience: open the HTML dashboard
+      "label": "Open Coverage Dashboard",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "xdg-open '${workspaceFolder}/coverage-report/index.html' || open '${workspaceFolder}/coverage-report/index.html'"
+      ],
+      "windows": {
+        "command": "powershell",
+         "args": ["Start-Process '${workspaceFolder}/coverage-report/index.html'"]
+      },
+      "problemMatcher": []
+    }
+  ]
 }

@@ -1,5 +1,26 @@
+
 {
-    "cSpell.words": [
-        "Avalonia"
-    ]
+  // Look for coverage files inside TestResults folders
+  "coverage-gutters.coverageBaseDir": "${workspaceFolder}/**/TestResults/**",
+
+  // Cobertura XML file name
+  "coverage-gutters.coverageFileNames": [
+    "coverage.cobertura.xml"
+  ],
+
+  // Show full-line highlights (optional tuning)
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showGutterCoverage": true,
+  "coverage-gutters.decorations.coveredLineColor": "rgba(76, 175, 80, 0.20)",
+  "coverage-gutters.decorations.uncoveredLineColor": "rgba(255, 0, 0, 0.20)",
+  "cSpell.words": [
+    "Avalonia",
+    "Kiota",
+    "microsoftonline",
+    "Msal",
+    "Mvvm",
+    "onedrive",
+    "Positionable",
+    "Syncronisation"
+  ]
 }

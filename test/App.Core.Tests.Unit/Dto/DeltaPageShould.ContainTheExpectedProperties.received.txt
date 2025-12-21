@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "id": "MockId",
+      "driveItemId": "MockDriveItemId",
+      "relativePath": "MockRelativePath",
+      "eTag": "MockETag",
+      "cTag": "MockCTag",
+      "size": 12345,
+      "lastModifiedUtc": "2025-12-21T01:02:03+00:00",
+      "isFolder": false,
+      "isDeleted": false
+    },
+    {
+      "id": "MockId2",
+      "driveItemId": "MockDriveItemId2",
+      "relativePath": "MockRelativePath2",
+      "eTag": "MockETag2",
+      "cTag": "MockCTag2",
+      "size": 123456,
+      "lastModifiedUtc": "2025-12-21T06:02:03+00:00",
+      "isFolder": true,
+      "isDeleted": true
+    }
+  ],
+  "nextLink": "MockNextLink",
+  "deltaLink": "MockDeltaLink"
+}

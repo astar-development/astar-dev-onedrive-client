@@ -41,6 +41,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\App.Core\App.Core.csproj" />
+      <ProjectReference Include="..\..\src\nuget-packages\AStar.Dev.Utilities\AStar.Dev.Utilities.csproj" />
     </ItemGroup>
 
     <ItemGroup>

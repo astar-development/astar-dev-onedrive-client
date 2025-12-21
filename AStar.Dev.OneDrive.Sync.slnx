@@ -1,14 +1,31 @@
 <Solution>
+  <Folder Name="/.vscode/">
+    <File Path=".vscode\launch.json" />
+    <File Path=".vscode\settings.json" />
+    <File Path=".vscode\tasks.json" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/App.Core/App.Core.csproj" />
     <Project Path="src/App.Infrastructure/App.Infrastructure.csproj" />
     <Project Path="src/App.Services/App.Services.csproj" />
     <Project Path="src/App.UI.Avalonia/App.UI.Avalonia.csproj" />
   </Folder>
+  <Folder Name="/src/nuget-packages/">
+    <Project Path="src/nuget-packages/AStar.Dev.Functional.Extensions/AStar.Dev.Functional.Extensions.csproj" />
+    <Project Path="src/nuget-packages/AStar.Dev.Logging.Extensions.Serilog/AStar.Dev.Logging.Extensions.Serilog.csproj" />
+    <Project Path="src/nuget-packages/AStar.Dev.Logging.Extensions/AStar.Dev.Logging.Extensions.csproj" />
+    <Project Path="src/nuget-packages/AStar.Dev.Utilities/AStar.Dev.Utilities.csproj" />
+  </Folder>
   <Folder Name="/test/">
     <Project Path="test/App.Core.Tests.Unit/App.Core.Tests.Unit.csproj" />
     <Project Path="test/App.Infrastructure.Tests.Unit/App.Infrastructure.Tests.Unit.csproj" />
     <Project Path="test/App.Services.Tests.Unit/App.Services.Tests.Unit.csproj" />
     <Project Path="test/App.UI.Avalonia.Tests.Unit/App.UI.Avalonia.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/test/nuget-packages/">
+    <Project Path="test/nuget-packages/AStar.Dev.Functional.Extensions.Tests.Unit/AStar.Dev.Functional.Extensions.Tests.Unit.csproj" />
+    <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit.csproj" />
+    <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Tests.Unit/AStar.Dev.Logging.Extensions.Tests.Unit.csproj" />
+    <Project Path="test/nuget-packages/AStar.Dev.Utilities.Tests.Unit/AStar.Dev.Utilities.Tests.Unit.csproj" />
   </Folder>
 </Solution>
