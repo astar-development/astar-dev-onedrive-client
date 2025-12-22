@@ -1,8 +1,4 @@
 ﻿using System.Reflection;
-using AStar.Dev.OneDrive.Client.Core.Utilities;
-using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
-using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
-using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.Configuration;

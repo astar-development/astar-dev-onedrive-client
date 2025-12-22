@@ -4,7 +4,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         Width="1000" Height="780"
         Title="OneDrive Sync"
-        x:Class="AStar.Dev.OneDrive.Client.MainWindow">
+        Icon="avares://AStar.Dev.OneDrive.Client/Assets/astar.ico"
+        x:Class="AStar.Dev.OneDrive.Client.ViewModels.MainWindow">
 
     <Window.Resources>
         <ResourceDictionary>

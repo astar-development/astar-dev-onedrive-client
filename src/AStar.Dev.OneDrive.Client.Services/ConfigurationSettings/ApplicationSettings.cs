@@ -58,7 +58,7 @@ public class ApplicationSettings
     ///     where user preferences are stored.
     /// </summary>
     [JsonIgnore]
-    internal string FullUserPreferencesPath
+    public string FullUserPreferencesPath
     {
         get => field ?? Path.Combine(BaseUserPreferencesPath, "user-preferences.json");
         set;
@@ -70,7 +70,7 @@ public class ApplicationSettings
     ///     where user preferences are stored.
     /// </summary>
     [JsonIgnore]
-    internal string BaseUserPreferencesPath
+    public string BaseUserPreferencesPath
     {
         get => field ?? GetDefaultBaseUserPreferencesPath();
         set;

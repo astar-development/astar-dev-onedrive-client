@@ -1,5 +1,9 @@
+using System.IO.Abstractions;
+using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
+using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
+using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +27,12 @@ internal static class HostExtensions
         _ = services.AddSingleton<MainWindowViewModel>();
         _ = services.AddSingleton<SettingsViewModel>();
         _ = services.AddSingleton<DashboardViewModel>();
+        _ = services.AddSingleton<IAutoSaveService, AutoSaveService>();
+        _ = services.AddSingleton<ISettingsAndPreferencesService, SettingsAndPreferencesService>();
+        _ = services.AddSingleton<IThemeMapper, ThemeMapper>();
+        _ = services.AddSingleton<IThemeSelectionHandler, ThemeSelectionHandler>();
+        _ = services.AddSingleton<IFileSystem, FileSystem>();
+        _ = services.AddSingleton<ThemeService>();
 
         // Sync settings
         //_ = services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));

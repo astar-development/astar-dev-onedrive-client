@@ -1,13 +1,9 @@
-using AStar.Dev.OneDrive.Client.Core.Utilities;
-using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
-using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Microsoft.Extensions.Configuration;
+using Avalonia.Styling;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client;
 
@@ -38,4 +34,6 @@ public partial class App : Application
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    public void SetTheme(ThemeVariant? variant) => RequestedThemeVariant = variant ?? ThemeVariant.Default; // Default == Auto
 }

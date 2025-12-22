@@ -1,7 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
+using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
+using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.Theme;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
@@ -14,6 +17,9 @@ public sealed class MainWindowViewModel : ViewModelBase
     private readonly SyncSettings _settings;
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly TransferService _transfer;
+    private readonly ApplicationSettings _applicationSettings;
+    private readonly IThemeSelectionHandler _themeHandler;
+    private readonly IAutoSaveService _autoSaveService;
 
     public ReactiveCommand<Unit, Unit> SignInCommand { get; }
     public ReactiveCommand<Unit, Unit> InitialSyncCommand { get; }
@@ -24,18 +30,22 @@ public sealed class MainWindowViewModel : ViewModelBase
     public int PendingUploads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public string SyncStatus { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "Idle";
     public double ProgressPercent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
-
-    public bool UseDarkTheme { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); ApplyTheme(); } }
     public int ParallelDownloads { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
     public int BatchSize { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
 
-    public MainWindowViewModel(IAuthService auth, SyncEngine sync, TransferService transfer, SyncSettings settings, ILogger<MainWindowViewModel> logger)
+    public MainWindowViewModel(IAuthService auth, SyncEngine sync, TransferService transfer, SyncSettings settings,
+        ApplicationSettings applicationSettings,
+        IThemeSelectionHandler themeHandler,
+        IAutoSaveService autoSaveService, ILogger<MainWindowViewModel> logger)
     {
         _auth = auth;
         _sync = sync;
         _transfer = transfer;
         _settings = settings;
         _logger = logger;
+        _applicationSettings = applicationSettings;
+        _themeHandler = themeHandler;
+        _autoSaveService = autoSaveService;
 
         ParallelDownloads = settings.ParallelDownloads;
         BatchSize = settings.BatchSize;
@@ -63,13 +73,6 @@ public sealed class MainWindowViewModel : ViewModelBase
             RefreshStatsAsync();
         });
     }
-
-    private void ApplyTheme()
-    {
-        // Minimal theme switcher. For full theme support, swap Avalonia styles.
-        // This placeholder toggles a simple resource; extend as needed.
-    }
-
     private void UpdateSettings()
     {
         // Update SyncSettings instance used by TransferService
