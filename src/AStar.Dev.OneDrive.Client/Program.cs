@@ -11,7 +11,7 @@ using static AStar.Dev.Logging.Extensions.Serilog.SerilogExtensions;
 
 namespace AStar.Dev.OneDrive.Client;
 
-class Program
+internal class Program
 {
     protected Program() { }
 
@@ -29,7 +29,6 @@ class Program
             Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();
             App.Services = host.Services;
-            ILogger<Program> logger = host.Services.GetRequiredService<ILogger<Program>>();
             LocalLogger = host.Services.GetRequiredService<ILogger<Program>>();
             ApplicationStarted(LocalLogger, applicationName);
 
@@ -39,7 +38,6 @@ class Program
         catch(Exception ex)
         {
             ApplicationFailedToStart(LocalLogger, applicationName, ex.GetBaseException().Message);
-            throw;
         }
         finally
         {

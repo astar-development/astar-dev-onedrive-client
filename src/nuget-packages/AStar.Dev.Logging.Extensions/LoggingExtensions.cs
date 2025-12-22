@@ -39,7 +39,7 @@ public static class LoggingExtensions
 
         logger.Debug("Serilog has been configured.");
 
-        Serilog.Log.Logger = logger;
+        Log.Logger = logger;
 
         _ = builder.Host
                    .UseSerilog((_, loggerConfig) => loggerConfig.Configure(builder.Configuration, serviceProvider.GetRequiredService<TelemetryConfiguration>()));
@@ -72,7 +72,7 @@ public static class LoggingExtensions
 
         logger.Debug("Serilog has been configured.");
 
-        Serilog.Log.Logger = logger;
+        Log.Logger = logger;
 
         _ = builder.Services
                    .AddSerilog((context, loggerConfig) => loggerConfig.Configure(builder.Configuration, serviceProvider.GetRequiredService<TelemetryConfiguration>()));

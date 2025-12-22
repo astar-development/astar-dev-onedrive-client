@@ -39,13 +39,18 @@ public class ApplicationSettings
     ///     Gets or sets the user preferences file name. This property is used to define
     ///     the name of the file where user preferences are stored.
     /// </summary>
-    public string UserPreferencesFile { get; set; } = string.Empty;
+    public string UserPreferencesFile { get; set; } = "user-preferences.json";
+
+    /// <summary>
+    /// Gets or sets the name of the database file used for synchronization.
+    /// </summary>
+    public string DatabaseName { get; set; } = "onedrive-sync.db";
 
     /// <summary>
     ///     Gets or sets the root path for OneDrive storage. This property is used to define
     ///     the base directory where OneDrive files are stored and accessed by the client.
     /// </summary>
-    public string OneDriveRootPath { get; set; } = string.Empty;
+    public string OneDriveRootDirectory { get; set; } = "OneDrive-Sync";
 
     /// <summary>
     ///     Gets or sets the cache prefix used for naming cached items related to the OneDrive client.
@@ -59,25 +64,20 @@ public class ApplicationSettings
     /// </summary>
     [JsonIgnore]
     public string FullUserPreferencesPath
-    {
-        get => field ?? Path.Combine(BaseUserPreferencesPath, "user-preferences.json");
-        set;
-    }
-
-    /// <summary>
-    ///     Gets the base path for user preferences, combining the user's home folder with the
-    ///     configured user preferences path. This property is used to locate the root directory
-    ///     where user preferences are stored.
-    /// </summary>
+        => Path.Combine(FullUserPreferencesDirectory, UserPreferencesFile);
     [JsonIgnore]
-    public string BaseUserPreferencesPath
-    {
-        get => field ?? GetDefaultBaseUserPreferencesPath();
-        set;
-    }
+    public string FullUserPreferencesDirectory
+        => Path.Combine(AppPathHelper.GetAppDataPath("astar-dev-onedrive-client"));
 
-    private static string GetDefaultBaseUserPreferencesPath()
-        => OperatingSystem.IsWindows()
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "astar-dev", "astar-dev-onedrive-client")
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "astar-dev", "astar-dev-onedrive-client");
+    [JsonIgnore]
+    public string FullDatabasePath
+        => Path.Combine(FullDatabaseDirectory, DatabaseName);
+
+    [JsonIgnore]
+    public string FullDatabaseDirectory
+        => Path.Combine(AppPathHelper.GetAppDataPath("astar-dev-onedrive-client"), "database");
+
+    [JsonIgnore]
+    public string FullUserSyncPath
+        => Path.Combine(AppPathHelper.GetUserHomeFolder(), OneDriveRootDirectory);
 }

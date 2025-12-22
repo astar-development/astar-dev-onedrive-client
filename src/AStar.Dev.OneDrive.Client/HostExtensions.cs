@@ -1,11 +1,13 @@
-using System.IO.Abstractions;
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
+using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using AStar.Dev.OneDrive.Client.Views;
+using AStar.Dev.Utilities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,13 +17,45 @@ internal static class HostExtensions
 {
     internal static void ConfigureApplicationServices(HostBuilderContext ctx, IServiceCollection services)
     {
-        var dbPath = "Data Source=/home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db"; // FIX THIS
-        var localRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDriveSync"); // AND THIS
-        var msalClientId = "3057f494-687d-4abb-a653-4b8066230b6e"; // CONFIG
-        _ = services.AddInfrastructure(dbPath, localRoot, msalClientId);
+        _ = services.AddLogging();
+        IConfiguration config = ctx.Configuration;
+        var connectionString = string.Empty;
+        var localRoot = string.Empty;
+        var msalClientId = string.Empty;
+        ApplicationSettings appSettings = File.ReadAllText("appsettings.json").FromJson<ApplicationSettings>();
 
-        // App services
-        _ = services.AddSyncServices(ctx.Configuration);
+        using(IServiceScope scope = services.BuildServiceProvider().CreateScope())
+        {
+
+            try
+            {
+                // Ensure directories exist
+                _ = Directory.CreateDirectory(appSettings.FullUserSyncPath);
+                _ = Directory.CreateDirectory(appSettings.FullDatabaseDirectory);
+                _ = Directory.CreateDirectory(appSettings.FullUserPreferencesDirectory);
+                if(!File.Exists(appSettings.FullUserPreferencesPath))
+                {
+                    File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new InvalidOperationException("Failed to create necessary application directories.", ex);
+            }
+
+            // App services
+            _ = services.AddSyncServices(config);
+        }
+
+        using(IServiceScope scope = services.BuildServiceProvider().CreateScope())
+        {
+            EntraIdSettings entraId = scope.ServiceProvider.GetRequiredService<EntraIdSettings>();
+            connectionString = $"Data Source={appSettings.FullDatabasePath}";
+            localRoot = appSettings.FullUserSyncPath;
+            msalClientId = entraId.ClientId;
+        }
+
+        _ = services.AddInfrastructure(connectionString, localRoot, msalClientId);
 
         // UI services and viewmodels
         _ = services.AddSingleton<MainWindow>();
@@ -32,15 +66,12 @@ internal static class HostExtensions
         _ = services.AddSingleton<ISettingsAndPreferencesService, SettingsAndPreferencesService>();
         _ = services.AddSingleton<IThemeMapper, ThemeMapper>();
         _ = services.AddSingleton<IThemeSelectionHandler, ThemeSelectionHandler>();
-        _ = services.AddSingleton<IFileSystem, FileSystem>();
         _ = services.AddSingleton<IWindowPositionValidator, WindowPositionValidator>();
         _ = services.AddSingleton<IMainWindowCoordinator, MainWindowCoordinator>();
         _ = services.AddSingleton<ThemeService>();
 
         // Sync settings
-        //_ = services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));
         ServiceProvider servicesProvider = services.BuildServiceProvider();
-        // LocalLogger = servicesProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
         Action<IServiceProvider> initializer = servicesProvider.GetRequiredService<Action<IServiceProvider>>();
         initializer(servicesProvider);
     }

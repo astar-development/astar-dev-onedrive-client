@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace AStar.Dev.OneDrive.Client.Common;
+namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 
 /// <summary>
 ///     Provides helper methods for determining application-specific data paths

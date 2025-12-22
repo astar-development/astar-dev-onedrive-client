@@ -22,7 +22,6 @@ public static class InfrastructureServiceCollectionExtensions
 
         _ = services.AddSingleton<IFileSystemAdapter>(_ => new LocalFileSystemAdapter(localRoot));
 
-        // Optional: register DbInitializer action
         _ = services.AddSingleton<Action<IServiceProvider>>(sp => provider =>
             {
                 using IServiceScope scope = provider.CreateScope();
