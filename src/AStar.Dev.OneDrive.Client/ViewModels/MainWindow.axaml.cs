@@ -1,22 +1,50 @@
+using AStar.Dev.OneDrive.Client.Common;
+using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
+using AStar.Dev.OneDrive.Client.Views;
 using Avalonia.Controls;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, IWindowPositionable
 {
     private readonly IThemeSelectionHandler _themeHandler;
+    private readonly IAutoSaveService _autoSaveService;
     private readonly UserPreferences _userPreferences;
+    private readonly MainWindowViewModel _viewModel;
+    private readonly IMainWindowCoordinator _coordinator = null!;
 
-    public MainWindow(IThemeSelectionHandler themeHandler, ISettingsAndPreferencesService settingsAndPreferencesService, MainWindowViewModel vm)
+    public MainWindow(
+        IMainWindowCoordinator coordinator, IThemeSelectionHandler themeHandler, ISettingsAndPreferencesService settingsAndPreferencesService, 
+        IAutoSaveService autoSaveService, MainWindowViewModel vm)
     {
         InitializeComponent();
+        
+        _coordinator = coordinator;
         _themeHandler = themeHandler;
+        _autoSaveService = autoSaveService;
         _userPreferences =settingsAndPreferencesService.Load();
+        _viewModel = vm;
+        WireUpEventHandlers();
         InitializeThemeSelector();
         DataContext = vm;
     }
+
+    private void WireUpEventHandlers()
+    {
+        Closing += OnClosing;
+        _autoSaveService.MonitorForChanges(_viewModel, () => _coordinator.PersistUserPreferences(this, _viewModel));
+    }
+
+    private void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        CleanupEventHandlers();
+        _autoSaveService.StopMonitoring(_viewModel);
+        _coordinator.PersistUserPreferences(this, _viewModel);
+    }
+
+    private void CleanupEventHandlers() => Closing -= OnClosing;
 
     private void InitializeThemeSelector()
     {

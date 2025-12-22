@@ -1,0 +1,29 @@
+-- database: /home/jason/.config/astar-dev/astar-dev-onedrive-client/database/app.db
+
+SELECT ItemId, COUNT(*) AS Count FROM TransferLogs
+GROUP BY ItemId
+HAVING COUNT(*) > 1;
+
+SELECT count(*) FROM TransferLogs;
+SELECT * FROM TransferLogs
+WHERE ItemId IN (
+    SELECT ItemId FROM TransferLogs
+    GROUP BY ItemId
+    HAVING COUNT(*) > 1
+)
+ORDER BY ItemId;
+
+DROP TABLE "TransferLogs";
+
+CREATE TABLE "TransferLogs" (
+    "Id" TEXT NOT NULL CONSTRAINT "PK_TransferLogs" PRIMARY KEY,
+    "BytesTransferred" INTEGER NULL,
+    "CompletedUtc_Ticks" INTEGER NULL,
+    "Error" TEXT NULL,
+    "ItemId" TEXT NOT NULL,
+    "StartedUtc_Ticks" INTEGER NOT NULL,
+    "Status" INTEGER NOT NULL,
+    "Type" INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX `sqlite_autoindex_TransferLogs_1` ON `TransferLogs` (Id);
+CREATE INDEX "IX_DriveItems_DriveItemId" ON "DriveItems" ("DriveItemId");

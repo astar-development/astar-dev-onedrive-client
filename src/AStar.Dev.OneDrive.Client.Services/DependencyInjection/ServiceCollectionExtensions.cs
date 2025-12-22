@@ -9,7 +9,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddSyncServices(this IServiceCollection services)
     {
-        _ = services.AddSingleton(new SyncSettings(ParallelDownloads: 4, BatchSize: 50));
+        _ = services.AddSingleton(new SyncSettings{MaxParallelDownloads = 4, DownloadBatchSize= 50, MaxRetries = 3, RetryBaseDelayMs = 500});
         _ = services.AddSingleton<TransferService>();
         _ = services.AddSingleton<SyncEngine>();
 
@@ -20,7 +20,8 @@ public static class ServiceCollectionExtensions
         EntraIdSettings entraId = configuration.GetSection(EntraIdSettings.SectionName).Get<EntraIdSettings>()!;
         ApplicationSettings appSettings = configuration.GetSection(ApplicationSettings.SectionName).Get<ApplicationSettings>()!;
         UserPreferences userPreferences = File.ReadAllText(appSettings.FullUserPreferencesPath).FromJson<UserPreferences>();
-        _ = services.AddSingleton(new SyncSettings(ParallelDownloads: userPreferences.UiSettings.MaxParallelDownloads, BatchSize: userPreferences.UiSettings.DownloadBatchSize));
+        
+        _ = services.AddSingleton(userPreferences.UiSettings.SyncSettings);
         _ = services.AddSingleton<TransferService>();
         _ = services.AddSingleton<SyncEngine>();
         _ = services.AddSingleton(entraId);

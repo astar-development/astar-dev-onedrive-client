@@ -1,4 +1,6 @@
-﻿namespace AStar.Dev.OneDrive.Client.SettingsAndPreferences;
+﻿using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+
+namespace AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 
 /// <summary>
 /// Provides methods for loading and saving user settings and preferences.

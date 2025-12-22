@@ -80,6 +80,11 @@ public class UiSettings
     public int DownloadBatchSize { get; set; } = 100;
 
     /// <summary>
+    ///     Gets or sets the synchronization settings related to file transfers and sync behavior.
+    /// </summary>
+    public SyncSettings SyncSettings { get; set; } = new();
+
+    /// <summary>
     ///     Updates the current instance of <see cref="UiSettings" /> with values from another
     ///     <see cref="UiSettings" /> instance.
     /// </summary>
@@ -92,6 +97,10 @@ public class UiSettings
     {
         MaxParallelDownloads = other.MaxParallelDownloads;
         DownloadBatchSize = other.DownloadBatchSize;
+        SyncSettings.DownloadBatchSize = other.SyncSettings.DownloadBatchSize;
+        SyncSettings.MaxParallelDownloads = other.SyncSettings.MaxParallelDownloads;
+        SyncSettings.MaxRetries = other.SyncSettings.MaxRetries;
+        SyncSettings.RetryBaseDelayMs = other.SyncSettings.RetryBaseDelayMs;
         LastAction = other.LastAction;
         Theme = other.Theme;
         RememberMe = other.RememberMe;

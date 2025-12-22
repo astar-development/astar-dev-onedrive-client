@@ -4,6 +4,7 @@ using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
@@ -30,11 +31,12 @@ public sealed class MainWindowViewModel : ViewModelBase
     public int PendingUploads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public string SyncStatus { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "Idle";
     public double ProgressPercent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
+    public UserPreferences UserPreferences { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public int ParallelDownloads { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
     public int BatchSize { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
 
     public MainWindowViewModel(IAuthService auth, SyncEngine sync, TransferService transfer, SyncSettings settings,
-        ApplicationSettings applicationSettings,
+      ISettingsAndPreferencesService settingsAndPreferencesService,   ApplicationSettings applicationSettings,
         IThemeSelectionHandler themeHandler,
         IAutoSaveService autoSaveService, ILogger<MainWindowViewModel> logger)
     {
@@ -46,9 +48,10 @@ public sealed class MainWindowViewModel : ViewModelBase
         _applicationSettings = applicationSettings;
         _themeHandler = themeHandler;
         _autoSaveService = autoSaveService;
+        UserPreferences = settingsAndPreferencesService.Load();
 
-        ParallelDownloads = settings.ParallelDownloads;
-        BatchSize = settings.BatchSize;
+        ParallelDownloads = settings.MaxParallelDownloads;
+        BatchSize = settings.DownloadBatchSize;
 
         SignInCommand = ReactiveCommand.CreateFromTask(async ct =>
         {
@@ -73,8 +76,11 @@ public sealed class MainWindowViewModel : ViewModelBase
             RefreshStatsAsync();
         });
     }
+
     private void UpdateSettings()
     {
+        _settings.MaxParallelDownloads = ParallelDownloads;
+        _settings.DownloadBatchSize = BatchSize;
         // Update SyncSettings instance used by TransferService
         // For simplicity, this example does not re-create services; in production update via options pattern
     }

@@ -24,7 +24,7 @@ public sealed class TransferService
         _repo = repo;
         _logger = logger;
         _settings = settings;
-        _downloadSemaphore = new SemaphoreSlim(settings.ParallelDownloads);
+        _downloadSemaphore = new SemaphoreSlim(settings.MaxParallelDownloads);
 
         _retryPolicy = Policy.Handle<Exception>()
                              .WaitAndRetryAsync(settings.MaxRetries, i => TimeSpan.FromMilliseconds(settings.RetryBaseDelayMs * Math.Pow(2, i)),
@@ -39,7 +39,7 @@ public sealed class TransferService
         _logger.LogInformation("Processing pending downloads");
         while(!ct.IsCancellationRequested)
         {
-            var items = (await _repo.GetPendingDownloadsAsync(_settings.BatchSize, ct)).ToList();
+            var items = (await _repo.GetPendingDownloadsAsync(_settings.DownloadBatchSize, ct)).ToList();
             if(items.Count == 0)
                 break;
 
@@ -84,7 +84,7 @@ public sealed class TransferService
     public async Task ProcessPendingUploadsAsync(CancellationToken ct)
     {
         _logger.LogInformation("Processing pending uploads");
-        var uploads = (await _repo.GetPendingUploadsAsync(_settings.BatchSize, ct)).ToList();
+        var uploads = (await _repo.GetPendingUploadsAsync(_settings.DownloadBatchSize, ct)).ToList();
         foreach(LocalFileRecord? local in uploads)
         {
             await _retryPolicy.ExecuteAsync(async ct2 => await UploadLocalFileAsync(local, ct2), ct);

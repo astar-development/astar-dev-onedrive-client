@@ -5,6 +5,7 @@ using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
+using AStar.Dev.OneDrive.Client.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -32,6 +33,8 @@ internal static class HostExtensions
         _ = services.AddSingleton<IThemeMapper, ThemeMapper>();
         _ = services.AddSingleton<IThemeSelectionHandler, ThemeSelectionHandler>();
         _ = services.AddSingleton<IFileSystem, FileSystem>();
+        _ = services.AddSingleton<IWindowPositionValidator, WindowPositionValidator>();
+        _ = services.AddSingleton<IMainWindowCoordinator, MainWindowCoordinator>();
         _ = services.AddSingleton<ThemeService>();
 
         // Sync settings
