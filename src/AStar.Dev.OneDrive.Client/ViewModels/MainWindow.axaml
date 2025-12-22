@@ -44,6 +44,7 @@
             <Button Content="Sign In" Command="{Binding SignInCommand}" Margin="4"/>
             <Button Content="Initial Full Sync" Command="{Binding InitialSyncCommand}" Margin="4"/>
             <Button Content="Incremental Sync" Command="{Binding IncrementalSyncCommand}" Margin="4"/>
+            <Button Content="Cancel Sync" Command="{Binding CancelSyncCommand}" Margin="4" Background="OrangeRed"/>
           </StackPanel>
         </Border>
 
