@@ -1,9 +1,11 @@
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using AStar.Dev.OneDrive.Client.Models;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
+using System.Reactive.Subjects;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
@@ -16,6 +18,9 @@ public sealed class TransferService
     private readonly SyncSettings _settings;
     private readonly SemaphoreSlim _downloadSemaphore;
     private readonly AsyncRetryPolicy _retryPolicy;
+    private readonly Subject<SyncProgress> _progressSubject = new();
+
+    public IObservable<SyncProgress> Progress => _progressSubject;
 
     public TransferService(IFileSystemAdapter fs, IGraphClient graph, ISyncRepository repo, ILogger<TransferService> logger, SyncSettings settings)
     {
@@ -37,19 +42,31 @@ public sealed class TransferService
     public async Task ProcessPendingDownloadsAsync(CancellationToken ct)
     {
         _logger.LogInformation("Processing pending downloads");
+        var totalProcessed = 0;
+        
         while(!ct.IsCancellationRequested)
         {
             var items = (await _repo.GetPendingDownloadsAsync(_settings.DownloadBatchSize, ct)).ToList();
             if(items.Count == 0)
                 break;
 
-            var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct)).ToList();
+            var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () => 
+            {
+                totalProcessed++;
+                ReportProgress(totalProcessed, "Downloading files");
+            })).ToList();
             await Task.WhenAll(tasks);
         }
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct)
-        => await _retryPolicy.ExecuteAsync(async ct2 => await DownloadItemAsync(item, ct2), ct);
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null)
+    {
+        await _retryPolicy.ExecuteAsync(async ct2 => 
+        {
+            await DownloadItemAsync(item, ct2);
+            onComplete?.Invoke();
+        }, ct);
+    }
 
     private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
     {
@@ -85,9 +102,16 @@ public sealed class TransferService
     {
         _logger.LogInformation("Processing pending uploads");
         var uploads = (await _repo.GetPendingUploadsAsync(_settings.DownloadBatchSize, ct)).ToList();
+        var totalProcessed = 0;
+        
         foreach(LocalFileRecord? local in uploads)
         {
-            await _retryPolicy.ExecuteAsync(async ct2 => await UploadLocalFileAsync(local, ct2), ct);
+            await _retryPolicy.ExecuteAsync(async ct2 => 
+            {
+                await UploadLocalFileAsync(local, ct2);
+                totalProcessed++;
+                ReportProgress(totalProcessed, "Uploading files", uploads.Count);
+            }, ct);
         }
     }
 
@@ -126,5 +150,20 @@ public sealed class TransferService
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
         }
+    }
+
+    private void ReportProgress(int processed, string operation, int total = 0)
+    {
+        var pendingDownloads = _repo.GetPendingDownloadsAsync(_settings.DownloadBatchSize, CancellationToken.None).GetAwaiter().GetResult().Count();
+        var pendingUploads = _repo.GetPendingUploadsAsync(_settings.DownloadBatchSize, CancellationToken.None).GetAwaiter().GetResult().Count();
+        
+        _progressSubject.OnNext(new SyncProgress
+        {
+            ProcessedFiles = processed,
+            TotalFiles = total,
+            CurrentOperation = operation,
+            PendingDownloads = pendingDownloads,
+            PendingUploads = pendingUploads
+        });
     }
 }

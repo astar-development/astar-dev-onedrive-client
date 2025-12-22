@@ -1,32 +1,31 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
-using AStar.Dev.OneDrive.Client.Common;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
-using AStar.Dev.OneDrive.Client.Theme;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
 
-public sealed class MainWindowViewModel : ViewModelBase
+public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IAuthService _auth;
     private readonly SyncEngine _sync;
     private readonly SyncSettings _settings;
     private readonly ILogger<MainWindowViewModel> _logger;
-    private readonly TransferService _transfer;
-    private readonly ApplicationSettings _applicationSettings;
-    private readonly IThemeSelectionHandler _themeHandler;
-    private readonly IAutoSaveService _autoSaveService;
+    private readonly CompositeDisposable _disposables = [];
+    private CancellationTokenSource? _currentSyncCancellation;
 
     public ReactiveCommand<Unit, Unit> SignInCommand { get; }
     public ReactiveCommand<Unit, Unit> InitialSyncCommand { get; }
     public ReactiveCommand<Unit, Unit> IncrementalSyncCommand { get; }
+    public ReactiveCommand<Unit, Unit> CancelSyncCommand { get; }
 
-    public ObservableCollection<string> RecentTransfers { get; } = new();
+    public ObservableCollection<string> RecentTransfers { get; } = [];
     public int PendingDownloads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public int PendingUploads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public string SyncStatus { get; set => this.RaiseAndSetIfChanged(ref field, value); } = "Idle";
@@ -35,19 +34,15 @@ public sealed class MainWindowViewModel : ViewModelBase
     public int ParallelDownloads { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
     public int BatchSize { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
 
+    private const int MaxRecentTransfers = 15;
+
     public MainWindowViewModel(IAuthService auth, SyncEngine sync, TransferService transfer, SyncSettings settings,
-      ISettingsAndPreferencesService settingsAndPreferencesService,   ApplicationSettings applicationSettings,
-        IThemeSelectionHandler themeHandler,
-        IAutoSaveService autoSaveService, ILogger<MainWindowViewModel> logger)
+      ISettingsAndPreferencesService settingsAndPreferencesService, ILogger<MainWindowViewModel> logger)
     {
         _auth = auth;
         _sync = sync;
-        _transfer = transfer;
         _settings = settings;
         _logger = logger;
-        _applicationSettings = applicationSettings;
-        _themeHandler = themeHandler;
-        _autoSaveService = autoSaveService;
         UserPreferences = settingsAndPreferencesService.Load();
 
         ParallelDownloads = settings.MaxParallelDownloads;
@@ -60,21 +55,94 @@ public sealed class MainWindowViewModel : ViewModelBase
             SyncStatus = "Signed in";
         });
 
+        IObservable<bool> isSyncing = this.WhenAnyValue(x => x.SyncStatus)
+            .Select(status => status.Contains("sync", StringComparison.OrdinalIgnoreCase) &&
+                             !status.Contains("complete", StringComparison.OrdinalIgnoreCase));
+
         InitialSyncCommand = ReactiveCommand.CreateFromTask(async ct =>
         {
-            SyncStatus = "Running initial full sync";
-            await _sync.InitialFullSyncAsync(ct);
-            SyncStatus = "Initial sync complete";
-            RefreshStatsAsync();
-        });
+            _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            try
+            {
+                SyncStatus = "Running initial full sync";
+                await _sync.InitialFullSyncAsync(_currentSyncCancellation.Token);
+                SyncStatus = "Initial sync complete";
+                RefreshStatsAsync();
+            }
+            catch(OperationCanceledException)
+            {
+                SyncStatus = "Initial sync cancelled";
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                _logger.LogInformation("Initial sync was cancelled by user");
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            }
+            finally
+            {
+                _currentSyncCancellation?.Dispose();
+                _currentSyncCancellation = null;
+            }
+        }, isSyncing.Select(syncing => !syncing));
 
         IncrementalSyncCommand = ReactiveCommand.CreateFromTask(async ct =>
         {
-            SyncStatus = "Running incremental sync";
-            await _sync.IncrementalSyncAsync(ct);
-            SyncStatus = "Incremental sync complete";
-            RefreshStatsAsync();
-        });
+            _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            try
+            {
+                SyncStatus = "Running incremental sync";
+                await _sync.IncrementalSyncAsync(_currentSyncCancellation.Token);
+                SyncStatus = "Incremental sync complete";
+                RefreshStatsAsync();
+            }
+            catch(OperationCanceledException)
+            {
+                SyncStatus = "Incremental sync cancelled";
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                _logger.LogInformation("Incremental sync was cancelled by user");
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            }
+            finally
+            {
+                _currentSyncCancellation?.Dispose();
+                _currentSyncCancellation = null;
+            }
+        }, isSyncing.Select(syncing => !syncing));
+
+        CancelSyncCommand = ReactiveCommand.Create(() =>
+        {
+            _currentSyncCancellation?.Cancel();
+            SyncStatus = "Cancelling...";
+            AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
+        }, isSyncing);
+
+        // Subscribe to SyncEngine progress
+        _ = _sync.Progress
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(progress =>
+            {
+                SyncStatus = progress.CurrentOperation;
+                ProgressPercent = progress.PercentComplete;
+                PendingDownloads = progress.PendingDownloads;
+                PendingUploads = progress.PendingUploads;
+
+                AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperation} ({progress.ProcessedFiles}/{progress.TotalFiles})");
+            })
+            .DisposeWith(_disposables);
+
+        // Subscribe to TransferService progress
+        _ = transfer.Progress
+            .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(progress =>
+            {
+                PendingDownloads = progress.PendingDownloads;
+                PendingUploads = progress.PendingUploads;
+
+                if(progress.ProcessedFiles % 100 == 0) // Log every 100 files
+                {
+                    AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperation}");
+                }
+            })
+            .DisposeWith(_disposables);
     }
 
     private void UpdateSettings()
@@ -94,5 +162,20 @@ public sealed class MainWindowViewModel : ViewModelBase
         ProgressPercent = 100;
         RecentTransfers.Clear();
         RecentTransfers.Add($"Sync completed at {DateTimeOffset.Now}");
+    }
+
+    private void AddRecentTransfer(string message)
+    {
+        RecentTransfers.Insert(0, message);
+        while(RecentTransfers.Count > MaxRecentTransfers)
+        {
+            RecentTransfers.RemoveAt(RecentTransfers.Count - 1);
+        }
+    }
+
+    public void Dispose()
+    {
+        _disposables?.Dispose();
+        _currentSyncCancellation?.Dispose();
     }
 }
