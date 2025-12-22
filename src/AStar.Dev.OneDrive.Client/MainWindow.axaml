@@ -5,18 +5,58 @@
         Width="900" Height="600"
         Title="OneDrive Sync"
         x:Class="AStar.Dev.OneDrive.Client.MainWindow">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key='Light'>
+                    <SolidColorBrush x:Key='BackgroundBrush'>DarkGreen</SolidColorBrush>
+                    <SolidColorBrush x:Key='ForegroundBrush'>White</SolidColorBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key='Dark'>
+                    <SolidColorBrush x:Key='BackgroundBrush'>SpringGreen</SolidColorBrush>
+                    <SolidColorBrush x:Key='ForegroundBrush'>Black</SolidColorBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}" />
+        </Style>
+    </Window.Styles>
   <DockPanel>
-  
+  <Border DockPanel.Dock="Top" Padding="16" BorderThickness="10" BorderBrush="Pink">
+    <Grid DockPanel.Dock="Top" Background="LightGray" Height="400" ColumnDefinitions="*,*,*,*" RowDefinitions="*,*,*,*">
+      <TextBlock Grid.Column="2" Grid.Row="2" Text="AStar Dev OneDrive Client" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" FontSize="16"/>
+      <TextBlock Grid.Column="3" Grid.Row="3" Text="AStar Dev OneDrive Client V2" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" FontSize="16"/>
+    </Grid>
+    </Border>
+    
   <Border DockPanel.Dock="Top" Padding="16">
     <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
       <Button Content="Sign In" Command="{Binding SignInCommand}" Margin="4"/>
       <Button Content="Initial Full Sync" Command="{Binding InitialSyncCommand}" Margin="4"/>
       <Button Content="Incremental Sync" Command="{Binding IncrementalSyncCommand}" Margin="4"/>
       <ToggleButton Content="Dark Theme" IsChecked="{Binding UseDarkTheme}" Margin="4"/>
-      <TextBlock Text="Parallel" VerticalAlignment="Center" Margin="8,0,0,0"/>
-      <NumericUpDown Minimum="1" Maximum="32" Value="{Binding ParallelDownloads}" Width="80" Margin="4"/>
-      <TextBlock Text="Batch" VerticalAlignment="Center" Margin="8,0,0,0"/>
-      <NumericUpDown Minimum="1" Maximum="500" Value="{Binding BatchSize}" Width="80" Margin="4"/>
+                <Border Grid.Column="1" Background="Gainsboro"
+                        BorderBrush="Black"
+                        BorderThickness="2"
+                        CornerRadius="3"
+                        Padding="10" Margin="10">
+      <Grid ColumnDefinitions="*,*">
+          <StackPanel Grid.Column="0">
+              <Label Content="Maximum Parallel Downloads" FontWeight="ExtraBold" />
+              <NumericUpDown Increment="1" Value="{Binding ParallelDownloads}"
+                              Minimum="1" Maximum="10" />
+              <Label Content="Download Batch Size" FontWeight="ExtraBold" />
+              <NumericUpDown Increment="1" Value="{Binding BatchSize}"
+                              Minimum="1" Maximum="100" />
+          </StackPanel>
+      </Grid>
+      </Border>
     </StackPanel>
   </Border>
 

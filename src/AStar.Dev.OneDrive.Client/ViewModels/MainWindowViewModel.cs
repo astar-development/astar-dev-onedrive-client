@@ -26,11 +26,8 @@ public sealed class MainWindowViewModel : ViewModelBase
     public double ProgressPercent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
     public bool UseDarkTheme { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); ApplyTheme(); } }
-    public int ParallelDownloads { get => _parallelDownloads; set { _ = this.RaiseAndSetIfChanged(ref _parallelDownloads, value); UpdateSettings(); } }
-    public int BatchSize { get => _batchSize; set { _ = this.RaiseAndSetIfChanged(ref _batchSize, value); UpdateSettings(); } }
-
-    private int _parallelDownloads;
-    private int _batchSize;
+    public int ParallelDownloads { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
+    public int BatchSize { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
 
     public MainWindowViewModel(IAuthService auth, SyncEngine sync, TransferService transfer, SyncSettings settings, ILogger<MainWindowViewModel> logger)
     {
@@ -40,8 +37,8 @@ public sealed class MainWindowViewModel : ViewModelBase
         _settings = settings;
         _logger = logger;
 
-        _parallelDownloads = settings.ParallelDownloads;
-        _batchSize = settings.BatchSize;
+        ParallelDownloads = settings.ParallelDownloads;
+        BatchSize = settings.BatchSize;
 
         SignInCommand = ReactiveCommand.CreateFromTask(async ct =>
         {
