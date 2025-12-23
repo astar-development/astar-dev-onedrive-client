@@ -31,6 +31,7 @@
 
 ### Coding Guidelines
 - Use nullable reference types and enable strict null checks
+- **Use `var` for local variable declarations** to maintain consistency with IDE0007 code style rule. Exception: Use explicit types for mock declarations in tests (see Testing section).
 - Prefer `async/await` for asynchronous programming. Do not make methods Async "just because" - only use async when there is a truly awaitable operation, such as I/O-bound work or CPU-bound work that can be parallelized. When creating an async method, ensure a cancellation token is accepted and passed to all awaitable operations within the method.
 - Production async methods should end with the "Async" suffix. E.g., `GetUserAsync()`.
 - Use `ConfigureAwait(false)` in library code to avoid deadlocks in certain synchronization contexts
@@ -46,6 +47,18 @@
 - Projects are set to treat warnings as errors. Ensure code compiles without warnings. E.g.: use discard `_` for unused variables, prefix private fields with `_`, etc.
 - Minimise the number of parameters in methods. If a method has more than 3 parameters consider refactoring by grouping related parameters into a class or struct.
 - Minimise the number of parameters in a constructor. If a constructor has more than 3 parameters consider refactoring the class as it may be doing too many things. If necessary, refactor by grouping related parameters into a class or struct. (Avoid using the "Parameter Object" pattern excessively as it can lead to an explosion of small classes that are only used in one place.)
+
+### Code Quality and Static Analysis
+- **SonarLint warnings must be addressed**: The project treats all warnings as errors, including SonarLint rules
+- **Suppressing warnings**: When a warning must be suppressed (e.g., hardcoded URIs required by external libraries), use `#pragma warning disable` with a clear justification comment:
+  ```csharp
+  #pragma warning disable S1075 // URIs should not be hardcoded - Required by MSAL for local OAuth redirect
+  private const string RedirectUri = "http://localhost";
+  #pragma warning restore S1075
+  ```
+- Common suppressible warnings:
+  - **S1075**: Hardcoded URIs (OAuth redirect URIs, API endpoints required by external libraries)
+  - **S6667**: Logging in catch clauses (when the exception is intentionally not logged)
 
 ### Interface Design for Testability
 
@@ -186,6 +199,22 @@ public class AutoSaveServiceShould
 - Verify property change notifications fire correctly
 - Test that notifications DON'T fire when setting the same value (optimization check)
 - Test ObservableCollections independently from property notifications
+- **When ViewModels have complex constructors**: Create a helper method to instantiate test ViewModels with properly configured mocks:
+  ```csharp
+  private static MainWindowViewModel CreateMockViewModel()
+  {
+      IAuthService mockAuth = Substitute.For<IAuthService>();
+      ISyncEngine mockSync = Substitute.For<ISyncEngine>();
+      ILogger<MainWindowViewModel> mockLogger = Substitute.For<ILogger<MainWindowViewModel>>();
+
+      // Important: Stub observable properties to avoid null reference exceptions
+      Subject<SyncProgress> syncProgressSubject = new();
+      mockSync.Progress.Returns(syncProgressSubject);
+
+      return new MainWindowViewModel(mockAuth, mockSync, mockLogger);
+  }
+  ```
+- **ViewModels subscribing to observables in constructors**: Always stub `IObservable<T>` properties with `Subject<T>` instances to prevent NullReferenceExceptions during test execution
 
 **Consolidating Similar Tests**
 - Use `[Theory]` with `[InlineData]` to reduce test duplication:
@@ -238,6 +267,21 @@ When testing is impractical, add interfaces to dependencies first before attempt
    - Directory not found in MockFileSystem → Add directory before adding files
    - CS0246 type not found → Check using statements and namespaces match
 
+### Test Execution and Troubleshooting
+
+**Running Tests**
+- Use `.runsettings` file to bypass Fine Code Coverage extension issues: `dotnet test --settings .runsettings`
+- Run without rebuilding for faster iterations: `dotnet test --no-build`
+- Combine settings and no-build: `dotnet test --settings .runsettings --no-build`
+- Filter specific test class: `dotnet test --filter "FullyQualifiedName~ClassName"`
+- Verbose output for debugging: `dotnet test --logger "console;verbosity=detailed"`
+
+**Common Test Execution Issues**
+- **Fine Code Coverage path caching**: If tests fail with "Settings file could not be found" errors after moving repository, create a `.runsettings` file with empty DataCollectors section
+- **NullReferenceException in ViewModel constructors**: ViewModels that subscribe to observables in constructors need all observable dependencies properly stubbed with `Subject<T>`
+- **File duplication in test files**: Always verify file content after recreation - look for duplicate closing braces or repeated test methods
+- **Build succeeds but tests fail**: Run `dotnet build` first, then `dotnet test --no-build` to catch build vs. test-time issues
+
 ### General Testing Guidelines
 
 - When adding tests, ensure they are deterministic and do not rely on external state or timing.
@@ -253,6 +297,30 @@ When testing is impractical, add interfaces to dependencies first before attempt
 - Ensure tests run in parallel where possible to reduce execution time.
 - Use test fixtures for shared setup and teardown logic.
 - Unit Test Projects should be named with the suffix `.Tests.Unit`. E.g., if the production project is named `MyApp`, the corresponding test project should be named `MyApp.Tests.Unit`.
+
+### Efficient Test File Editing
+
+**When making multiple similar changes across a test file:**
+- Use `multi_replace_string_in_file` for batch edits (e.g., converting all `string result` to `var result`)
+- Group related changes together in a single multi_replace call for efficiency
+- Each replacement should include sufficient context (3-5 lines before/after) to ensure uniqueness
+- Common scenarios for batch edits:
+  - Converting explicit types to `var` throughout a file
+  - Updating mock setup patterns consistently
+  - Refactoring test helper methods
+
+**Example: Converting multiple type declarations to var**
+```csharp
+// Instead of multiple replace_string_in_file calls, use one multi_replace_string_in_file:
+[
+  {"explanation": "Convert result to var in Test1", 
+   "oldString": "string result = GetValue();", 
+   "newString": "var result = GetValue();"},
+  {"explanation": "Convert result to var in Test2", 
+   "oldString": "int count = GetCount();", 
+   "newString": "var count = GetCount();"}
+]
+```
 
 **Commit Conventions**
 
