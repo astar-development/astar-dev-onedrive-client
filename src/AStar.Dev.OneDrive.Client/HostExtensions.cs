@@ -18,6 +18,10 @@ internal static class HostExtensions
     {
         _ = services.AddLogging();
         IConfiguration config = ctx.Configuration;
+
+        // Validate required configuration before proceeding
+        ValidateConfiguration(config);
+
         var connectionString = string.Empty;
         var localRoot = string.Empty;
         var msalClientId = string.Empty;
@@ -70,9 +74,48 @@ internal static class HostExtensions
         _ = services.AddSingleton<IMainWindowCoordinator, MainWindowCoordinator>();
         _ = services.AddSingleton<ThemeService>();
 
-        // Sync settings
-        ServiceProvider servicesProvider = services.BuildServiceProvider();
-        Action<IServiceProvider> initializer = servicesProvider.GetRequiredService<Action<IServiceProvider>>();
-        initializer(servicesProvider);
-    }
-}
+                // Sync settings
+                ServiceProvider servicesProvider = services.BuildServiceProvider();
+                Action<IServiceProvider> initializer = servicesProvider.GetRequiredService<Action<IServiceProvider>>();
+                initializer(servicesProvider);
+            }
+
+            /// <summary>
+            /// Validates that all required configuration values are present.
+            /// Fails fast with clear error messages if configuration is missing.
+            /// </summary>
+            /// <param name="configuration">The application configuration.</param>
+            /// <exception cref="InvalidOperationException">Thrown when required configuration is missing.</exception>
+            private static void ValidateConfiguration(IConfiguration configuration)
+            {
+                var errors = new List<string>();
+
+                // Validate Entra ID Client ID
+                var clientId = configuration["EntraId:ClientId"];
+                if (string.IsNullOrWhiteSpace(clientId))
+                {
+                    errors.Add("EntraId:ClientId is not configured. " +
+                              "Run: dotnet user-secrets set \"EntraId:ClientId\" \"YOUR-CLIENT-ID\"");
+                }
+
+                // Validate Entra ID Scopes
+                var scopes = configuration.GetSection("EntraId:Scopes").Get<string[]>();
+                if (scopes == null || scopes.Length == 0)
+                {
+                    errors.Add("EntraId:Scopes are not configured. Required scopes: User.Read, Files.ReadWrite.All, offline_access");
+                }
+
+                // Validate Application Settings
+                var appVersion = configuration["AStarDevOneDriveClient:ApplicationVersion"];
+                if (string.IsNullOrWhiteSpace(appVersion))
+                {
+                    errors.Add("AStarDevOneDriveClient:ApplicationVersion is not configured.");
+                }
+
+                if (errors.Count > 0)
+                {
+                    var errorMessage = "Configuration validation failed:\n" + string.Join("\n", errors);
+                    throw new InvalidOperationException(errorMessage);
+                }
+            }
+        }

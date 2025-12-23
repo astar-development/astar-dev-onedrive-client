@@ -4,8 +4,11 @@ using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
 using AStar.Dev.OneDrive.Client.Infrastructure.Graph;
+using AStar.Dev.OneDrive.Client.Infrastructure.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.Extensions.Http;
 using System.IO.Abstractions;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
@@ -19,18 +22,54 @@ public static class InfrastructureServiceCollectionExtensions
 
         _ = services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalClientId));
         _ = services.AddHttpClient<IGraphClient, GraphClientWrapper>()
-                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true })
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(GetCircuitBreakerPolicy());
 
         _ = services.AddSingleton<IFileSystem>(sp => new System.IO.Abstractions.FileSystem());
         _ = services.AddSingleton<IFileSystemAdapter>(sp => new LocalFileSystemAdapter(localRoot, sp.GetRequiredService<IFileSystem>()));
 
-        _ = services.AddSingleton<Action<IServiceProvider>>(sp => provider =>
-            {
-                using IServiceScope scope = provider.CreateScope();
-                AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                DbInitializer.EnsureDatabaseCreatedAndConfigured(db);
-            });
+        // Health checks
+        _ = services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("database")
+                        .AddCheck<GraphApiHealthCheck>("graph_api");
 
-        return services;
-    }
-}
+                    _ = services.AddSingleton<Action<IServiceProvider>>(sp => provider =>
+                        {
+                            using IServiceScope scope = provider.CreateScope();
+                            AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                            DbInitializer.EnsureDatabaseCreatedAndConfigured(db);
+                        });
+
+                    return services;
+                }
+
+                /// <summary>
+                /// Creates a retry policy with exponential backoff for transient HTTP failures.
+                /// Retries on network failures, 5xx server errors, and 429 rate limiting.
+                /// </summary>
+                private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy() =>
+                    HttpPolicyExtensions
+                        .HandleTransientHttpError()
+                        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                        .WaitAndRetryAsync(
+                            retryCount: 3,
+                            sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                            onRetry: (outcome, timespan, retryCount, context) =>
+                                Console.WriteLine($"Retry {retryCount} after {timespan.TotalSeconds}s due to {outcome.Result?.StatusCode}"));
+
+                /// <summary>
+                /// Creates a circuit breaker policy to prevent cascading failures.
+                /// Opens circuit after 5 consecutive failures, stays open for 30 seconds.
+                /// </summary>
+                private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy() =>
+                    HttpPolicyExtensions
+                        .HandleTransientHttpError()
+                        .CircuitBreakerAsync(
+                            handledEventsAllowedBeforeBreaking: 5,
+                            durationOfBreak: TimeSpan.FromSeconds(30),
+                            onBreak: (outcome, duration) =>
+                                Console.WriteLine($"Circuit breaker opened for {duration.TotalSeconds}s due to {outcome.Result?.StatusCode}"),
+                            onReset: () =>
+                                Console.WriteLine("Circuit breaker reset"));
+            }

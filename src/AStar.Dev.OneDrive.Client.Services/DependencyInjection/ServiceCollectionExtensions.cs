@@ -25,11 +25,12 @@ public static class ServiceCollectionExtensions
             _ = services.AddSingleton(userPreferences);
         }
 
-        _ = services.AddSingleton<TransferService>();
-        _ = services.AddSingleton<SyncEngine>();
-        _ = services.AddSingleton<ISyncEngine, SyncEngine>();
-        _ = services.AddSingleton<ITransferService, TransferService>();
+                _ = services.AddSingleton<TransferService>();
+                _ = services.AddSingleton<SyncEngine>();
+                _ = services.AddSingleton<ISyncEngine, SyncEngine>();
+                _ = services.AddSingleton<ITransferService, TransferService>();
+                _ = services.AddSingleton<IHealthCheckService, ApplicationHealthCheckService>();
 
-        return services;
-    }
-}
+                return services;
+            }
+        }

@@ -13,7 +13,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     public LocalFileSystemAdapterShould()
     {
         _testRoot = Path.Combine(Path.GetTempPath(), $"LocalFileSystemAdapterTests_{Guid.NewGuid()}");
-        Directory.CreateDirectory(_testRoot);
+        _ = Directory.CreateDirectory(_testRoot);
     }
 
     public void Dispose()
@@ -30,7 +30,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
         var relativePath = "subfolder/test.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
         var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
-        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         File.WriteAllText(fullPath, "content");
 
         FileInfo result = adapter.GetFileInfo(relativePath);
@@ -56,7 +56,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
         var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         var relativePath = "/subfolder/test.txt";
         var fullPath = Path.Combine(_testRoot, "subfolder", "test.txt");
-        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         File.WriteAllText(fullPath, "content");
 
         FileInfo result = adapter.GetFileInfo(relativePath);
@@ -85,7 +85,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
         var relativePath = "existing/file.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
         var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
-        Directory.CreateDirectory(Path.Combine(_testRoot, "existing"));
+        _ = Directory.CreateDirectory(Path.Combine(_testRoot, "existing"));
         var content = new MemoryStream("data"u8.ToArray());
 
         await adapter.WriteFileAsync(relativePath, content, CancellationToken.None);
@@ -118,7 +118,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
 
         Stream? result = await adapter.OpenReadAsync(relativePath, CancellationToken.None);
 
-        result.ShouldNotBeNull();
+        _ = result.ShouldNotBeNull();
         using var reader = new StreamReader(result);
         var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
         content.ShouldBe("file content");
@@ -175,7 +175,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     public async Task EnumerateFilesReturnAllFilesRecursively()
     {
         var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
-        Directory.CreateDirectory(Path.Combine(_testRoot, "subfolder"));
+        _ = Directory.CreateDirectory(Path.Combine(_testRoot, "subfolder"));
         await File.WriteAllTextAsync(Path.Combine(_testRoot, "file1.txt"), "content1", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_testRoot, "subfolder", "file2.txt"), "content2", TestContext.Current.CancellationToken);
 

@@ -7,6 +7,7 @@
     <LangVersion>preview</LangVersion>
     <UseWPF>false</UseWPF>
     <RootNamespace>AStar.Dev.OneDrive.Client</RootNamespace>
+    <UserSecretsId>astar-dev-onedrive-client-secrets</UserSecretsId>
     <!-- Enable Avalonia build targets; do NOT add explicit AvaloniaResource entries -->
     <UseAvalonia>true</UseAvalonia>
     <AvaloniaUsePrecompiledXaml>false</AvaloniaUsePrecompiledXaml>
