@@ -47,6 +47,20 @@
 - Minimise the number of parameters in methods. If a method has more than 3 parameters consider refactoring by grouping related parameters into a class or struct.
 - Minimise the number of parameters in a constructor. If a constructor has more than 3 parameters consider refactoring the class as it may be doing too many things. If necessary, refactor by grouping related parameters into a class or struct. (Avoid using the "Parameter Object" pattern excessively as it can lead to an explosion of small classes that are only used in one place.)
 
+### Interface Design for Testability
+
+- Add interfaces for classes that will be dependencies of other classes
+- Sealed classes used as dependencies MUST have interfaces
+- Interface naming: `I` + class name (e.g., `ThemeService` → `IThemeService`)
+- Place interfaces in the same namespace as implementations
+- Document interfaces, use `/// <inheritdoc/>` in implementations
+- When refactoring for testability:
+  1. Create interface
+  2. Update class to implement interface
+  3. Update consumers to use interface
+  4. Update DI registrations if applicable
+  5. Write tests with mocked interface
+
 ### Language Features
 - Use primary constructors for concise class definitions:
  ```csharp
@@ -75,25 +89,159 @@ var numbers = [1, 2, 3];
 
 - Follow Test-Driven Development (TDD) principles: ALWAYS write Unit tests before implementation.
 
-- Test classes should follow the naming convention: `<ClassName>Should`. Test methods should follow the naming convention: `<Action><ExpectedBehavior>` so the combination of the test class and the test method creates a grammatically correct, English, sentence.
-- Example:
+### Test File Organization
+
+- Test files should mirror the production code structure exactly
+- Example structure:
+  ```
+  src/AStar.Dev.OneDrive.Client/Common/AutoSaveService.cs
+  test/AStar.Dev.OneDrive.Client.Tests.Unit/Common/AutoSaveServiceShould.cs
+
+  src/AStar.Dev.OneDrive.Client/Theme/ThemeMapper.cs
+  test/AStar.Dev.OneDrive.Client.Tests.Unit/Theme/ThemeMapperShould.cs
+  ```
+- Each production class should have exactly one test class
+- Test classes go in the same relative path within the test project
+
+### Test Naming Conventions
+
+- Test classes should follow the naming convention: `<ClassName>Should`. 
+- Test methods should follow the naming convention: `<Action><ExpectedBehavior>`
+- The combination creates a grammatically correct English sentence
+
+Examples:
 ```csharp
- public class CalculatorShould
- {
-     [Fact]
-     public void AddTwoNumbersAndReturnTheExpectedSum()
-     {
-         var calculator = new Calculator();
+public class CalculatorShould
+{
+    [Fact]
+    public void AddTwoNumbersAndReturnTheExpectedSum()
+    {
+        var calculator = new Calculator();
 
-         var result = calculator.Add(2, 3);
+        var result = calculator.Add(2, 3);
 
-         result.ShouldBe(5);
-     }
- }
+        result.ShouldBe(5);
+    }
+
+    [Fact]
+    public void ThrowExceptionWhenDividingByZero() { }
+}
+
+public class ThemeMapperShould
+{
+    [Fact]
+    public void MapLightThemeToIndex1() { }
+
+    [Theory]
+    [InlineData("Light", 1)]
+    [InlineData("Dark", 2)]
+    public void MapThemeToCorrectIndex(string theme, int expected) { }
+}
+
+public class AutoSaveServiceShould
+{
+    [Fact]
+    public void InvokeSaveActionWhenSyncStatusPropertyChanges() { }
+
+    [Fact]
+    public void StopInvokingSaveActionAfterStopMonitoringIsCalled() { }
+}
 ```
 
+### Testing Guidelines - Sealed Classes and Dependencies
+
+- **When adding tests for classes with sealed dependencies**: Create interfaces for sealed dependencies to enable mocking (e.g., `SyncEngine` → `ISyncEngine`, `TransferService` → `ITransferService`).
+- **Interface creation strategy**: If a class is difficult to test due to concrete dependencies, add an interface rather than trying to work around it.
+- **ReactiveUI ViewModels**: Test property change notifications using `INotifyPropertyChanged` event subscriptions. Verify both that notifications fire when values change AND that they don't fire when values remain the same.
+- **Avalonia/UI-dependent code**: When testing services that depend on `Application.Current` or UI controls, focus on testing business logic and graceful handling rather than full integration. Document limitations clearly.
+- **Observable/Reactive properties**: When mocking classes with `IObservable<T>` properties, always stub them to return `Subject<T>` or similar to avoid null reference exceptions.
+
+### Variable Declaration in Tests
+
+- **Tests**: Use explicit types for mocked dependencies to satisfy compiler warnings when treating warnings as errors:
+  ```csharp
+  // Good
+  IThemeMapper mockMapper = Substitute.For<IThemeMapper>();
+
+  // Avoid in test code
+  var mockMapper = Substitute.For<IThemeMapper>();
+  ```
+- **Exception handling**: Use explicit types for exception variables:
+  ```csharp
+  Exception? exception = Record.Exception(() => sut.DoSomething());
+  ```
+
+### Common Testing Patterns
+
+**MockFileSystem (System.IO.Abstractions)**
+- When testing file I/O operations, use `System.IO.Abstractions.TestingHelpers.MockFileSystem`
+- Always create directories before attempting to write files:
+  ```csharp
+  var fileSystem = new MockFileSystem();
+  fileSystem.AddDirectory(@"C:\Path\To\Directory");
+  fileSystem.AddFile(@"C:\Path\To\File.txt", new MockFileData("content"));
+  ```
+
+**Testing ViewModels with ReactiveUI**
+- Verify property change notifications fire correctly
+- Test that notifications DON'T fire when setting the same value (optimization check)
+- Test ObservableCollections independently from property notifications
+
+**Consolidating Similar Tests**
+- Use `[Theory]` with `[InlineData]` to reduce test duplication:
+  ```csharp
+  [Theory]
+  [InlineData("Light", 1)]
+  [InlineData("Dark", 2)]
+  [InlineData("Auto", 0)]
+  public void MapThemeToCorrectIndex(string theme, int expectedIndex)
+  {
+      var result = sut.MapThemeToIndex(theme);
+      result.ShouldBe(expectedIndex);
+  }
+  ```
+
+### What to Test (Priority Order)
+
+1. **High Priority - Always Test**:
+   - Business logic and domain models
+   - Services with clear input/output contracts
+   - Data mappers and transformations
+   - File I/O operations
+   - Serialization/deserialization
+   - Property change notifications in ViewModels
+
+2. **Medium Priority - Test When Practical**:
+   - UI coordination logic (handlers, mappers)
+   - Configuration loading
+   - Simple ViewModels
+
+3. **Lower Priority - Document Limitations**:
+   - UI controls and Avalonia-specific code
+   - Code dependent on `Application.Current` or other static singletons
+   - Complex reactive streams (test the logic, not the reactive plumbing)
+
+When testing is impractical, add interfaces to dependencies first before attempting workarounds.
+
+### Testing Workflow
+
+1. **Before writing tests**: Check if dependencies are mockable (have interfaces)
+2. **While writing tests**: 
+   - Build frequently to catch warnings early (warnings = errors)
+   - Run tests incrementally as you write them
+3. **After writing tests**:
+   - Run full test suite: `dotnet test`
+   - Run specific test class: `dotnet test --filter "FullyQualifiedName~ClassName"`
+   - Verify build passes: `dotnet build`
+4. **Common issues**:
+   - Null reference exceptions from unmocked observables → Stub with `Subject<T>`
+   - Directory not found in MockFileSystem → Add directory before adding files
+   - CS0246 type not found → Check using statements and namespaces match
+
+### General Testing Guidelines
+
 - When adding tests, ensure they are deterministic and do not rely on external state or timing.
-- When adding tests, remember the "Law of Dimishing Returns" - each additional test should provide meaningful coverage and value. Avoid redundant tests that do not add new insights.
+- When adding tests, remember the "Law of Diminishing Returns" - each additional test should provide meaningful coverage and value. Avoid redundant tests that do not add new insights.
 - Tests should use the AAA pattern: Arrange, Act, Assert. BUT, avoid unnecessary comments that state the obvious. Use blank lines to separate the Arrange, Act, and Assert sections instead of comments.
 - Test async methods should NOT end with the "Async" suffix as that will affect the readability of the test in the runner / test report etc.
 - The tests should exist in the same folder structure as the production code, but within a separate test project.
