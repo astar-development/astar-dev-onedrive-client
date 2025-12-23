@@ -27,6 +27,8 @@ public static class ServiceCollectionExtensions
 
         _ = services.AddSingleton<TransferService>();
         _ = services.AddSingleton<SyncEngine>();
+        _ = services.AddSingleton<ISyncEngine, SyncEngine>();
+        _ = services.AddSingleton<ITransferService, TransferService>();
 
         return services;
     }

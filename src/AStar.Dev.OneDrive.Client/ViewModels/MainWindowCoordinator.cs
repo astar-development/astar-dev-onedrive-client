@@ -9,7 +9,7 @@ namespace AStar.Dev.OneDrive.Client.ViewModels;
 ///     Coordinates the initialization, state management, and user preferences for the main application window.
 ///     Provides methods to initialize the window and its associated view model, and persist user preferences.
 /// </summary>
-public class MainWindowCoordinator(ISettingsAndPreferencesService settingsAndPreferencesService, ThemeService themeService, IWindowPositionValidator positionValidator) : IMainWindowCoordinator
+public class MainWindowCoordinator(ISettingsAndPreferencesService settingsAndPreferencesService, IThemeService themeService, IWindowPositionValidator positionValidator) : IMainWindowCoordinator
 {
     /// <inheritdoc />
     public void Initialize(IWindowPositionable window, MainWindowViewModel mainWindowViewModel)

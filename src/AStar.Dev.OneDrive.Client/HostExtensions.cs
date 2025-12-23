@@ -60,10 +60,10 @@ internal static class HostExtensions
         // UI services and viewmodels
         _ = services.AddSingleton<MainWindow>();
         _ = services.AddSingleton<MainWindowViewModel>();
-        _ = services.AddSingleton<SettingsViewModel>();
         _ = services.AddSingleton<DashboardViewModel>();
         _ = services.AddSingleton<IAutoSaveService, AutoSaveService>();
         _ = services.AddSingleton<ISettingsAndPreferencesService, SettingsAndPreferencesService>();
+        _ = services.AddSingleton<IThemeService, ThemeService>();
         _ = services.AddSingleton<IThemeMapper, ThemeMapper>();
         _ = services.AddSingleton<IThemeSelectionHandler, ThemeSelectionHandler>();
         _ = services.AddSingleton<IWindowPositionValidator, WindowPositionValidator>();
