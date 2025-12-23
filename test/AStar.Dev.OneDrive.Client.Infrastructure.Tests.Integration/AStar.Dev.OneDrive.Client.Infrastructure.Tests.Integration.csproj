@@ -7,13 +7,6 @@
         <IsPackable>false</IsPackable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <TargetFramework>net10.0</TargetFramework>
-        <RunSettingsFilePath>C:\repos\astar-development\astar-dev-onedrive-client-v2\test\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit\bin\Debug\net10.0\fine-code-coverage\coverage-tool-output\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit-fcc-mscodecoverage-generated.runsettings</RunSettingsFilePath>
-        <!--
-        This template uses native xUnit.net command line options when using 'dotnet run' and
-        VSTest by default when using 'dotnet test'. For more information on how to enable support
-        for Microsoft Testing Platform, please visit:
-          https://xunit.net/docs/getting-started/v3/microsoft-testing-platform
-        -->
     </PropertyGroup>
 
     <ItemGroup>
@@ -46,19 +39,5 @@
     <ItemGroup>
         <AssemblyAttribute Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="FileSystem\" />
-    </ItemGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-        <NoWarn>1701;1702;IDE0058;9035;</NoWarn>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-        <NoWarn>1701;1702;IDE0058;9035;</NoWarn>
-    </PropertyGroup>
 
 </Project>

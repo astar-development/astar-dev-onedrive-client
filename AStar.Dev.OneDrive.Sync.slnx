@@ -21,6 +21,7 @@
     <Project Path="src/nuget-packages/AStar.Dev.Utilities/AStar.Dev.Utilities.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.csproj" />
     <Project Path="test/AStar.Dev.OneDrive.Client.Tests.Unit/AStar.Dev.OneDrive.Client.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Core.Tests.Unit\AStar.Dev.OneDrive.Client.Core.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.csproj" />
