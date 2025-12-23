@@ -40,11 +40,16 @@ public sealed class EfSyncRepository : ISyncRepository
         await tx.CommitAsync(ct);
     }
 
-    public async Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int limit, CancellationToken ct)
+    public async Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int pageSize, int offset, CancellationToken ct)
         => await _db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted)
                             .OrderBy(d => d.LastModifiedUtc)
-                            .Take(limit)
+                            .Skip(offset*pageSize)
+                            .Take(pageSize)
                             .ToListAsync(ct);
+
+    public async Task<int> GetPendingDownloadCountAsync(CancellationToken ct)
+        => await _db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted)
+                            .CountAsync(ct);
 
     public async Task MarkLocalFileStateAsync(string driveItemId, SyncState state, CancellationToken ct)
     {

@@ -33,6 +33,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public UserPreferences UserPreferences { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public int ParallelDownloads { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
     public int BatchSize { get; set { _ = this.RaiseAndSetIfChanged(ref field, value); UpdateSettings(); } }
+    public bool SignedIn { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
     private const int MaxRecentTransfers = 15;
 
@@ -53,10 +54,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             SyncStatus = "Signing in...";
             await _auth.SignInAsync(ct);
             SyncStatus = "Signed in";
+            SignedIn = true;
         });
 
         IObservable<bool> isSyncing = this.WhenAnyValue(x => x.SyncStatus)
-            .Select(status => status.Contains("sync", StringComparison.OrdinalIgnoreCase) &&
+            .Select(status => (status.Contains("sync", StringComparison.OrdinalIgnoreCase) || status.Contains("Processing", StringComparison.OrdinalIgnoreCase)) &&
                              !status.Contains("complete", StringComparison.OrdinalIgnoreCase));
 
         InitialSyncCommand = ReactiveCommand.CreateFromTask(async ct =>
@@ -116,6 +118,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
         // Subscribe to SyncEngine progress
         _ = _sync.Progress
+            .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(progress =>
             {
@@ -134,6 +137,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(progress =>
             {
+                ProgressPercent = progress.PercentComplete;
                 PendingDownloads = progress.PendingDownloads;
                 PendingUploads = progress.PendingUploads;
 

@@ -43,30 +43,29 @@ public sealed class TransferService
     {
         _logger.LogInformation("Processing pending downloads");
         var totalProcessed = 0;
-        
+        var pageCount = 0;
+        var batchSize = _settings.DownloadBatchSize>0? _settings.DownloadBatchSize : 100;
+        var total = await _repo.GetPendingDownloadCountAsync(ct);
         while(!ct.IsCancellationRequested)
         {
-            var items = (await _repo.GetPendingDownloadsAsync(_settings.DownloadBatchSize, ct)).ToList();
+            var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount++, ct)).ToList();
             if(items.Count == 0)
                 break;
 
             var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () => 
             {
                 totalProcessed++;
-                ReportProgress(totalProcessed, "Downloading files");
+                ReportProgress(totalProcessed, "Downloading files", total);
             })).ToList();
             await Task.WhenAll(tasks);
         }
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null)
-    {
-        await _retryPolicy.ExecuteAsync(async ct2 => 
-        {
-            await DownloadItemAsync(item, ct2);
-            onComplete?.Invoke();
-        }, ct);
-    }
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null) => await _retryPolicy.ExecuteAsync(async ct2 =>
+                                                                                                                                 {
+                                                                                                                                     await DownloadItemAsync(item, ct2);
+                                                                                                                                     onComplete?.Invoke();
+                                                                                                                                 }, ct);
 
     private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
     {
@@ -103,14 +102,14 @@ public sealed class TransferService
         _logger.LogInformation("Processing pending uploads");
         var uploads = (await _repo.GetPendingUploadsAsync(_settings.DownloadBatchSize, ct)).ToList();
         var totalProcessed = 0;
-        
+        var pendingUploads = uploads.Count;
         foreach(LocalFileRecord? local in uploads)
         {
             await _retryPolicy.ExecuteAsync(async ct2 => 
             {
                 await UploadLocalFileAsync(local, ct2);
                 totalProcessed++;
-                ReportProgress(totalProcessed, "Uploading files", uploads.Count);
+                ReportProgress(totalProcessed, "Uploading files", uploads.Count, pendingUploads);
             }, ct);
         }
     }
@@ -152,18 +151,17 @@ public sealed class TransferService
         }
     }
 
-    private void ReportProgress(int processed, string operation, int total = 0)
+    private void ReportProgress(int processed, string operation, int total = 0, int pendingUploads = 0)
     {
-        var pendingDownloads = _repo.GetPendingDownloadsAsync(_settings.DownloadBatchSize, CancellationToken.None).GetAwaiter().GetResult().Count();
-        var pendingUploads = _repo.GetPendingUploadsAsync(_settings.DownloadBatchSize, CancellationToken.None).GetAwaiter().GetResult().Count();
-        
-        _progressSubject.OnNext(new SyncProgress
+       var syncProgress = new SyncProgress
         {
+            CurrentOperation = operation,
             ProcessedFiles = processed,
             TotalFiles = total,
-            CurrentOperation = operation,
-            PendingDownloads = pendingDownloads,
+            PendingDownloads = total - processed,
             PendingUploads = pendingUploads
-        });
+        }; 
+
+        _progressSubject.OnNext(syncProgress);
     }
 }

@@ -22,7 +22,8 @@ internal static class HostExtensions
         var connectionString = string.Empty;
         var localRoot = string.Empty;
         var msalClientId = string.Empty;
-        ApplicationSettings appSettings = File.ReadAllText("appsettings.json").FromJson<ApplicationSettings>();
+        var currentDirectory = AppContext.BaseDirectory;
+        ApplicationSettings appSettings = File.ReadAllText(Path.Combine(currentDirectory, "appsettings.json")).FromJson<ApplicationSettings>();
 
         using(IServiceScope scope = services.BuildServiceProvider().CreateScope())
         {

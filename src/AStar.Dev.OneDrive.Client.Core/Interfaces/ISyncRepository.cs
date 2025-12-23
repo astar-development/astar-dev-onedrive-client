@@ -13,10 +13,10 @@ public interface ISyncRepository
     /// </summary>
     Task ApplyDriveItemsAsync(IEnumerable<DriveItemRecord> items, CancellationToken ct);
 
-    Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int limit, CancellationToken ct);
+    Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int pageSize, int offset, CancellationToken ct);
     Task MarkLocalFileStateAsync(string driveItemId, SyncState state, CancellationToken ct);
     Task AddOrUpdateLocalFileAsync(LocalFileRecord file, CancellationToken ct);
     Task<IEnumerable<LocalFileRecord>> GetPendingUploadsAsync(int limit, CancellationToken ct);
-
+Task<int> GetPendingDownloadCountAsync(CancellationToken ct);
     Task LogTransferAsync(TransferLog log, CancellationToken ct);
 }
