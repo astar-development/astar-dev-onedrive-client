@@ -43,7 +43,7 @@ public sealed class GraphClientWrapper : IGraphClient
                 var size = el.TryGetProperty("size", out JsonElement sProp) ? sProp.GetInt64() : 0L;
                 var parentPath = el.TryGetProperty("parentReference", out JsonElement pr) && pr.TryGetProperty("path", out JsonElement p) ? p.GetString() ?? string.Empty : string.Empty;
                 var name = el.TryGetProperty("name", out JsonElement n) ? n.GetString() ?? id : id;
-                var relativePath = BuildRelativePath(parentPath, name);
+                var relativePath = GraphPathHelpers.BuildRelativePath(parentPath, name);
                 var eTag = el.TryGetProperty("eTag", out JsonElement et) ? et.GetString() : null;
                 var cTag = el.TryGetProperty("cTag", out JsonElement ctProp) ? ctProp.GetString() : null;
                 DateTimeOffset last = el.TryGetProperty("lastModifiedDateTime", out JsonElement lm) ? DateTimeOffset.Parse(lm.GetString()!) : DateTimeOffset.UtcNow;
@@ -52,27 +52,12 @@ public sealed class GraphClientWrapper : IGraphClient
             }
         }
 
-        var next = doc.RootElement.TryGetProperty("@odata.nextLink", out JsonElement nl) ? nl.GetString() : null;
-        var delta = doc.RootElement.TryGetProperty("@odata.deltaLink", out JsonElement dl) ? dl.GetString() : null;
-        return new DeltaPage(items, next, delta);
-    }
-
-    private static string BuildRelativePath(string parentReferencePath, string name)
-    {
-        // parentReference.path looks like "/drive/root:/Folder/SubFolder"
-        if(string.IsNullOrEmpty(parentReferencePath))
-            return name;
-        var idx = parentReferencePath.IndexOf(":/", StringComparison.Ordinal);
-        if(idx >= 0)
-        {
-            var after = parentReferencePath[(idx + 2)..].Trim('/');
-            return string.IsNullOrEmpty(after) ? name : Path.Combine(after, name);
+            var next = doc.RootElement.TryGetProperty("@odata.nextLink", out JsonElement nl) ? nl.GetString() : null;
+            var delta = doc.RootElement.TryGetProperty("@odata.deltaLink", out JsonElement dl) ? dl.GetString() : null;
+            return new DeltaPage(items, next, delta);
         }
 
-        return name;
-    }
-
-    public async Task<Stream> DownloadDriveItemContentAsync(string driveItemId, CancellationToken ct)
+        public async Task<Stream> DownloadDriveItemContentAsync(string driveItemId, CancellationToken ct)
     {
         var token = await _auth.GetAccessTokenAsync(ct);
         var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}/content";
