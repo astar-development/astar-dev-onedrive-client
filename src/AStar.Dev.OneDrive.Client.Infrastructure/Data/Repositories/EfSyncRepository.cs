@@ -84,6 +84,9 @@ public sealed class EfSyncRepository : ISyncRepository
     public async Task<IEnumerable<LocalFileRecord>> GetPendingUploadsAsync(int limit, CancellationToken ct)
         => await _db.LocalFiles.Where(l => l.SyncState == SyncState.PendingUpload).Take(limit).ToListAsync(ct);
 
+    public async Task<LocalFileRecord?> GetLocalFileByPathAsync(string relativePath, CancellationToken ct)
+        => await _db.LocalFiles.FirstOrDefaultAsync(l => l.RelativePath == relativePath, ct);
+
     public async Task LogTransferAsync(TransferLog log, CancellationToken ct)
     {
         TransferLog? existing = await _db.TransferLogs.FindAsync(new object[] { log.Id }, ct);

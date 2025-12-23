@@ -8,6 +8,10 @@
     <File Path=".vscode\tasks.json" />
   </Folder>
   <Folder Name="/docs/" />
+  <Folder Name="/docs/architecture/" />
+  <Folder Name="/docs/Post-everything-recommendations/">
+    <File Path="post-testing-recommendations.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src\AStar.Dev.OneDrive.Client.Core\AStar.Dev.OneDrive.Client.Core.csproj" />
     <Project Path="src\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
@@ -22,7 +26,6 @@
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.csproj" />
-    <Project Path="test/AStar.Dev.OneDrive.Client.Services.Tests.Integration/AStar.Dev.OneDrive.Client.Services.Tests.Integration.csproj" />
     <Project Path="test/AStar.Dev.OneDrive.Client.Tests.Unit/AStar.Dev.OneDrive.Client.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Core.Tests.Unit\AStar.Dev.OneDrive.Client.Core.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.csproj" />

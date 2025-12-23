@@ -1,6 +1,8 @@
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
 using Shouldly;
+using System.IO.Abstractions;
+using FileSystemImpl = System.IO.Abstractions.FileSystem;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.FileSystem;
 
@@ -27,7 +29,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     {
         var relativePath = "subfolder/test.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         File.WriteAllText(fullPath, "content");
 
@@ -41,7 +43,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     public void ReturnFileInfoForNonExistentFile()
     {
         var relativePath = "nonexistent.txt";
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
 
         FileInfo result = adapter.GetFileInfo(relativePath);
 
@@ -51,7 +53,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     [Fact]
     public void HandleLeadingSlashesInRelativePath()
     {
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         var relativePath = "/subfolder/test.txt";
         var fullPath = Path.Combine(_testRoot, "subfolder", "test.txt");
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
@@ -67,7 +69,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     {
         var relativePath = "subfolder/newfile.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         var content = new MemoryStream("test content"u8.ToArray());
 
         await adapter.WriteFileAsync(relativePath, content, CancellationToken.None);
@@ -82,7 +84,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     {
         var relativePath = "existing/file.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         Directory.CreateDirectory(Path.Combine(_testRoot, "existing"));
         var content = new MemoryStream("data"u8.ToArray());
 
@@ -96,7 +98,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     {
         var relativePath = "overwrite.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         await File.WriteAllTextAsync(fullPath, "old content", TestContext.Current.CancellationToken);
 
         var newContent = new MemoryStream("new content"u8.ToArray());
@@ -111,7 +113,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     {
         var relativePath = "read.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         await File.WriteAllTextAsync(fullPath, "file content", TestContext.Current.CancellationToken);
 
         Stream? result = await adapter.OpenReadAsync(relativePath, CancellationToken.None);
@@ -126,7 +128,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     public async Task OpenReadReturnNullForNonExistentFile()
     {
         var relativePath = "missing.txt";
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
 
         Stream? result = await adapter.OpenReadAsync(relativePath, CancellationToken.None);
 
@@ -138,7 +140,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     {
         var relativePath = "delete.txt";
         var fullPath = Path.Combine(_testRoot, relativePath);
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         await File.WriteAllTextAsync(fullPath, "content", TestContext.Current.CancellationToken);
 
         await adapter.DeleteFileAsync(relativePath, CancellationToken.None);
@@ -150,7 +152,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     public async Task DeleteNonExistentFileWithoutError()
     {
         var relativePath = "nonexistent.txt";
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
 
         Exception? exception = await Record.ExceptionAsync(async () =>
             await adapter.DeleteFileAsync(relativePath, CancellationToken.None));
@@ -162,7 +164,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     public async Task EnumerateFilesReturnEmptyListWhenDirectoryDoesNotExist()
     {
         var nonExistentRoot = Path.Combine(Path.GetTempPath(), $"NonExistent_{Guid.NewGuid()}");
-        var adapter = new LocalFileSystemAdapter(nonExistentRoot);
+        var adapter = new LocalFileSystemAdapter(nonExistentRoot, new FileSystemImpl());
 
         IEnumerable<LocalFileInfo> result = await adapter.EnumerateFilesAsync(CancellationToken.None);
 
@@ -172,7 +174,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     [Fact]
     public async Task EnumerateFilesReturnAllFilesRecursively()
     {
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         Directory.CreateDirectory(Path.Combine(_testRoot, "subfolder"));
         await File.WriteAllTextAsync(Path.Combine(_testRoot, "file1.txt"), "content1", TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_testRoot, "subfolder", "file2.txt"), "content2", TestContext.Current.CancellationToken);
@@ -187,7 +189,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     [Fact]
     public async Task EnumerateFilesPopulateLocalFileInfoProperties()
     {
-        var adapter = new LocalFileSystemAdapter(_testRoot);
+        var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
         var testFile = Path.Combine(_testRoot, "test.txt");
         await File.WriteAllTextAsync(testFile, "content", TestContext.Current.CancellationToken);
         var fileInfo = new FileInfo(testFile);

@@ -6,6 +6,7 @@ using AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
 using AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO.Abstractions;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 
@@ -20,7 +21,8 @@ public static class InfrastructureServiceCollectionExtensions
         _ = services.AddHttpClient<IGraphClient, GraphClientWrapper>()
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true });
 
-        _ = services.AddSingleton<IFileSystemAdapter>(_ => new LocalFileSystemAdapter(localRoot));
+        _ = services.AddSingleton<IFileSystem>(sp => new System.IO.Abstractions.FileSystem());
+        _ = services.AddSingleton<IFileSystemAdapter>(sp => new LocalFileSystemAdapter(localRoot, sp.GetRequiredService<IFileSystem>()));
 
         _ = services.AddSingleton<Action<IServiceProvider>>(sp => provider =>
             {
