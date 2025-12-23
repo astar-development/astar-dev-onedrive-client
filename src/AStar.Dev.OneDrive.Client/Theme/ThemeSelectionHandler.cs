@@ -1,5 +1,4 @@
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
-using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using Avalonia.Controls;
 
 namespace AStar.Dev.OneDrive.Client.Theme;
@@ -15,6 +14,7 @@ public class ThemeSelectionHandler(IThemeMapper themeMapper, ThemeService themeS
     {
         themeSelector.SelectedIndex = themeMapper.MapThemeToIndex(preferences.UiSettings.Theme);
         themeSelector.SelectionChanged += (s, _) => OnSelectionChanged(s, preferences);
+        themeService.ApplyThemePreference(preferences);
     }
 
     /// <inheritdoc />

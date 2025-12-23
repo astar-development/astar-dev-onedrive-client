@@ -1,6 +1,4 @@
 using AStar.Dev.OneDrive.Client.Common;
-using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
-using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.Views;
 using Avalonia.Controls;
@@ -11,20 +9,17 @@ public partial class MainWindow : Window, IWindowPositionable
 {
     private readonly IThemeSelectionHandler _themeHandler;
     private readonly IAutoSaveService _autoSaveService;
-    private readonly UserPreferences _userPreferences;
     private readonly MainWindowViewModel _viewModel;
-    private readonly IMainWindowCoordinator _coordinator = null!;
+    private readonly IMainWindowCoordinator _coordinator;
 
     public MainWindow(
-        IMainWindowCoordinator coordinator, IThemeSelectionHandler themeHandler, ISettingsAndPreferencesService settingsAndPreferencesService, 
-        IAutoSaveService autoSaveService, MainWindowViewModel vm)
+        IMainWindowCoordinator coordinator, IThemeSelectionHandler themeHandler, IAutoSaveService autoSaveService, MainWindowViewModel vm)
     {
         InitializeComponent();
-        
+
         _coordinator = coordinator;
         _themeHandler = themeHandler;
         _autoSaveService = autoSaveService;
-        _userPreferences =settingsAndPreferencesService.Load();
         _viewModel = vm;
         WireUpEventHandlers();
         InitializeThemeSelector();
@@ -51,6 +46,6 @@ public partial class MainWindow : Window, IWindowPositionable
         ComboBox? themeSelector = this.FindControl<ComboBox>("ThemeSelector");
 
         if(themeSelector is not null)
-            _themeHandler.Initialize(themeSelector, _userPreferences);
+            _themeHandler.Initialize(themeSelector, _viewModel.UserPreferences);
     }
 }

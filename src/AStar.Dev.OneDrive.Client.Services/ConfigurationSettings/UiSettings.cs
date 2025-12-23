@@ -65,21 +65,6 @@ public class UiSettings
     public string LastAction { get; set; } = "No action yet";
 
     /// <summary>
-    ///     Gets or sets the maximum number of parallel download operations that can be
-    ///     performed concurrently. This property is used to control the level of
-    ///     concurrency when retrieving files from OneDrive, helping to manage system
-    ///     resource usage effectively.
-    /// </summary>
-    public int MaxParallelDownloads { get; set; } = 8;
-
-    /// <summary>
-    ///     Gets or sets the maximum number of items to be retrieved or processed in a single batch during
-    ///     download operations. This value is used to optimize data retrieval by controlling the batch size
-    ///     for network requests or processing chunks. Adjusting this property can balance performance and resource usage.
-    /// </summary>
-    public int DownloadBatchSize { get; set; } = 100;
-
-    /// <summary>
     ///     Gets or sets the synchronization settings related to file transfers and sync behavior.
     /// </summary>
     public SyncSettings SyncSettings { get; set; } = new();
@@ -95,8 +80,6 @@ public class UiSettings
     /// <returns>Returns the updated instance of <see cref="UiSettings" />.</returns>
     public UiSettings Update(UiSettings other)
     {
-        MaxParallelDownloads = other.MaxParallelDownloads;
-        DownloadBatchSize = other.DownloadBatchSize;
         SyncSettings.DownloadBatchSize = other.SyncSettings.DownloadBatchSize;
         SyncSettings.MaxParallelDownloads = other.SyncSettings.MaxParallelDownloads;
         SyncSettings.MaxRetries = other.SyncSettings.MaxRetries;

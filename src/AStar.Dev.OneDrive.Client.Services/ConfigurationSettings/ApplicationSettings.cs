@@ -65,19 +65,22 @@ public class ApplicationSettings
     [JsonIgnore]
     public string FullUserPreferencesPath
         => Path.Combine(FullUserPreferencesDirectory, UserPreferencesFile);
+
     [JsonIgnore]
-    public string FullUserPreferencesDirectory
-        => Path.Combine(AppPathHelper.GetAppDataPath("astar-dev-onedrive-client"));
+    public static string FullUserPreferencesDirectory
+        => Path.Combine(AppPathHelper.GetAppDataPath(ApplicationName));
 
     [JsonIgnore]
     public string FullDatabasePath
         => Path.Combine(FullDatabaseDirectory, DatabaseName);
 
     [JsonIgnore]
-    public string FullDatabaseDirectory
-        => Path.Combine(AppPathHelper.GetAppDataPath("astar-dev-onedrive-client"), "database");
+    public static string FullDatabaseDirectory
+        => Path.Combine(AppPathHelper.GetAppDataPath(ApplicationName), "database");
 
     [JsonIgnore]
     public string FullUserSyncPath
         => Path.Combine(AppPathHelper.GetUserHomeFolder(), OneDriveRootDirectory);
+
+    private static readonly string ApplicationName = "astar-dev-onedrive-client";
 }

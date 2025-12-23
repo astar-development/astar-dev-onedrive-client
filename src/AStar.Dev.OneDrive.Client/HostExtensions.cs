@@ -32,8 +32,8 @@ internal static class HostExtensions
             {
                 // Ensure directories exist
                 _ = Directory.CreateDirectory(appSettings.FullUserSyncPath);
-                _ = Directory.CreateDirectory(appSettings.FullDatabaseDirectory);
-                _ = Directory.CreateDirectory(appSettings.FullUserPreferencesDirectory);
+                _ = Directory.CreateDirectory(ApplicationSettings.FullDatabaseDirectory);
+                _ = Directory.CreateDirectory(ApplicationSettings.FullUserPreferencesDirectory);
                 if(!File.Exists(appSettings.FullUserPreferencesPath))
                 {
                     File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());

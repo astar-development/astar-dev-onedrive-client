@@ -22,7 +22,6 @@ public static class ServiceCollectionExtensions
             FileServices fileSystem = scope.ServiceProvider.GetRequiredService<FileServices>();
             var userPreferencesContent = fileSystem.GetFileContents(appSettings.FullUserPreferencesPath);
             UserPreferences userPreferences = userPreferencesContent.FromJson<UserPreferences>();
-            _ = services.AddSingleton(userPreferences.UiSettings.SyncSettings);
             _ = services.AddSingleton(userPreferences);
         }
 

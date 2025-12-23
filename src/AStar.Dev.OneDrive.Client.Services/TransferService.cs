@@ -1,11 +1,12 @@
+using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Models;
+using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
-using System.Reactive.Subjects;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
@@ -15,24 +16,24 @@ public sealed class TransferService
     private readonly IGraphClient _graph;
     private readonly ISyncRepository _repo;
     private readonly ILogger<TransferService> _logger;
-    private readonly SyncSettings _settings;
+    private readonly UserPreferences _settings;
     private readonly SemaphoreSlim _downloadSemaphore;
     private readonly AsyncRetryPolicy _retryPolicy;
     private readonly Subject<SyncProgress> _progressSubject = new();
 
     public IObservable<SyncProgress> Progress => _progressSubject;
 
-    public TransferService(IFileSystemAdapter fs, IGraphClient graph, ISyncRepository repo, ILogger<TransferService> logger, SyncSettings settings)
+    public TransferService(IFileSystemAdapter fs, IGraphClient graph, ISyncRepository repo, ILogger<TransferService> logger, UserPreferences settings)
     {
         _fs = fs;
         _graph = graph;
         _repo = repo;
         _logger = logger;
         _settings = settings;
-        _downloadSemaphore = new SemaphoreSlim(settings.MaxParallelDownloads);
+        _downloadSemaphore = new SemaphoreSlim(settings.UiSettings.SyncSettings.MaxParallelDownloads);
 
         _retryPolicy = Policy.Handle<Exception>()
-                             .WaitAndRetryAsync(settings.MaxRetries, i => TimeSpan.FromMilliseconds(settings.RetryBaseDelayMs * Math.Pow(2, i)),
+                             .WaitAndRetryAsync(settings.UiSettings.SyncSettings.MaxRetries, i => TimeSpan.FromMilliseconds(settings.UiSettings.SyncSettings.RetryBaseDelayMs * Math.Pow(2, i)),
                                  (ex, ts, retryCount, ctx) => _logger.LogWarning(ex, "Retry {Retry} after {Delay}ms", retryCount, ts.TotalMilliseconds));
     }
 
@@ -44,7 +45,7 @@ public sealed class TransferService
         _logger.LogInformation("Processing pending downloads");
         var totalProcessed = 0;
         var pageCount = 0;
-        var batchSize = _settings.DownloadBatchSize>0? _settings.DownloadBatchSize : 100;
+        var batchSize = _settings.UiSettings.SyncSettings.DownloadBatchSize>0? _settings.UiSettings.SyncSettings.DownloadBatchSize : 100;
         var total = await _repo.GetPendingDownloadCountAsync(ct);
         while(!ct.IsCancellationRequested)
         {
@@ -52,7 +53,7 @@ public sealed class TransferService
             if(items.Count == 0)
                 break;
 
-            var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () => 
+            var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () =>
             {
                 totalProcessed++;
                 ReportProgress(totalProcessed, "Downloading files", total);
@@ -100,12 +101,12 @@ public sealed class TransferService
     public async Task ProcessPendingUploadsAsync(CancellationToken ct)
     {
         _logger.LogInformation("Processing pending uploads");
-        var uploads = (await _repo.GetPendingUploadsAsync(_settings.DownloadBatchSize, ct)).ToList();
+        var uploads = (await _repo.GetPendingUploadsAsync(_settings.UiSettings.SyncSettings.DownloadBatchSize, ct)).ToList();
         var totalProcessed = 0;
         var pendingUploads = uploads.Count;
         foreach(LocalFileRecord? local in uploads)
         {
-            await _retryPolicy.ExecuteAsync(async ct2 => 
+            await _retryPolicy.ExecuteAsync(async ct2 =>
             {
                 await UploadLocalFileAsync(local, ct2);
                 totalProcessed++;
@@ -153,14 +154,14 @@ public sealed class TransferService
 
     private void ReportProgress(int processed, string operation, int total = 0, int pendingUploads = 0)
     {
-       var syncProgress = new SyncProgress
+        var syncProgress = new SyncProgress
         {
             CurrentOperation = operation,
             ProcessedFiles = processed,
             TotalFiles = total,
             PendingDownloads = total - processed,
             PendingUploads = pendingUploads
-        }; 
+        };
 
         _progressSubject.OnNext(syncProgress);
     }
