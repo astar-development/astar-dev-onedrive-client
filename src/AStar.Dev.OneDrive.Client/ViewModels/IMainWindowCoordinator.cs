@@ -1,6 +1,4 @@
-using AStar.Dev.OneDrive.Client.ViewModels;
-
-namespace AStar.Dev.OneDrive.Client.Views;
+namespace AStar.Dev.OneDrive.Client.ViewModels;
 
 /// <summary>
 ///     Defines the contract for coordinating actions and state between the main window

@@ -1,6 +1,5 @@
 ﻿{
   "clientId": "TestClientId",
-  "tenantId": "TestTenantId",
   "scopes": [
     "TestScope",
     "TestScope1"

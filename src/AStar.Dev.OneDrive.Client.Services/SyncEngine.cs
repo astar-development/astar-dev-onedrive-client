@@ -2,12 +2,11 @@ using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using AStar.Dev.OneDrive.Client.Models;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
-public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, TransferService transfer, ILogger<SyncEngine> logger)
+public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransferService transfer, ILogger<SyncEngine> logger) : ISyncEngine
 {
     private readonly Subject<SyncProgress> _progressSubject = new();
 

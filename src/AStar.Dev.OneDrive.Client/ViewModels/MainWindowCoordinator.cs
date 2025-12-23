@@ -1,10 +1,9 @@
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
-using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 
-namespace AStar.Dev.OneDrive.Client.Views;
+namespace AStar.Dev.OneDrive.Client.ViewModels;
 
 /// <summary>
 ///     Coordinates the initialization, state management, and user preferences for the main application window.

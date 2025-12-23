@@ -10,12 +10,9 @@ namespace AStar.Dev.OneDrive.Client.Theme;
 ///     This service is responsible for setting the application theme
 ///     (e.g., Light, Dark, or Default) by interacting with the application instance.
 /// </summary>
-public class ThemeService
+public class ThemeService : IThemeService
 {
-    /// <summary>
-    ///     Applies the theme preference based on the user's settings.
-    /// </summary>
-    /// <param name="userPreferences">The user's preferences containing UI settings, including the desired theme.</param>
+    /// <inheritdoc />
     public void ApplyThemePreference(UserPreferences userPreferences)
     {
         if(Application.Current is not App app)

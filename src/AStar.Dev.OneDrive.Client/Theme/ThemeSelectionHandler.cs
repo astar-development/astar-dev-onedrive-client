@@ -7,7 +7,7 @@ namespace AStar.Dev.OneDrive.Client.Theme;
 ///     Handles theme selection interactions by coordinating between the UI control,
 ///     user preferences, and theme application services.
 /// </summary>
-public class ThemeSelectionHandler(IThemeMapper themeMapper, ThemeService themeService) : IThemeSelectionHandler
+public class ThemeSelectionHandler(IThemeMapper themeMapper, IThemeService themeService) : IThemeSelectionHandler
 {
     /// <inheritdoc />
     public void Initialize(ComboBox themeSelector, UserPreferences preferences)

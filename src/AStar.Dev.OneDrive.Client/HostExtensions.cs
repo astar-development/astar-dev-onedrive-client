@@ -5,7 +5,6 @@ using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
-using AStar.Dev.OneDrive.Client.Views;
 using AStar.Dev.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

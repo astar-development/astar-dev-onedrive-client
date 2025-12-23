@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.UI.Avalonia.Tests.Unit;
+namespace AStar.Dev.OneDrive.Client.Tests.Unit;
 
 public class UnitTest1
 {

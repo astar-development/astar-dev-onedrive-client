@@ -14,7 +14,7 @@ namespace AStar.Dev.OneDrive.Client.ViewModels;
 public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IAuthService _auth;
-    private readonly SyncEngine _sync;
+    private readonly ISyncEngine _sync;
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly CompositeDisposable _disposables = [];
     private CancellationTokenSource? _currentSyncCancellation;
@@ -34,7 +34,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 
     private const int MaxRecentTransfers = 15;
 
-    public MainWindowViewModel(IAuthService auth, SyncEngine sync, TransferService transfer,
+    public MainWindowViewModel(IAuthService auth, ISyncEngine sync, ITransferService transfer,
       ISettingsAndPreferencesService settingsAndPreferencesService, ILogger<MainWindowViewModel> logger)
     {
         _auth = auth;

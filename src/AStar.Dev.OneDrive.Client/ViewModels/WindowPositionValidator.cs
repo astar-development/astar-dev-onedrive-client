@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.Views;
+namespace AStar.Dev.OneDrive.Client.ViewModels;
 
 /// <summary>
 ///     Validates window positioning and sizing constraints to ensure windows are positioned

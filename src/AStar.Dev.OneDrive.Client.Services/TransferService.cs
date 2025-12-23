@@ -2,7 +2,6 @@ using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using AStar.Dev.OneDrive.Client.Models;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -10,7 +9,7 @@ using Polly.Retry;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
-public sealed class TransferService
+public sealed class TransferService : ITransferService
 {
     private readonly IFileSystemAdapter _fs;
     private readonly IGraphClient _graph;

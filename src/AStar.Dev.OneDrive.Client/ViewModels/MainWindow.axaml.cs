@@ -1,6 +1,5 @@
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Theme;
-using AStar.Dev.OneDrive.Client.Views;
 using Avalonia.Controls;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;

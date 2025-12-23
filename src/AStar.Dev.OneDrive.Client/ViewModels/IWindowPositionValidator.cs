@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.Views;
+namespace AStar.Dev.OneDrive.Client.ViewModels;
 
 /// <summary>
 ///     Provides validation services for window positioning and sizing.

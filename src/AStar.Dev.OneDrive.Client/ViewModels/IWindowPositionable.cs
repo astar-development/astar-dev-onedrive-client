@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace AStar.Dev.OneDrive.Client.Views;
+namespace AStar.Dev.OneDrive.Client.ViewModels;
 
 /// <summary>
 ///     Represents a window that can be positioned and sized.

@@ -3,6 +3,7 @@
   "applicationVersion": "1.2.3",
   "userPreferencesPath": "TestUserPreferencesPath",
   "userPreferencesFile": "TestUserPreferencesFile",
-  "oneDriveRootPath": "TestOneDriveRootPath",
+  "databaseName": "MockDatabaseName",
+  "oneDriveRootDirectory": "TestOneDriveRootPath",
   "cachePrefix": "TestCachePrefix_"
 }

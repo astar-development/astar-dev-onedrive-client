@@ -1,9 +1,13 @@
 <Solution>
+  <Folder Name="/.github/">
+    <File Path=".github/copilot-instructions.md" />
+  </Folder>
   <Folder Name="/.vscode/">
     <File Path=".vscode\launch.json" />
     <File Path=".vscode\settings.json" />
     <File Path=".vscode\tasks.json" />
   </Folder>
+  <Folder Name="/docs/" />
   <Folder Name="/src/">
     <Project Path="src\AStar.Dev.OneDrive.Client.Core\AStar.Dev.OneDrive.Client.Core.csproj" />
     <Project Path="src\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
@@ -17,10 +21,10 @@
     <Project Path="src/nuget-packages/AStar.Dev.Utilities/AStar.Dev.Utilities.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/AStar.Dev.OneDrive.Client.Tests.Unit/AStar.Dev.OneDrive.Client.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Core.Tests.Unit\AStar.Dev.OneDrive.Client.Core.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.csproj" />
     <Project Path="test\AStar.Dev.OneDrive.Client.Services.Tests.Unit\AStar.Dev.OneDrive.Client.Services.Tests.Unit.csproj" />
-    <Project Path="test\AStar.Dev.OneDrive.Client.UI.Avalonia.Tests.Unit\AStar.Dev.OneDrive.Client.UI.Avalonia.Tests.Unit.csproj" />
   </Folder>
   <Folder Name="/test/nuget-packages/">
     <Project Path="test/nuget-packages/AStar.Dev.Functional.Extensions.Tests.Unit/AStar.Dev.Functional.Extensions.Tests.Unit.csproj" />

@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.Models;
+namespace AStar.Dev.OneDrive.Client.Services;
 
 public sealed record SyncProgress
 {
