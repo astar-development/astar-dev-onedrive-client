@@ -33,6 +33,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public UserPreferences UserPreferences { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public bool SignedIn { get; set => this.RaiseAndSetIfChanged(ref field, value); }
 
+    // Performance metrics
+    public string TransferSpeed { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
+    public string EstimatedTimeRemaining { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
+    public string ElapsedTime { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
+
     private const int MaxRecentTransfers = 15;
 
     public MainWindowViewModel(IAuthService auth, ISyncEngine sync, ISyncRepository repo, ITransferService transfer,
@@ -161,41 +166,90 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
         }, isSyncing);
 
-        // Subscribe to SyncEngine progress
-        _ = _sync.Progress
-            .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
-            .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(progress =>
-            {
-                SyncStatus = progress.CurrentOperation;
-                ProgressPercent = progress.PercentComplete;
-                PendingDownloads = progress.PendingDownloads;
-                PendingUploads = progress.PendingUploads;
-
-                AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperation} ({progress.ProcessedFiles}/{progress.TotalFiles})");
-            })
-            .DisposeWith(_disposables);
-
-        // Subscribe to TransferService progress
-        _ = transfer.Progress
-            .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
-            .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(progress =>
-            {
-                ProgressPercent = progress.PercentComplete;
-                PendingDownloads = progress.PendingDownloads;
-                PendingUploads = progress.PendingUploads;
-
-                if(progress.ProcessedFiles % 100 == 0) // Log every 100 files
+            // Subscribe to SyncEngine progress
+            _ = _sync.Progress
+                .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(progress =>
                 {
-                    AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperation}");
-                }
-            })
-            .DisposeWith(_disposables);
-    }
+                    SyncStatus = progress.CurrentOperation;
+                    ProgressPercent = progress.PercentComplete;
+                    PendingDownloads = progress.PendingDownloads;
+                    PendingUploads = progress.PendingUploads;
+
+                    // Update performance metrics
+                    UpdatePerformanceMetrics(progress);
+
+                    AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperation} ({progress.ProcessedFiles}/{progress.TotalFiles})");
+                })
+                .DisposeWith(_disposables);
+
+            // Subscribe to TransferService progress
+            _ = transfer.Progress
+                .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(progress =>
+                {
+                    ProgressPercent = progress.PercentComplete;
+                    PendingDownloads = progress.PendingDownloads;
+                    PendingUploads = progress.PendingUploads;
+
+                    // Update performance metrics
+                    UpdatePerformanceMetrics(progress);
+
+                    if(progress.ProcessedFiles % 100 == 0) // Log every 100 files
+                    {
+                        AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperation}");
+                    }
+                })
+                .DisposeWith(_disposables);
+        }
 
     private static bool IsSyncingStatus(string status) => (status.Contains("sync", StringComparison.OrdinalIgnoreCase) || status.Contains("Processing", StringComparison.OrdinalIgnoreCase)) &&
                                  !status.Contains("complete", StringComparison.OrdinalIgnoreCase);
+
+    private void UpdatePerformanceMetrics(SyncProgress progress)
+    {
+        // Transfer speed
+        if (progress.BytesPerSecond > 0)
+        {
+            TransferSpeed = $"{progress.MegabytesPerSecond:F2} MB/s";
+        }
+        else
+        {
+            TransferSpeed = string.Empty;
+        }
+
+        // Estimated time remaining
+        if (progress.EstimatedTimeRemaining.HasValue)
+        {
+            var eta = progress.EstimatedTimeRemaining.Value;
+            EstimatedTimeRemaining = eta.TotalHours >= 1 
+                ? $"ETA: {eta.Hours}h {eta.Minutes}m" 
+                : eta.TotalMinutes >= 1
+                    ? $"ETA: {eta.Minutes}m {eta.Seconds}s"
+                    : $"ETA: {eta.Seconds}s";
+        }
+        else
+        {
+            EstimatedTimeRemaining = string.Empty;
+        }
+
+        // Elapsed time
+        if (progress.ElapsedTime.TotalSeconds > 0)
+        {
+            var elapsed = progress.ElapsedTime;
+            ElapsedTime = elapsed.TotalHours >= 1
+                ? $"{elapsed.Hours}h {elapsed.Minutes}m {elapsed.Seconds}s"
+                : elapsed.TotalMinutes >= 1
+                    ? $"{elapsed.Minutes}m {elapsed.Seconds}s"
+                    : $"{elapsed.Seconds}s";
+        }
+        else
+        {
+            ElapsedTime = string.Empty;
+        }
+    }
 
     private async Task RefreshStatsAsync()
     {

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
@@ -19,6 +20,8 @@ public sealed class TransferService : ITransferService
     private readonly SemaphoreSlim _downloadSemaphore;
     private readonly AsyncRetryPolicy _retryPolicy;
     private readonly Subject<SyncProgress> _progressSubject = new();
+    private readonly Stopwatch _operationStopwatch = new();
+    private long _totalBytesTransferred;
 
     public IObservable<SyncProgress> Progress => _progressSubject;
 
@@ -41,24 +44,34 @@ public sealed class TransferService : ITransferService
     /// </summary>
     public async Task ProcessPendingDownloadsAsync(CancellationToken ct)
     {
+        _operationStopwatch.Restart();
+        _totalBytesTransferred = 0;
         _logger.LogInformation("Processing pending downloads");
         var totalProcessed = 0;
         var pageCount = 0;
         var batchSize = _settings.UiSettings.SyncSettings.DownloadBatchSize>0? _settings.UiSettings.SyncSettings.DownloadBatchSize : 100;
         var total = await _repo.GetPendingDownloadCountAsync(ct);
+
         while(!ct.IsCancellationRequested)
         {
             var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount++, ct)).ToList();
             if(items.Count == 0)
                 break;
 
+            var totalBytes = items.Sum(i => i.Size);
             var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () =>
             {
                 totalProcessed++;
-                ReportProgress(totalProcessed, "Downloading files", total);
+                _totalBytesTransferred += item.Size;
+                ReportProgress(totalProcessed, "Downloading files", total, 0, totalBytes);
             })).ToList();
             await Task.WhenAll(tasks);
         }
+
+        _operationStopwatch.Stop();
+        _logger.LogInformation("Completed downloads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
+            totalProcessed, _totalBytesTransferred / (1024.0 * 1024.0), _operationStopwatch.Elapsed.TotalSeconds,
+            (_totalBytesTransferred / (1024.0 * 1024.0)) / _operationStopwatch.Elapsed.TotalSeconds);
     }
 
     private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null) => await _retryPolicy.ExecuteAsync(async ct2 =>
@@ -99,19 +112,29 @@ public sealed class TransferService : ITransferService
     /// </summary>
     public async Task ProcessPendingUploadsAsync(CancellationToken ct)
     {
+        _operationStopwatch.Restart();
+        _totalBytesTransferred = 0;
         _logger.LogInformation("Processing pending uploads");
         var uploads = (await _repo.GetPendingUploadsAsync(_settings.UiSettings.SyncSettings.DownloadBatchSize, ct)).ToList();
         var totalProcessed = 0;
         var pendingUploads = uploads.Count;
+        var totalBytes = uploads.Sum(u => u.Size);
+
         foreach(LocalFileRecord? local in uploads)
         {
             await _retryPolicy.ExecuteAsync(async ct2 =>
             {
                 await UploadLocalFileAsync(local, ct2);
                 totalProcessed++;
-                ReportProgress(totalProcessed, "Uploading files", uploads.Count, pendingUploads);
+                _totalBytesTransferred += local.Size;
+                ReportProgress(totalProcessed, "Uploading files", uploads.Count, pendingUploads, totalBytes);
             }, ct);
         }
+
+        _operationStopwatch.Stop();
+        _logger.LogInformation("Completed uploads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
+            totalProcessed, _totalBytesTransferred / (1024.0 * 1024.0), _operationStopwatch.Elapsed.TotalSeconds,
+            (_totalBytesTransferred / (1024.0 * 1024.0)) / _operationStopwatch.Elapsed.TotalSeconds);
     }
 
     private async Task UploadLocalFileAsync(LocalFileRecord local, CancellationToken ct)
@@ -151,17 +174,34 @@ public sealed class TransferService : ITransferService
         }
     }
 
-    private void ReportProgress(int processed, string operation, int total = 0, int pendingUploads = 0)
-    {
-        var syncProgress = new SyncProgress
+        private void ReportProgress(int processed, string operation, int total = 0, int pendingUploads = 0, long totalBytes = 0)
         {
-            CurrentOperation = operation,
-            ProcessedFiles = processed,
-            TotalFiles = total,
-            PendingDownloads = total - processed,
-            PendingUploads = pendingUploads
-        };
+            var elapsedSeconds = _operationStopwatch.Elapsed.TotalSeconds;
+            var bytesPerSecond = elapsedSeconds > 0 ? _totalBytesTransferred / elapsedSeconds : 0;
 
-        _progressSubject.OnNext(syncProgress);
+            // Calculate ETA
+            TimeSpan? eta = null;
+            if (bytesPerSecond > 0 && totalBytes > 0 && _totalBytesTransferred < totalBytes)
+            {
+                var remainingBytes = totalBytes - _totalBytesTransferred;
+                var remainingSeconds = remainingBytes / bytesPerSecond;
+                eta = TimeSpan.FromSeconds(remainingSeconds);
+            }
+
+            var syncProgress = new SyncProgress
+            {
+                CurrentOperation = operation,
+                ProcessedFiles = processed,
+                TotalFiles = total,
+                PendingDownloads = total - processed,
+                PendingUploads = pendingUploads,
+                BytesTransferred = _totalBytesTransferred,
+                TotalBytes = totalBytes,
+                BytesPerSecond = bytesPerSecond,
+                EstimatedTimeRemaining = eta,
+                ElapsedTime = _operationStopwatch.Elapsed
+            };
+
+            _progressSubject.OnNext(syncProgress);
+        }
     }
-}
