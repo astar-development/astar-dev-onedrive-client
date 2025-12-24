@@ -16,8 +16,9 @@ public interface ISyncRepository
     Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int pageSize, int offset, CancellationToken ct);
     Task MarkLocalFileStateAsync(string driveItemId, SyncState state, CancellationToken ct);
     Task AddOrUpdateLocalFileAsync(LocalFileRecord file, CancellationToken ct);
-        Task<IEnumerable<LocalFileRecord>> GetPendingUploadsAsync(int limit, CancellationToken ct);
+    Task<IEnumerable<LocalFileRecord>> GetPendingUploadsAsync(int limit, CancellationToken ct);
     Task<int> GetPendingDownloadCountAsync(CancellationToken ct);
-        Task<LocalFileRecord?> GetLocalFileByPathAsync(string relativePath, CancellationToken ct);
-        Task LogTransferAsync(TransferLog log, CancellationToken ct);
+    Task<int> GetPendingUploadCountAsync(CancellationToken ct);
+    Task<LocalFileRecord?> GetLocalFileByPathAsync(string relativePath, CancellationToken ct);
+    Task LogTransferAsync(TransferLog log, CancellationToken ct);
     }

@@ -148,6 +148,7 @@ public class AutoSaveServiceShould
     {
         IAuthService auth = Substitute.For<IAuthService>();
         ISyncEngine sync = Substitute.For<ISyncEngine>();
+        ISyncRepository repo = Substitute.For<ISyncRepository>();
         ITransferService transfer = Substitute.For<ITransferService>();
         ISettingsAndPreferencesService settings = Substitute.For<ISettingsAndPreferencesService>();
         ILogger<MainWindowViewModel> logger = Substitute.For<ILogger<MainWindowViewModel>>();
@@ -157,6 +158,6 @@ public class AutoSaveServiceShould
         sync.Progress.Returns(new Subject<SyncProgress>());
         transfer.Progress.Returns(new Subject<SyncProgress>());
 
-        return new MainWindowViewModel(auth, sync, transfer, settings, logger);
+        return new MainWindowViewModel(auth, sync, repo, transfer, settings, logger);
     }
 }
