@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <IsPackable>false</IsPackable>
-        <RunSettingsFilePath>C:\repos\astar-development\astar-dev-onedrive-client\test\nuget-packages\AStar.Dev.Utilities.Tests.Unit\bin\Debug\net10.0\fine-code-coverage\coverage-tool-output\AStar.Dev.Utilities.Tests.Unit-fcc-mscodecoverage-generated.runsettings</RunSettingsFilePath>
     </PropertyGroup>
 
     <ItemGroup>

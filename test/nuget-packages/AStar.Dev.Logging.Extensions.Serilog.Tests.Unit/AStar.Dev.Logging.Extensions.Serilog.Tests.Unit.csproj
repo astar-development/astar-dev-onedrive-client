@@ -7,7 +7,6 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
 		<OutputType>Exe</OutputType>
-		<RunSettingsFilePath>C:\repos\astar-development\astar-dev-onedrive-client\test\nuget-packages\AStar.Dev.Logging.Extensions.Serilog.Tests.Unit\bin\Debug\net10.0\fine-code-coverage\coverage-tool-output\AStar.Dev.Logging.Extensions.Serilog.Tests.Unit-fcc-mscodecoverage-generated.runsettings</RunSettingsFilePath>
 	</PropertyGroup>
 
 	<ItemGroup>
