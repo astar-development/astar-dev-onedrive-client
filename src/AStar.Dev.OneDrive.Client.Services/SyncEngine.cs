@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
-public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransferService transfer, ILogger<SyncEngine> logger) : ISyncEngine
+public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransferService transfer, IFileSystemAdapter fs, ILogger<SyncEngine> logger) : ISyncEngine
 {
     private readonly Subject<SyncProgress> _progressSubject = new();
 
@@ -139,17 +139,104 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
         await transfer.ProcessPendingDownloadsAsync(ct);
         await transfer.ProcessPendingUploadsAsync(ct);
 
-        stopwatch.Stop();
-        logger.LogInformation("Incremental sync complete: {ItemCount} items, {Downloads} downloads, {Uploads} uploads in {ElapsedMs}ms",
-            itemCount, pendingDownloads, pendingUploads, stopwatch.ElapsedMilliseconds);
-        _progressSubject.OnNext(new SyncProgress
-        {
-            CurrentOperation = "Incremental sync completed",
-            ProcessedFiles = 1,
-            TotalFiles = 1,
-            PendingDownloads = 0,
-            PendingUploads = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-    }
-}
+                stopwatch.Stop();
+                logger.LogInformation("Incremental sync complete: {ItemCount} items, {Downloads} downloads, {Uploads} uploads in {ElapsedMs}ms",
+                    itemCount, pendingDownloads, pendingUploads, stopwatch.ElapsedMilliseconds);
+                _progressSubject.OnNext(new SyncProgress
+                {
+                    CurrentOperation = "Incremental sync completed",
+                    ProcessedFiles = 1,
+                    TotalFiles = 1,
+                    PendingDownloads = 0,
+                    PendingUploads = 0,
+                    ElapsedTime = stopwatch.Elapsed
+                });
+            }
+
+            /// <summary>
+            /// Scans the local file system and marks new or modified files for upload.
+            /// </summary>
+            public async Task ScanLocalFilesAsync(CancellationToken ct)
+            {
+                var stopwatch = Stopwatch.StartNew();
+                logger.LogInformation("Starting local file scan");
+                _progressSubject.OnNext(new SyncProgress
+                {
+                    CurrentOperation = "Scanning local files...",
+                    ProcessedFiles = 0,
+                    TotalFiles = 0,
+                    ElapsedTime = stopwatch.Elapsed
+                });
+
+                var localFiles = await fs.EnumerateFilesAsync(ct);
+                var localFilesList = localFiles.ToList();
+                var processedCount = 0;
+                var newFilesCount = 0;
+                var modifiedFilesCount = 0;
+
+                logger.LogInformation("Found {FileCount} local files to process", localFilesList.Count);
+
+                foreach (var localFile in localFilesList)
+                {
+                    processedCount++;
+
+                    if (processedCount % 100 == 0)
+                    {
+                        _progressSubject.OnNext(new SyncProgress
+                        {
+                            CurrentOperation = $"Scanning local files ({processedCount}/{localFilesList.Count})...",
+                            ProcessedFiles = processedCount,
+                            TotalFiles = localFilesList.Count,
+                            ElapsedTime = stopwatch.Elapsed
+                        });
+                    }
+
+                    var existingFile = await repo.GetLocalFileByPathAsync(localFile.RelativePath, ct);
+
+                    if (existingFile is null)
+                    {
+                        var newFile = new LocalFileRecord(
+                            Guid.NewGuid().ToString(),
+                            localFile.RelativePath,
+                            localFile.Hash,
+                            localFile.Size,
+                            localFile.LastWriteUtc,
+                            SyncState.PendingUpload
+                        );
+                        await repo.AddOrUpdateLocalFileAsync(newFile, ct);
+                        newFilesCount++;
+                        logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
+                    }
+                    else if (existingFile.LastWriteUtc < localFile.LastWriteUtc || 
+                             existingFile.Size != localFile.Size ||
+                             (localFile.Hash is not null && existingFile.Hash != localFile.Hash))
+                    {
+                        var updatedFile = existingFile with
+                        {
+                            Hash = localFile.Hash,
+                            Size = localFile.Size,
+                            LastWriteUtc = localFile.LastWriteUtc,
+                            SyncState = SyncState.PendingUpload
+                        };
+                        await repo.AddOrUpdateLocalFileAsync(updatedFile, ct);
+                        modifiedFilesCount++;
+                        logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
+                    }
+                }
+
+                var pendingUploads = await repo.GetPendingUploadCountAsync(ct);
+
+                stopwatch.Stop();
+                logger.LogInformation("Local file scan complete: {Total} files scanned, {New} new, {Modified} modified, {Pending} pending uploads in {ElapsedMs}ms",
+                    processedCount, newFilesCount, modifiedFilesCount, pendingUploads, stopwatch.ElapsedMilliseconds);
+
+                _progressSubject.OnNext(new SyncProgress
+                {
+                    CurrentOperation = "Local file scan completed",
+                    ProcessedFiles = processedCount,
+                    TotalFiles = processedCount,
+                    PendingUploads = pendingUploads,
+                    ElapsedTime = stopwatch.Elapsed
+                });
+            }
+        }

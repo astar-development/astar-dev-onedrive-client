@@ -24,6 +24,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
     public ReactiveCommand<Unit, Unit> InitialSyncCommand { get; }
     public ReactiveCommand<Unit, Unit> IncrementalSyncCommand { get; }
     public ReactiveCommand<Unit, Unit> CancelSyncCommand { get; }
+    public ReactiveCommand<Unit, Unit> ScanLocalFilesCommand { get; }
 
     public ObservableCollection<string> RecentTransfers { get; } = [];
     public int PendingDownloads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
@@ -159,14 +160,49 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                     }
                 }, isSyncing.Select(syncing => !syncing));
 
-        CancelSyncCommand = ReactiveCommand.Create(() =>
-        {
-            _currentSyncCancellation?.Cancel();
-            SyncStatus = "Cancelling...";
-            AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
-        }, isSyncing);
+                CancelSyncCommand = ReactiveCommand.Create(() =>
+                {
+                    _currentSyncCancellation?.Cancel();
+                    SyncStatus = "Cancelling...";
+                    AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
+                }, isSyncing);
 
-            // Subscribe to SyncEngine progress
+                ScanLocalFilesCommand = ReactiveCommand.CreateFromTask(async ct =>
+                {
+                    _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    try
+                    {
+                        SyncStatus = "Scanning local files";
+                        await _sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
+                        SyncStatus = "Local file scan complete";
+                        _ = RefreshStatsAsync();
+                        AddRecentTransfer("Local file scan completed successfully");
+                        _logger.LogInformation("Local file scan completed successfully");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        SyncStatus = "Local file scan cancelled";
+                        AddRecentTransfer("Local file scan was cancelled");
+        #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                        _logger.LogInformation("Local file scan was cancelled by user");
+        #pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                    }
+                    catch (Exception ex)
+                    {
+                        SyncStatus = "Local file scan failed";
+                        var errorMsg = $"Scan error: {ex.Message}";
+                        AddRecentTransfer($"ERROR: {errorMsg}");
+                        _logger.LogError(ex, "Local file scan failed");
+                        throw;
+                    }
+                    finally
+                    {
+                        _currentSyncCancellation?.Dispose();
+                        _currentSyncCancellation = null;
+                    }
+                }, isSyncing.Select(syncing => !syncing));
+
+                    // Subscribe to SyncEngine progress
             _ = _sync.Progress
                 .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
                 .ObserveOn(RxApp.MainThreadScheduler)
@@ -205,7 +241,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 .DisposeWith(_disposables);
         }
 
-    private static bool IsSyncingStatus(string status) => (status.Contains("sync", StringComparison.OrdinalIgnoreCase) || status.Contains("Processing", StringComparison.OrdinalIgnoreCase)) &&
+    private static bool IsSyncingStatus(string status) => (status.Contains("sync", StringComparison.OrdinalIgnoreCase) || 
+                                 status.Contains("Processing", StringComparison.OrdinalIgnoreCase) ||
+                                 status.Contains("Scanning", StringComparison.OrdinalIgnoreCase)) &&
                                  !status.Contains("complete", StringComparison.OrdinalIgnoreCase);
 
     private void UpdatePerformanceMetrics(SyncProgress progress)

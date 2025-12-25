@@ -18,10 +18,17 @@ public interface ISyncEngine
     /// <returns>A task representing the asynchronous operation.</returns>
     Task InitialFullSyncAsync(CancellationToken ct);
 
-    /// <summary>
-    ///     Performs an incremental sync using the stored delta token.
-    /// </summary>
-    /// <param name="ct">The cancellation token to cancel the operation.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    Task IncrementalSyncAsync(CancellationToken ct);
-}
+        /// <summary>
+        ///     Performs an incremental sync using the stored delta token.
+        /// </summary>
+        /// <param name="ct">The cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task IncrementalSyncAsync(CancellationToken ct);
+
+        /// <summary>
+        ///     Scans the local file system and marks new or modified files for upload.
+        /// </summary>
+        /// <param name="ct">The cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task ScanLocalFilesAsync(CancellationToken ct);
+    }
