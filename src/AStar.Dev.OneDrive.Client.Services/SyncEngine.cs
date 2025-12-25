@@ -202,35 +202,77 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
                         }
 
                         var existingFile = await repo.GetLocalFileByPathAsync(localFile.RelativePath, ct);
+                        var driveItem = await repo.GetDriveItemByPathAsync(localFile.RelativePath, ct);
 
-                        if (existingFile is null)
+                        // Only mark as PendingUpload if:
+                        // 1. Not present in OneDrive (driveItem == null)
+                        // 2. Present in OneDrive, but local file is newer or different
+                        if (driveItem is null)
                         {
-                            var newFile = new LocalFileRecord(
-                                Guid.NewGuid().ToString(),
-                                localFile.RelativePath,
-                                localFile.Hash,
-                                localFile.Size,
-                                localFile.LastWriteUtc,
-                                SyncState.PendingUpload
-                            );
-                            await repo.AddOrUpdateLocalFileAsync(newFile, ct);
-                            newFilesCount++;
-                            logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
-                        }
-                        else if (existingFile.LastWriteUtc < localFile.LastWriteUtc || 
-                                 existingFile.Size != localFile.Size ||
-                                 (localFile.Hash is not null && existingFile.Hash != localFile.Hash))
-                        {
-                            var updatedFile = existingFile with
+                            // New local file, not in OneDrive
+                            if (existingFile is null)
                             {
-                                Hash = localFile.Hash,
-                                Size = localFile.Size,
-                                LastWriteUtc = localFile.LastWriteUtc,
-                                SyncState = SyncState.PendingUpload
-                            };
-                            await repo.AddOrUpdateLocalFileAsync(updatedFile, ct);
-                            modifiedFilesCount++;
-                            logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
+                                var newFile = new LocalFileRecord(
+                                    Guid.NewGuid().ToString(),
+                                    localFile.RelativePath,
+                                    localFile.Hash,
+                                    localFile.Size,
+                                    localFile.LastWriteUtc,
+                                    SyncState.PendingUpload
+                                );
+                                await repo.AddOrUpdateLocalFileAsync(newFile, ct);
+                                newFilesCount++;
+                                logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
+                            }
+                            else if (existingFile.SyncState != SyncState.PendingUpload)
+                            {
+                                var updatedFile = existingFile with { SyncState = SyncState.PendingUpload };
+                                await repo.AddOrUpdateLocalFileAsync(updatedFile, ct);
+                                newFilesCount++;
+                                logger.LogDebug("Marked existing local file (not in OneDrive) for upload: {Path}", localFile.RelativePath);
+                            }
+                        }
+                        else
+                        {
+                            // File exists in OneDrive, only mark as upload if local file is newer/different
+                            var isModified =
+                                localFile.LastWriteUtc > driveItem.LastModifiedUtc ||
+                                localFile.Size != driveItem.Size ||
+                                (localFile.Hash is not null && driveItem.Size > 0 && existingFile != null && localFile.Hash != existingFile.Hash);
+
+                            if (isModified)
+                            {
+                                if (existingFile is null)
+                                {
+                                    var newFile = new LocalFileRecord(
+                                        driveItem.Id,
+                                        localFile.RelativePath,
+                                        localFile.Hash,
+                                        localFile.Size,
+                                        localFile.LastWriteUtc,
+                                        SyncState.PendingUpload
+                                    );
+                                    await repo.AddOrUpdateLocalFileAsync(newFile, ct);
+                                    modifiedFilesCount++;
+                                    logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
+                                }
+                                else if (existingFile.SyncState != SyncState.PendingUpload ||
+                                         existingFile.LastWriteUtc != localFile.LastWriteUtc ||
+                                         existingFile.Size != localFile.Size ||
+                                         (localFile.Hash is not null && localFile.Hash != existingFile.Hash))
+                                {
+                                    var updatedFile = existingFile with
+                                    {
+                                        Hash = localFile.Hash,
+                                        Size = localFile.Size,
+                                        LastWriteUtc = localFile.LastWriteUtc,
+                                        SyncState = SyncState.PendingUpload
+                                    };
+                                    await repo.AddOrUpdateLocalFileAsync(updatedFile, ct);
+                                    modifiedFilesCount++;
+                                    logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
+                                }
+                            }
                         }
                     }
 

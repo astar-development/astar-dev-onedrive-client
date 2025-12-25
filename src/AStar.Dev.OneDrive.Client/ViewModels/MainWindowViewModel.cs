@@ -167,42 +167,42 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                     AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
                 }, isSyncing);
 
-                ScanLocalFilesCommand = ReactiveCommand.CreateFromTask(async ct =>
+            ScanLocalFilesCommand = ReactiveCommand.CreateFromTask(async ct =>
+            {
+                _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                try
                 {
-                    _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                    try
-                    {
-                        SyncStatus = "Scanning local files";
-                        await _sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
-                        SyncStatus = "Local file scan complete";
-                        _ = RefreshStatsAsync();
-                        AddRecentTransfer("Local file scan completed successfully");
-                        _logger.LogInformation("Local file scan completed successfully");
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        SyncStatus = "Local file scan cancelled";
-                        AddRecentTransfer("Local file scan was cancelled");
-        #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-                        _logger.LogInformation("Local file scan was cancelled by user");
-        #pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-                    }
-                    catch (Exception ex)
-                    {
-                        SyncStatus = "Local file scan failed";
-                        var errorMsg = $"Scan error: {ex.Message}";
-                        AddRecentTransfer($"ERROR: {errorMsg}");
-                        _logger.LogError(ex, "Local file scan failed");
-                        throw;
-                    }
-                    finally
-                    {
-                        _currentSyncCancellation?.Dispose();
-                        _currentSyncCancellation = null;
-                    }
-                }, isSyncing.Select(syncing => !syncing));
+                    ProgressPercent = 0;
+                    await _sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
+                    ProgressPercent = 100;
+                    _ = RefreshStatsAsync();
+                    AddRecentTransfer("Local file scan completed successfully");
+                    _logger.LogInformation("Local file scan completed successfully");
+                }
+                catch (OperationCanceledException)
+                {
+                    ProgressPercent = 0;
+                    AddRecentTransfer("Local file scan was cancelled");
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                    _logger.LogInformation("Local file scan was cancelled by user");
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                }
+                catch (Exception ex)
+                {
+                    ProgressPercent = 0;
+                    var errorMsg = $"Scan error: {ex.Message}";
+                    AddRecentTransfer($"ERROR: {errorMsg}");
+                    _logger.LogError(ex, "Local file scan failed");
+                    throw;
+                }
+                finally
+                {
+                    _currentSyncCancellation?.Dispose();
+                    _currentSyncCancellation = null;
+                }
+            }, isSyncing.Select(syncing => !syncing));
 
-                    // Subscribe to SyncEngine progress
+            // Subscribe to SyncEngine progress
             _ = _sync.Progress
                 .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
                 .ObserveOn(RxApp.MainThreadScheduler)

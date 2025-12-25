@@ -21,4 +21,8 @@ public interface ISyncRepository
     Task<int> GetPendingUploadCountAsync(CancellationToken ct);
     Task<LocalFileRecord?> GetLocalFileByPathAsync(string relativePath, CancellationToken ct);
     Task LogTransferAsync(TransferLog log, CancellationToken ct);
-    }
+    /// <summary>
+    /// Gets a DriveItemRecord by its relative path, or null if not found.
+    /// </summary>
+    Task<DriveItemRecord?> GetDriveItemByPathAsync(string relativePath, CancellationToken ct);
+}
