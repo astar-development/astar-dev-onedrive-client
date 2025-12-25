@@ -2,6 +2,7 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.Data.Repositories;
@@ -15,12 +16,12 @@ public sealed class EfSyncRepositoryShould : IDisposable
     {
         DbContextOptionsBuilder<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite("DataSource=:memory:");
-        
+
         _context = new AppDbContext(options.Options);
         _context.Database.OpenConnection();
         _ = _context.Database.EnsureCreated();
-        
-        _repository = new EfSyncRepository(_context);
+
+        _repository = new EfSyncRepository(_context, NullLogger<EfSyncRepository>.Instance);
     }
 
     public void Dispose()

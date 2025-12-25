@@ -34,9 +34,22 @@ public sealed class TransferService : ITransferService
         _settings = settings;
         _downloadSemaphore = new SemaphoreSlim(settings.UiSettings.SyncSettings.MaxParallelDownloads);
 
-        _retryPolicy = Policy.Handle<Exception>()
-                             .WaitAndRetryAsync(settings.UiSettings.SyncSettings.MaxRetries, i => TimeSpan.FromMilliseconds(settings.UiSettings.SyncSettings.RetryBaseDelayMs * Math.Pow(2, i)),
-                                 (ex, ts, retryCount, ctx) => _logger.LogWarning(ex, "Retry {Retry} after {Delay}ms", retryCount, ts.TotalMilliseconds));
+        _retryPolicy = Policy.Handle<HttpRequestException>()
+                             .Or<IOException>()
+                             .WaitAndRetryAsync(
+                                 settings.UiSettings.SyncSettings.MaxRetries, 
+                                 retryAttempt => TimeSpan.FromMilliseconds(settings.UiSettings.SyncSettings.RetryBaseDelayMs * Math.Pow(2, retryAttempt)),
+                                 (ex, ts, retryCount, ctx) =>
+                                 {
+                                     var exceptionType = ex.GetType().Name;
+                                     var isNetworkError = ex is IOException || (ex is HttpRequestException && ex.InnerException is IOException);
+                                     var errorCategory = isNetworkError ? "Network I/O" : exceptionType;
+
+                                     _logger.LogWarning(ex, 
+                                         "[{ErrorCategory}] Retry {Retry}/{MaxRetries} after {Delay}ms. Error: {Message}", 
+                                         errorCategory, retryCount, settings.UiSettings.SyncSettings.MaxRetries, 
+                                         ts.TotalMilliseconds, ex.Message);
+                                 });
     }
 
     /// <summary>
@@ -52,21 +65,57 @@ public sealed class TransferService : ITransferService
         var batchSize = _settings.UiSettings.SyncSettings.DownloadBatchSize>0? _settings.UiSettings.SyncSettings.DownloadBatchSize : 100;
         var total = await _repo.GetPendingDownloadCountAsync(ct);
 
+        _logger.LogInformation("Found {TotalPending} pending downloads (batch size: {BatchSize})", total, batchSize);
+
+        if (total == 0)
+        {
+            _logger.LogInformation("No pending downloads found - sync complete");
+            return;
+        }
+
+        // Calculate total bytes for ALL pending downloads (not just current batch)
+        long totalBytesForAllDownloads = 0;
+
         while(!ct.IsCancellationRequested)
         {
+            _logger.LogDebug("Fetching batch {PageNumber} (offset: {Offset})", pageCount + 1, pageCount * batchSize);
             var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount++, ct)).ToList();
-            if(items.Count == 0)
-                break;
 
-            var totalBytes = items.Sum(i => i.Size);
-            var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () =>
+            if(items.Count == 0)
             {
-                totalProcessed++;
-                _totalBytesTransferred += item.Size;
-                ReportProgress(totalProcessed, "Downloading files", total, 0, totalBytes);
-            })).ToList();
-            await Task.WhenAll(tasks);
-        }
+                _logger.LogInformation("No more items in batch - all downloads complete");
+                break;
+            }
+
+            _logger.LogInformation("Processing batch {BatchNumber} with {ItemCount} files", pageCount, items.Count);
+
+                // First batch: calculate total bytes for progress tracking
+                if (totalBytesForAllDownloads == 0 && pageCount == 1)
+                {
+                    // For performance, we'll estimate based on average file size in first batch
+                    var avgSize = items.Any() ? (long)items.Average(i => i.Size) : 0;
+                    totalBytesForAllDownloads = avgSize * total;
+                    _logger.LogInformation("Estimated total download size: {TotalMB:F2} MB (avg file size: {AvgKB:F2} KB)", 
+                        totalBytesForAllDownloads / (1024.0 * 1024.0), avgSize / 1024.0);
+                }
+
+                _logger.LogDebug("Starting parallel download of {Count} files", items.Count);
+                var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () =>
+                {
+                    var processed = Interlocked.Increment(ref totalProcessed);
+                    Interlocked.Add(ref _totalBytesTransferred, item.Size);
+                    ReportProgress(processed, "Downloading files", total, 0, totalBytesForAllDownloads);
+                })).ToList();
+                await Task.WhenAll(tasks);
+
+                _logger.LogInformation("Batch {BatchNumber} complete: {Processed}/{Total} files downloaded so far", 
+                    pageCount, totalProcessed, total);
+            }
+
+            if (ct.IsCancellationRequested)
+            {
+                _logger.LogWarning("Download process cancelled after {Processed}/{Total} files", totalProcessed, total);
+            }
 
         _operationStopwatch.Stop();
         _logger.LogInformation("Completed downloads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
@@ -74,32 +123,63 @@ public sealed class TransferService : ITransferService
             (_totalBytesTransferred / (1024.0 * 1024.0)) / _operationStopwatch.Elapsed.TotalSeconds);
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null) => await _retryPolicy.ExecuteAsync(async ct2 =>
-                                                                                                                                 {
-                                                                                                                                     await DownloadItemAsync(item, ct2);
-                                                                                                                                     onComplete?.Invoke();
-                                                                                                                                 }, ct);
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null)
+    {
+        try
+        {
+            await _retryPolicy.ExecuteAsync(async ct2 =>
+            {
+                await DownloadItemAsync(item, ct2);
+                onComplete?.Invoke();
+            }, ct);
+        }
+            catch (Exception ex)
+            {
+                var exceptionType = ex.GetType().Name;
+                var isNetworkError = ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
+                var errorDetail = isNetworkError 
+                    ? "Network connection error - connection was forcibly closed or timed out" 
+                    : $"{exceptionType}: {ex.Message}";
+
+                _logger.LogError(ex, "Failed to download {Path} after {MaxRetries} retries. {ErrorDetail}", 
+                    item.RelativePath, _settings.UiSettings.SyncSettings.MaxRetries, errorDetail);
+                throw;
+            }
+        }
 
     private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
     {
+        _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
         await _downloadSemaphore.WaitAsync(ct);
         var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
         await _repo.LogTransferAsync(log, ct);
         try
         {
+            _logger.LogDebug("Downloading content for: {Path}", item.RelativePath);
             await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
+
+            _logger.LogDebug("Writing file to disk: {Path}", item.RelativePath);
             await _fs.WriteFileAsync(item.RelativePath, stream, ct);
+
+            _logger.LogDebug("Marking file as downloaded: {Path}", item.RelativePath);
             await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
+
             FileInfo fileInfo = _fs.GetFileInfo(item.RelativePath);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length };
             await _repo.LogTransferAsync(log, ct);
-            _logger.LogInformation("Downloaded {Path}", item.RelativePath);
+            _logger.LogInformation("Downloaded {Path} ({SizeKB:F2} KB)", item.RelativePath, fileInfo.Length / 1024.0);
         }
         catch(Exception ex)
         {
-            _logger.LogError(ex, "Download failed for {Id}", item.Id);
+            var exceptionType = ex.GetType().Name;
+            var isNetworkError = ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
+
+            _logger.LogError(ex, "Download failed for {Path} (DriveItemId: {DriveItemId}). Type: {ExceptionType}, Network Error: {IsNetwork}", 
+                item.RelativePath, item.DriveItemId, exceptionType, isNetworkError);
+
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
+            throw;
         }
         finally
         {
@@ -125,9 +205,9 @@ public sealed class TransferService : ITransferService
             await _retryPolicy.ExecuteAsync(async ct2 =>
             {
                 await UploadLocalFileAsync(local, ct2);
-                totalProcessed++;
-                _totalBytesTransferred += local.Size;
-                ReportProgress(totalProcessed, "Uploading files", uploads.Count, pendingUploads, totalBytes);
+                var processed = Interlocked.Increment(ref totalProcessed);
+                Interlocked.Add(ref _totalBytesTransferred, local.Size);
+                ReportProgress(processed, "Uploading files", uploads.Count, pendingUploads, totalBytes);
             }, ct);
         }
 

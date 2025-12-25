@@ -22,7 +22,15 @@ public static class InfrastructureServiceCollectionExtensions
 
         _ = services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalClientId));
         _ = services.AddHttpClient<IGraphClient, GraphClientWrapper>()
-                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = true })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler 
+                { 
+                    AllowAutoRedirect = true,
+                    MaxConnectionsPerServer = 10
+                })
+                .ConfigureHttpClient(client =>
+                {
+                    client.Timeout = TimeSpan.FromMinutes(5); // Overall request timeout
+                })
                 .AddPolicyHandler(GetRetryPolicy())
                 .AddPolicyHandler(GetCircuitBreakerPolicy());
 
@@ -46,17 +54,21 @@ public static class InfrastructureServiceCollectionExtensions
 
                 /// <summary>
                 /// Creates a retry policy with exponential backoff for transient HTTP failures.
-                /// Retries on network failures, 5xx server errors, and 429 rate limiting.
+                /// Retries on network failures, 5xx server errors, 429 rate limiting, and IOException.
                 /// </summary>
                 private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy() =>
-                    HttpPolicyExtensions
-                        .HandleTransientHttpError()
-                        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    Policy<HttpResponseMessage>
+                        .Handle<HttpRequestException>()
+                        .Or<IOException>(ex => ex.Message.Contains("forcibly closed") || ex.Message.Contains("transport connection"))
+                        .OrResult(msg => (int)msg.StatusCode >= 500 || msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests || msg.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
                         .WaitAndRetryAsync(
                             retryCount: 3,
                             sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                             onRetry: (outcome, timespan, retryCount, context) =>
-                                Console.WriteLine($"Retry {retryCount} after {timespan.TotalSeconds}s due to {outcome.Result?.StatusCode}"));
+                            {
+                                var error = outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString() ?? "Unknown";
+                                Console.WriteLine($"[Graph API] Retry {retryCount}/3 after {timespan.TotalSeconds:F1}s. Reason: {error}");
+                            });
 
                 /// <summary>
                 /// Creates a circuit breaker policy to prevent cascading failures.

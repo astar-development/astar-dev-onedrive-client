@@ -3,6 +3,7 @@ using System.Text.Json;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 
@@ -10,11 +11,13 @@ public sealed class GraphClientWrapper : IGraphClient
 {
     private readonly IAuthService _auth;
     private readonly HttpClient _http;
+    private readonly ILogger<GraphClientWrapper> _logger;
 
-    public GraphClientWrapper(IAuthService auth, HttpClient http)
+    public GraphClientWrapper(IAuthService auth, HttpClient http, ILogger<GraphClientWrapper> logger)
     {
         _auth = auth;
         _http = http;
+        _logger = logger;
     }
 
     public async Task<DeltaPage> GetDriveDeltaPageAsync(string? deltaOrNextLink, CancellationToken ct)
@@ -58,15 +61,41 @@ public sealed class GraphClientWrapper : IGraphClient
         }
 
         public async Task<Stream> DownloadDriveItemContentAsync(string driveItemId, CancellationToken ct)
-    {
-        var token = await _auth.GetAccessTokenAsync(ct);
-        var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}/content";
-        using var req = new HttpRequestMessage(HttpMethod.Get, url);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        HttpResponseMessage res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        _ = res.EnsureSuccessStatusCode();
-        return await res.Content.ReadAsStreamAsync(ct);
-    }
+        {
+            try
+            {
+                _logger.LogDebug("Requesting download for DriveItemId: {DriveItemId}", driveItemId);
+                var token = await _auth.GetAccessTokenAsync(ct);
+                var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}/content";
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                HttpResponseMessage res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+                _ = res.EnsureSuccessStatusCode();
+
+                var stream = await res.Content.ReadAsStreamAsync(ct);
+                _logger.LogDebug("Download stream acquired for DriveItemId: {DriveItemId}", driveItemId);
+                return stream;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP request failed for DriveItemId: {DriveItemId}. Status: {StatusCode}, Message: {Message}", 
+                    driveItemId, ex.StatusCode, ex.Message);
+                throw;
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Network I/O error downloading DriveItemId: {DriveItemId}. This may indicate a connection reset or timeout. Message: {Message}", 
+                    driveItemId, ex.Message);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error downloading DriveItemId: {DriveItemId}. Type: {ExceptionType}, Message: {Message}", 
+                    driveItemId, ex.GetType().Name, ex.Message);
+                throw;
+            }
+        }
 
     public async Task<UploadSessionInfo> CreateUploadSessionAsync(string parentPath, string fileName, CancellationToken ct)
     {

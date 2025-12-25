@@ -2,13 +2,20 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 
 public sealed class EfSyncRepository : ISyncRepository
 {
     private readonly AppDbContext _db;
-    public EfSyncRepository(AppDbContext db) => _db = db;
+    private readonly ILogger<EfSyncRepository> _logger;
+
+    public EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
 
     public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken ct)
         => await _db.DeltaTokens.OrderByDescending(t => t.LastSyncedUtc).FirstOrDefaultAsync(ct);
@@ -41,15 +48,40 @@ public sealed class EfSyncRepository : ISyncRepository
     }
 
     public async Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int pageSize, int offset, CancellationToken ct)
-        => await _db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted)
+    {
+        var totalDriveItems = await _db.DriveItems.CountAsync(ct);
+        var totalFiles = await _db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted).CountAsync(ct);
+        var downloadedFiles = await _db.LocalFiles.Where(l => l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded).CountAsync(ct);
+
+        _logger.LogDebug("Repository stats: {TotalItems} total items, {TotalFiles} files, {Downloaded} already downloaded", 
+            totalDriveItems, totalFiles, downloadedFiles);
+
+        var query = _db.DriveItems
+                            .Where(d => !d.IsFolder && !d.IsDeleted)
+                            .Where(d => !_db.LocalFiles.Any(l => l.Id == d.Id && (l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded)))
                             .OrderBy(d => d.LastModifiedUtc)
                             .Skip(offset*pageSize)
-                            .Take(pageSize)
-                            .ToListAsync(ct);
+                            .Take(pageSize);
+
+        var results = await query.ToListAsync(ct);
+
+        _logger.LogDebug("GetPendingDownloadsAsync(pageSize={PageSize}, offset={Offset}): returning {Count} items", 
+            pageSize, offset, results.Count);
+
+        return results;
+    }
 
     public async Task<int> GetPendingDownloadCountAsync(CancellationToken ct)
-        => await _db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted)
+    {
+        var count = await _db.DriveItems
+                            .Where(d => !d.IsFolder && !d.IsDeleted)
+                            .Where(d => !_db.LocalFiles.Any(l => l.Id == d.Id && (l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded)))
                             .CountAsync(ct);
+
+        _logger.LogDebug("GetPendingDownloadCountAsync: {Count} pending downloads", count);
+
+        return count;
+    }
 
     public async Task MarkLocalFileStateAsync(string driveItemId, SyncState state, CancellationToken ct)
     {

@@ -101,6 +101,15 @@
           <TextBlock Text="{Binding PendingDownloads}" Margin="0,0,0,10"/>
           <TextBlock Text="Pending Uploads:"/>
           <TextBlock Text="{Binding PendingUploads}" Margin="0,0,0,10"/>
+
+          <!-- Performance Metrics -->
+          <TextBlock Text="Transfer Speed:" IsVisible="{Binding TransferSpeed, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="{Binding TransferSpeed}" Margin="0,0,0,10" IsVisible="{Binding TransferSpeed, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="Time Remaining:" IsVisible="{Binding EstimatedTimeRemaining, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="{Binding EstimatedTimeRemaining}" Margin="0,0,0,10" IsVisible="{Binding EstimatedTimeRemaining, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="Elapsed Time:" IsVisible="{Binding ElapsedTime, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="{Binding ElapsedTime}" Margin="0,0,0,10" IsVisible="{Binding ElapsedTime, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
           <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" ShowProgressText="True" Foreground="Green" Background="LightGray" Height="20" Margin="0,8,0,8"/>
         </StackPanel>
         </Border>
