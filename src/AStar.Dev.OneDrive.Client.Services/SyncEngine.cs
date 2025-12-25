@@ -153,90 +153,100 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
                 });
             }
 
-            /// <summary>
-            /// Scans the local file system and marks new or modified files for upload.
-            /// </summary>
-            public async Task ScanLocalFilesAsync(CancellationToken ct)
-            {
-                var stopwatch = Stopwatch.StartNew();
-                logger.LogInformation("Starting local file scan");
-                _progressSubject.OnNext(new SyncProgress
+                /// <summary>
+                /// Scans the local file system and marks new or modified files for upload.
+                /// </summary>
+                public async Task ScanLocalFilesAsync(CancellationToken ct)
                 {
-                    CurrentOperation = "Scanning local files...",
-                    ProcessedFiles = 0,
-                    TotalFiles = 0,
-                    ElapsedTime = stopwatch.Elapsed
-                });
-
-                var localFiles = await fs.EnumerateFilesAsync(ct);
-                var localFilesList = localFiles.ToList();
-                var processedCount = 0;
-                var newFilesCount = 0;
-                var modifiedFilesCount = 0;
-
-                logger.LogInformation("Found {FileCount} local files to process", localFilesList.Count);
-
-                foreach (var localFile in localFilesList)
-                {
-                    processedCount++;
-
-                    if (processedCount % 100 == 0)
+                    var stopwatch = Stopwatch.StartNew();
+                    logger.LogInformation("Starting local file scan");
+                    _progressSubject.OnNext(new SyncProgress
                     {
-                        _progressSubject.OnNext(new SyncProgress
+                        CurrentOperation = "Scanning local files...",
+                        ProcessedFiles = 0,
+                        TotalFiles = 0,
+                        ElapsedTime = stopwatch.Elapsed
+                    });
+
+                    var localFiles = await fs.EnumerateFilesAsync(ct);
+                    var localFilesList = localFiles.ToList();
+                    var processedCount = 0;
+                    var newFilesCount = 0;
+                    var modifiedFilesCount = 0;
+
+                    logger.LogInformation("Found {FileCount} local files to process", localFilesList.Count);
+
+                    _progressSubject.OnNext(new SyncProgress
+                    {
+                        CurrentOperation = $"Scanning local files...",
+                        ProcessedFiles = 0,
+                        TotalFiles = localFilesList.Count,
+                        ElapsedTime = stopwatch.Elapsed
+                    });
+
+                    foreach (var localFile in localFilesList)
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+                        processedCount++;
+
+                        if (processedCount % 50 == 0 || processedCount == localFilesList.Count)
                         {
-                            CurrentOperation = $"Scanning local files ({processedCount}/{localFilesList.Count})...",
-                            ProcessedFiles = processedCount,
-                            TotalFiles = localFilesList.Count,
-                            ElapsedTime = stopwatch.Elapsed
-                        });
-                    }
+                            _progressSubject.OnNext(new SyncProgress
+                            {
+                                CurrentOperation = $"Scanning local files ({processedCount}/{localFilesList.Count})...",
+                                ProcessedFiles = processedCount,
+                                TotalFiles = localFilesList.Count,
+                                ElapsedTime = stopwatch.Elapsed
+                            });
+                        }
 
-                    var existingFile = await repo.GetLocalFileByPathAsync(localFile.RelativePath, ct);
+                        var existingFile = await repo.GetLocalFileByPathAsync(localFile.RelativePath, ct);
 
-                    if (existingFile is null)
-                    {
-                        var newFile = new LocalFileRecord(
-                            Guid.NewGuid().ToString(),
-                            localFile.RelativePath,
-                            localFile.Hash,
-                            localFile.Size,
-                            localFile.LastWriteUtc,
-                            SyncState.PendingUpload
-                        );
-                        await repo.AddOrUpdateLocalFileAsync(newFile, ct);
-                        newFilesCount++;
-                        logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
-                    }
-                    else if (existingFile.LastWriteUtc < localFile.LastWriteUtc || 
-                             existingFile.Size != localFile.Size ||
-                             (localFile.Hash is not null && existingFile.Hash != localFile.Hash))
-                    {
-                        var updatedFile = existingFile with
+                        if (existingFile is null)
                         {
-                            Hash = localFile.Hash,
-                            Size = localFile.Size,
-                            LastWriteUtc = localFile.LastWriteUtc,
-                            SyncState = SyncState.PendingUpload
-                        };
-                        await repo.AddOrUpdateLocalFileAsync(updatedFile, ct);
-                        modifiedFilesCount++;
-                        logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
+                            var newFile = new LocalFileRecord(
+                                Guid.NewGuid().ToString(),
+                                localFile.RelativePath,
+                                localFile.Hash,
+                                localFile.Size,
+                                localFile.LastWriteUtc,
+                                SyncState.PendingUpload
+                            );
+                            await repo.AddOrUpdateLocalFileAsync(newFile, ct);
+                            newFilesCount++;
+                            logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
+                        }
+                        else if (existingFile.LastWriteUtc < localFile.LastWriteUtc || 
+                                 existingFile.Size != localFile.Size ||
+                                 (localFile.Hash is not null && existingFile.Hash != localFile.Hash))
+                        {
+                            var updatedFile = existingFile with
+                            {
+                                Hash = localFile.Hash,
+                                Size = localFile.Size,
+                                LastWriteUtc = localFile.LastWriteUtc,
+                                SyncState = SyncState.PendingUpload
+                            };
+                            await repo.AddOrUpdateLocalFileAsync(updatedFile, ct);
+                            modifiedFilesCount++;
+                            logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
+                        }
                     }
+
+                    var pendingUploads = await repo.GetPendingUploadCountAsync(ct);
+
+                    stopwatch.Stop();
+                    logger.LogInformation("Local file scan complete: {Total} files scanned, {New} new, {Modified} modified, {Pending} pending uploads in {ElapsedMs}ms",
+                        processedCount, newFilesCount, modifiedFilesCount, pendingUploads, stopwatch.ElapsedMilliseconds);
+
+                    _progressSubject.OnNext(new SyncProgress
+                    {
+                        CurrentOperation = "Local file scan completed",
+                        ProcessedFiles = processedCount,
+                        TotalFiles = processedCount,
+                        PendingUploads = pendingUploads,
+                        ElapsedTime = stopwatch.Elapsed
+                    });
                 }
-
-                var pendingUploads = await repo.GetPendingUploadCountAsync(ct);
-
-                stopwatch.Stop();
-                logger.LogInformation("Local file scan complete: {Total} files scanned, {New} new, {Modified} modified, {Pending} pending uploads in {ElapsedMs}ms",
-                    processedCount, newFilesCount, modifiedFilesCount, pendingUploads, stopwatch.ElapsedMilliseconds);
-
-                _progressSubject.OnNext(new SyncProgress
-                {
-                    CurrentOperation = "Local file scan completed",
-                    ProcessedFiles = processedCount,
-                    TotalFiles = processedCount,
-                    PendingUploads = pendingUploads,
-                    ElapsedTime = stopwatch.Elapsed
-                });
             }
-        }
