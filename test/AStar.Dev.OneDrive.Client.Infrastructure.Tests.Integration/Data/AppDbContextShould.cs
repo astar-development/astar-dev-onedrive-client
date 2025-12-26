@@ -38,8 +38,8 @@ public sealed class AppDbContextShould : IDisposable
     public void HaveDriveItemsTable()
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(DriveItemRecord));
-        
-        entityType.ShouldNotBeNull();
+
+        _ = entityType.ShouldNotBeNull();
         entityType.GetTableName().ShouldBe("DriveItems");
     }
 
@@ -47,8 +47,8 @@ public sealed class AppDbContextShould : IDisposable
     public void HaveLocalFilesTable()
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(LocalFileRecord));
-        
-        entityType.ShouldNotBeNull();
+
+        _ = entityType.ShouldNotBeNull();
         entityType.GetTableName().ShouldBe("LocalFiles");
     }
 
@@ -56,8 +56,8 @@ public sealed class AppDbContextShould : IDisposable
     public void HaveDeltaTokensTable()
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(DeltaToken));
-        
-        entityType.ShouldNotBeNull();
+
+        _ = entityType.ShouldNotBeNull();
         entityType.GetTableName().ShouldBe("DeltaTokens");
     }
 
@@ -65,8 +65,8 @@ public sealed class AppDbContextShould : IDisposable
     public void HaveTransferLogsTable()
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(TransferLog));
-        
-        entityType.ShouldNotBeNull();
+
+        _ = entityType.ShouldNotBeNull();
         entityType.GetTableName().ShouldBe("TransferLogs");
     }
 
@@ -75,8 +75,8 @@ public sealed class AppDbContextShould : IDisposable
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(DriveItemRecord));
         IKey? primaryKey = entityType?.FindPrimaryKey();
-        
-        primaryKey.ShouldNotBeNull();
+
+        _ = primaryKey.ShouldNotBeNull();
         primaryKey.Properties.Count.ShouldBe(1);
         primaryKey.Properties[0].Name.ShouldBe("Id");
     }
@@ -86,8 +86,8 @@ public sealed class AppDbContextShould : IDisposable
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(LocalFileRecord));
         IKey? primaryKey = entityType?.FindPrimaryKey();
-        
-        primaryKey.ShouldNotBeNull();
+
+        _ = primaryKey.ShouldNotBeNull();
         primaryKey.Properties.Count.ShouldBe(1);
         primaryKey.Properties[0].Name.ShouldBe("Id");
     }
@@ -97,8 +97,8 @@ public sealed class AppDbContextShould : IDisposable
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(DeltaToken));
         IKey? primaryKey = entityType?.FindPrimaryKey();
-        
-        primaryKey.ShouldNotBeNull();
+
+        _ = primaryKey.ShouldNotBeNull();
         primaryKey.Properties.Count.ShouldBe(1);
         primaryKey.Properties[0].Name.ShouldBe("Id");
     }
@@ -108,8 +108,8 @@ public sealed class AppDbContextShould : IDisposable
     {
         IEntityType? entityType = _context.Model.FindEntityType(typeof(TransferLog));
         IKey? primaryKey = entityType?.FindPrimaryKey();
-        
-        primaryKey.ShouldNotBeNull();
+
+        _ = primaryKey.ShouldNotBeNull();
         primaryKey.Properties.Count.ShouldBe(1);
         primaryKey.Properties[0].Name.ShouldBe("Id");
     }
@@ -140,7 +140,7 @@ public sealed class AppDbContextShould : IDisposable
         // TransferLog uses string Id but we can test Guid behavior through other means
         // Let's verify the type converter is registered
         IEntityType? entityType = _context.Model.FindEntityType(typeof(TransferLog));
-        entityType.ShouldNotBeNull();
+        _ = entityType.ShouldNotBeNull();
         
         // The fact that we can save and retrieve entities with string IDs that could be GUIDs is sufficient
         TransferLog log = new(Guid.NewGuid().ToString(), TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);

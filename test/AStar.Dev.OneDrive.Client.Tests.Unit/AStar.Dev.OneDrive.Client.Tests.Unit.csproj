@@ -21,6 +21,7 @@
     <ItemGroup>
         <Using Include="Xunit" />
         <Using Include="Shouldly" />
+		<Using Include="NSubstitute" />
     </ItemGroup>
 
     <ItemGroup>

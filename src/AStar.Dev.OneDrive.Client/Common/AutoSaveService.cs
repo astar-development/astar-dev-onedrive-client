@@ -16,7 +16,7 @@ public class AutoSaveService : IAutoSaveService
     {
         _handler = (_, e) =>
         {
-            if(e.PropertyName == nameof(MainWindowViewModel.SyncStatus))
+            if(e.PropertyName == nameof(MainWindowViewModel.SyncStatusMessage))
                 saveAction();
         };
 

@@ -23,7 +23,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
         logger.LogInformation("Starting initial full sync");
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Starting initial full sync...",
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = "Starting initial full sync...",
             ProcessedFiles = 0,
             TotalFiles = 0,
             ElapsedTime = stopwatch.Elapsed
@@ -45,7 +46,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
 
             _progressSubject.OnNext(new SyncProgress
             {
-                CurrentOperation = $"Processing delta pages (page {pageCount}, {totalItemsProcessed} items)",
+                OperationType = SyncOperationType.Syncing,
+                CurrentOperationMessage = $"Processing delta pages (page {pageCount}, {totalItemsProcessed} items)",
                 ProcessedFiles = pageCount,
                 TotalFiles = 0,
                 ElapsedTime = stopwatch.Elapsed
@@ -69,7 +71,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
 
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Processing transfers...",
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = "Processing transfers...",
             ProcessedFiles = pageCount,
             TotalFiles = pageCount,
             PendingDownloads = pendingDownloads,
@@ -86,7 +89,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
             totalItemsProcessed, pendingDownloads, pendingUploads, stopwatch.ElapsedMilliseconds);
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Initial sync completed",
+            OperationType = SyncOperationType.Completed,
+            CurrentOperationMessage = "Initial sync completed",
             ProcessedFiles = pageCount,
             TotalFiles = pageCount,
             PendingDownloads = 0,
@@ -104,7 +108,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
         logger.LogInformation("Starting incremental sync");
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Starting incremental sync...",
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = "Starting incremental sync...",
             ProcessedFiles = 0,
             TotalFiles = 0,
             ElapsedTime = stopwatch.Elapsed
@@ -128,7 +133,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
 
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Processing transfers...",
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = "Processing transfers...",
             ProcessedFiles = 1,
             TotalFiles = 1,
             PendingDownloads = pendingDownloads,
@@ -144,7 +150,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
             itemCount, pendingDownloads, pendingUploads, stopwatch.ElapsedMilliseconds);
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Incremental sync completed",
+            OperationType = SyncOperationType.Completed,
+            CurrentOperationMessage = "Incremental sync completed",
             ProcessedFiles = 1,
             TotalFiles = 1,
             PendingDownloads = 0,
@@ -162,7 +169,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
         logger.LogInformation("Starting local file sync");
         _progressSubject.OnNext(new SyncProgress
         {
-            CurrentOperation = "Scanning local files to sync...",
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = "Scanning local files to sync...",
             ProcessedFiles = 0,
             TotalFiles = 0,
             ElapsedTime = stopwatch.Elapsed
@@ -180,7 +188,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
 
             _progressSubject.OnNext(new SyncProgress
             {
-                CurrentOperation = $"Scanning local files...",
+                OperationType = SyncOperationType.Syncing,
+                CurrentOperationMessage = $"Scanning local files...",
                 ProcessedFiles = 0,
                 TotalFiles = localFilesList.Count,
                 ElapsedTime = stopwatch.Elapsed
@@ -196,7 +205,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
                 {
                     _progressSubject.OnNext(new SyncProgress
                     {
-                        CurrentOperation = $"Scanning local files ({processedCount}/{localFilesList.Count})...",
+                        OperationType = SyncOperationType.Syncing,
+                        CurrentOperationMessage = $"Scanning local files ({processedCount}/{localFilesList.Count})...",
                         ProcessedFiles = processedCount,
                         TotalFiles = localFilesList.Count,
                         ElapsedTime = stopwatch.Elapsed
@@ -286,7 +296,8 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
 
             _progressSubject.OnNext(new SyncProgress
             {
-                CurrentOperation = "Local file sync completed",
+                OperationType = SyncOperationType.Completed,
+                CurrentOperationMessage = "Local file sync completed",
                 ProcessedFiles = processedCount,
                 TotalFiles = processedCount,
                 PendingUploads = pendingUploads,

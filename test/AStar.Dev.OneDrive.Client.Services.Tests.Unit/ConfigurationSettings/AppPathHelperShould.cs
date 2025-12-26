@@ -8,7 +8,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_WithAppName_ReturnsNonEmptyPath()
     {
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         result.ShouldNotBeNullOrWhiteSpace();
         result.ShouldContain("TestApp");
@@ -23,7 +23,7 @@ public sealed class AppPathHelperShould
             return;
         }
 
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         result.ShouldContain("AppData");
         result.ShouldContain("Roaming");
@@ -39,7 +39,7 @@ public sealed class AppPathHelperShould
             return;
         }
 
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         result.ShouldContain("Library");
         result.ShouldContain("Application Support");
@@ -55,7 +55,7 @@ public sealed class AppPathHelperShould
             return;
         }
 
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         result.ShouldContain(".config");
         result.ShouldEndWith("TestApp");
@@ -69,7 +69,7 @@ public sealed class AppPathHelperShould
     [InlineData("App_With_Underscores")]
     public void GetAppDataPath_WithVariousAppNames_IncludesAppNameInPath(string appName)
     {
-        string result = AppPathHelper.GetAppDataPath(appName);
+        var result = AppPathHelper.GetAppDataPath(appName);
 
         result.ShouldContain(appName);
     }
@@ -77,7 +77,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_ReturnsAbsolutePath()
     {
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         Path.IsPathRooted(result).ShouldBeTrue();
     }
@@ -85,8 +85,8 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_WithSameAppName_ReturnsConsistentPath()
     {
-        string result1 = AppPathHelper.GetAppDataPath("TestApp");
-        string result2 = AppPathHelper.GetAppDataPath("TestApp");
+        var result1 = AppPathHelper.GetAppDataPath("TestApp");
+        var result2 = AppPathHelper.GetAppDataPath("TestApp");
 
         result1.ShouldBe(result2);
     }
@@ -94,8 +94,8 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_WithDifferentAppNames_ReturnsDifferentPaths()
     {
-        string result1 = AppPathHelper.GetAppDataPath("App1");
-        string result2 = AppPathHelper.GetAppDataPath("App2");
+        var result1 = AppPathHelper.GetAppDataPath("App1");
+        var result2 = AppPathHelper.GetAppDataPath("App2");
 
         result1.ShouldNotBe(result2);
     }
@@ -103,7 +103,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetUserHomeFolder_ReturnsNonEmptyPath()
     {
-        string result = AppPathHelper.GetUserHomeFolder();
+        var result = AppPathHelper.GetUserHomeFolder();
 
         result.ShouldNotBeNullOrWhiteSpace();
     }
@@ -111,7 +111,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetUserHomeFolder_ReturnsAbsolutePath()
     {
-        string result = AppPathHelper.GetUserHomeFolder();
+        var result = AppPathHelper.GetUserHomeFolder();
 
         Path.IsPathRooted(result).ShouldBeTrue();
     }
@@ -119,8 +119,8 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetUserHomeFolder_ReturnsConsistentPath()
     {
-        string result1 = AppPathHelper.GetUserHomeFolder();
-        string result2 = AppPathHelper.GetUserHomeFolder();
+        var result1 = AppPathHelper.GetUserHomeFolder();
+        var result2 = AppPathHelper.GetUserHomeFolder();
 
         result1.ShouldBe(result2);
     }
@@ -128,8 +128,8 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetUserHomeFolder_MatchesEnvironmentUserProfile()
     {
-        string result = AppPathHelper.GetUserHomeFolder();
-        string expected = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var result = AppPathHelper.GetUserHomeFolder();
+        var expected = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
         result.ShouldBe(expected);
     }
@@ -137,8 +137,8 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_StartsWithUserHomeFolder()
     {
-        string homeFolder = AppPathHelper.GetUserHomeFolder();
-        string appDataPath = AppPathHelper.GetAppDataPath("TestApp");
+        var homeFolder = AppPathHelper.GetUserHomeFolder();
+        var appDataPath = AppPathHelper.GetAppDataPath("TestApp");
 
         appDataPath.ShouldStartWith(homeFolder);
     }
@@ -151,7 +151,7 @@ public sealed class AppPathHelperShould
             return;
         }
 
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         // Windows uses backslash
         result.ShouldContain("\\");
@@ -165,7 +165,7 @@ public sealed class AppPathHelperShould
             return;
         }
 
-        string result = AppPathHelper.GetAppDataPath("TestApp");
+        var result = AppPathHelper.GetAppDataPath("TestApp");
 
         // Unix systems use forward slash
         result.ShouldContain("/");
@@ -179,7 +179,7 @@ public sealed class AppPathHelperShould
     {
         // Note: The method doesn't validate input - it will combine empty string
         // This test documents current behavior
-        string result = AppPathHelper.GetAppDataPath(appName);
+        var result = AppPathHelper.GetAppDataPath(appName);
 
         result.ShouldNotBeNullOrWhiteSpace();
         // Path will end with separator if appName is empty/whitespace
@@ -188,8 +188,8 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_PathExists_WhenDirectoryCreated()
     {
-        string testAppName = $"TestApp_{Guid.NewGuid()}";
-        string appDataPath = AppPathHelper.GetAppDataPath(testAppName);
+        var testAppName = $"TestApp_{Guid.NewGuid()}";
+        var appDataPath = AppPathHelper.GetAppDataPath(testAppName);
 
         try
         {

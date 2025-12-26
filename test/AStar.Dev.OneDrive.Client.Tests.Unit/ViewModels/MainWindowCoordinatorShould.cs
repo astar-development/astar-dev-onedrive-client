@@ -104,7 +104,7 @@ public class MainWindowCoordinatorShould
 
         _sut.Initialize(mockWindow, mockViewModel);
 
-        mockViewModel.SyncStatus.ShouldBe("Test Action");
+        mockViewModel.SyncStatusMessage.ShouldBe("Test Action");
     }
 
     [Fact]

@@ -26,7 +26,7 @@ public class AutoSaveServiceShould
         }
 
         sut.MonitorForChanges(viewModel, saveAction);
-        viewModel.SyncStatus = "New Status";
+        viewModel.SyncStatusMessage = "New Status";
 
         saveActionInvoked.ShouldBeTrue();
     }
@@ -62,9 +62,9 @@ public class AutoSaveServiceShould
         }
 
         sut.MonitorForChanges(viewModel, saveAction);
-        viewModel.SyncStatus = "Status 1";
-        viewModel.SyncStatus = "Status 2";
-        viewModel.SyncStatus = "Status 3";
+        viewModel.SyncStatusMessage = "Status 1";
+        viewModel.SyncStatusMessage = "Status 2";
+        viewModel.SyncStatusMessage = "Status 3";
 
         saveActionInvokeCount.ShouldBe(3);
     }
@@ -81,11 +81,11 @@ public class AutoSaveServiceShould
         }
 
         sut.MonitorForChanges(viewModel, saveAction);
-        viewModel.SyncStatus = "Status 1";
+        viewModel.SyncStatusMessage = "Status 1";
 
         sut.StopMonitoring(viewModel);
-        viewModel.SyncStatus = "Status 2";
-        viewModel.SyncStatus = "Status 3";
+        viewModel.SyncStatusMessage = "Status 2";
+        viewModel.SyncStatusMessage = "Status 3";
 
         saveActionInvokeCount.ShouldBe(1);
     }
@@ -116,7 +116,7 @@ public class AutoSaveServiceShould
         sut.StopMonitoring(viewModel);
         sut.StopMonitoring(viewModel);
 
-        viewModel.SyncStatus = "New Status";
+        viewModel.SyncStatusMessage = "New Status";
 
         saveActionInvokeCount.ShouldBe(0);
     }
@@ -133,13 +133,13 @@ public class AutoSaveServiceShould
         }
 
         sut.MonitorForChanges(viewModel, saveAction);
-        viewModel.SyncStatus = "Status 1";
+        viewModel.SyncStatusMessage = "Status 1";
 
         sut.StopMonitoring(viewModel);
-        viewModel.SyncStatus = "Status 2";
+        viewModel.SyncStatusMessage = "Status 2";
 
         sut.MonitorForChanges(viewModel, saveAction);
-        viewModel.SyncStatus = "Status 3";
+        viewModel.SyncStatusMessage = "Status 3";
 
         saveActionInvokeCount.ShouldBe(2);
     }

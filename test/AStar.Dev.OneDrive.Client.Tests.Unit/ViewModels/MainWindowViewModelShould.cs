@@ -1,16 +1,12 @@
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.Extensions.Logging;
-using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using Shouldly;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.ViewModels;
 
@@ -83,7 +79,7 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
         TaskCompletionSource<bool> executeStarted = new();
         TaskCompletionSource<bool> tcs = new();
-        
+
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(async _ =>
             {
@@ -96,7 +92,7 @@ public sealed class MainWindowViewModelShould
         executeStarted.Task.Wait(TimeSpan.FromSeconds(5));
 
         // Assert
-        sut.SyncStatus.ShouldBe("Scanning local files");
+        sut.SyncStatusMessage.ShouldBe("Scanning local files");
 
         // Cleanup
         tcs.SetResult(true);
@@ -118,7 +114,7 @@ public sealed class MainWindowViewModelShould
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
         // Assert
-        sut.SyncStatus.ShouldBe("Local file scan complete");
+        sut.SyncStatusMessage.ShouldBe("Local file scan complete");
     }
 
     [Fact]
@@ -181,7 +177,7 @@ public sealed class MainWindowViewModelShould
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
         // Assert
-        sut.SyncStatus.ShouldBe("Local file scan cancelled");
+        sut.SyncStatusMessage.ShouldBe("Local file scan cancelled");
         sut.RecentTransfers.ShouldContain(t => t.Contains("Local file scan was cancelled"));
     }
 
@@ -201,7 +197,7 @@ public sealed class MainWindowViewModelShould
         Task.Delay(100).Wait();
 
         // Assert
-        sut.SyncStatus.ShouldBe("Local file scan failed");
+        sut.SyncStatusMessage.ShouldBe("Local file scan failed");
         sut.RecentTransfers.ShouldContain(t => t.Contains("ERROR") && t.Contains("Test error"));
         errorThrown.ShouldBeTrue();
     }
@@ -213,11 +209,11 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
 
         // Act
-        sut.SyncStatus = "Scanning local files";
+        sut.SyncStatusMessage = "Scanning local files";
 
         // Assert - The command should be disabled (cannot execute) when scanning
         // We test this indirectly by checking that the status contains "Scanning"
-        sut.SyncStatus.Contains("Scanning", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
+        sut.SyncStatusMessage.Contains("Scanning", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
     }
 
     [Fact]
@@ -227,10 +223,10 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
 
         // Act
-        sut.SyncStatus = "Local file scan complete";
+        sut.SyncStatusMessage = "Local file scan complete";
 
         // Assert - The status contains "complete" so syncing should be considered done
-        sut.SyncStatus.Contains("complete", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
+        sut.SyncStatusMessage.Contains("complete", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
     }
 
     [Fact]
@@ -240,13 +236,14 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
         TaskCompletionSource<bool> executeStarted = new();
         TaskCompletionSource<bool> tcs = new();
-        
+
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(async _ =>
             {
                 _syncProgressSubject.OnNext(new SyncProgress
                 {
-                    CurrentOperation = "Scanning local files (50/100)...",
+                    OperationType = SyncOperationType.Syncing,
+                    CurrentOperationMessage = "Scanning local files (50/100)...",
                     ProcessedFiles = 50,
                     TotalFiles = 100,
                     PendingUploads = 15
@@ -258,8 +255,8 @@ public sealed class MainWindowViewModelShould
         var progressReceived = false;
         sut.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MainWindowViewModel.SyncStatus) &&
-                sut.SyncStatus.Contains("Scanning local files"))
+            if(e.PropertyName == nameof(MainWindowViewModel.SyncStatusMessage) &&
+                sut.SyncStatusMessage.Contains("Scanning local files"))
             {
                 progressReceived = true;
             }

@@ -1,6 +1,3 @@
-using AStar.Dev.OneDrive.Client.Services;
-using Shouldly;
-
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
 public sealed class SyncProgressShould
@@ -10,6 +7,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 5,
             TotalFiles = 0
         };
@@ -22,6 +20,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 0,
             TotalFiles = 0
         };
@@ -42,6 +41,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = processed,
             TotalFiles = total
         };
@@ -61,6 +61,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = processed,
             TotalFiles = total
         };
@@ -74,6 +75,7 @@ public sealed class SyncProgressShould
         // This documents behavior when processed > total (edge case)
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Completed,
             ProcessedFiles = 150,
             TotalFiles = 100
         };
@@ -84,13 +86,14 @@ public sealed class SyncProgressShould
     [Fact]
     public void DefaultConstructor_InitializesWithDefaults()
     {
-        SyncProgress progress = new();
+        SyncProgress progress = new(){ OperationType = SyncOperationType.Syncing };
 
+        progress.OperationType.ShouldBe(SyncOperationType.Syncing);
         progress.ProcessedFiles.ShouldBe(0);
         progress.TotalFiles.ShouldBe(0);
         progress.PendingDownloads.ShouldBe(0);
         progress.PendingUploads.ShouldBe(0);
-        progress.CurrentOperation.ShouldBe(string.Empty);
+        progress.CurrentOperationMessage.ShouldBe(string.Empty);
         progress.PercentComplete.ShouldBe(0.0);
     }
 
@@ -98,7 +101,7 @@ public sealed class SyncProgressShould
     public void Timestamp_DefaultsToApproximatelyNow()
     {
         DateTimeOffset before = DateTimeOffset.Now;
-        SyncProgress progress = new();
+        SyncProgress progress = new(){ OperationType = SyncOperationType.Syncing };
         DateTimeOffset after = DateTimeOffset.Now;
 
         progress.Timestamp.ShouldBeGreaterThanOrEqualTo(before);
@@ -111,11 +114,12 @@ public sealed class SyncProgressShould
         DateTimeOffset timestamp = new(2024, 1, 15, 10, 30, 0, TimeSpan.FromHours(-5));
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 42,
             TotalFiles = 100,
             PendingDownloads = 15,
             PendingUploads = 7,
-            CurrentOperation = "Syncing Documents",
+            CurrentOperationMessage = "Syncing Documents",
             Timestamp = timestamp
         };
 
@@ -123,7 +127,7 @@ public sealed class SyncProgressShould
         progress.TotalFiles.ShouldBe(100);
         progress.PendingDownloads.ShouldBe(15);
         progress.PendingUploads.ShouldBe(7);
-        progress.CurrentOperation.ShouldBe("Syncing Documents");
+        progress.CurrentOperationMessage.ShouldBe("Syncing Documents");
         progress.Timestamp.ShouldBe(timestamp);
         progress.PercentComplete.ShouldBe(42.0);
     }
@@ -134,21 +138,23 @@ public sealed class SyncProgressShould
         DateTimeOffset timestamp = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         SyncProgress progress1 = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 50,
             TotalFiles = 100,
             PendingDownloads = 10,
             PendingUploads = 5,
-            CurrentOperation = "Test",
+            CurrentOperationMessage = "Test",
             Timestamp = timestamp
         };
 
         SyncProgress progress2 = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 50,
             TotalFiles = 100,
             PendingDownloads = 10,
             PendingUploads = 5,
-            CurrentOperation = "Test",
+            CurrentOperationMessage = "Test",
             Timestamp = timestamp
         };
 
@@ -161,12 +167,14 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress1 = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 50,
             TotalFiles = 100
         };
 
         SyncProgress progress2 = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 51,
             TotalFiles = 100
         };
@@ -180,21 +188,22 @@ public sealed class SyncProgressShould
     {
         SyncProgress original = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 10,
             TotalFiles = 100,
-            CurrentOperation = "Initial"
+            CurrentOperationMessage = "Initial"
         };
 
-        SyncProgress modified = original with { ProcessedFiles = 20, CurrentOperation = "Updated" };
+        SyncProgress modified = original with { ProcessedFiles = 20, CurrentOperationMessage = "Updated" };
 
         // Original unchanged
         original.ProcessedFiles.ShouldBe(10);
-        original.CurrentOperation.ShouldBe("Initial");
+        original.CurrentOperationMessage.ShouldBe("Initial");
 
         // Modified has new values
         modified.ProcessedFiles.ShouldBe(20);
         modified.TotalFiles.ShouldBe(100); // Unchanged
-        modified.CurrentOperation.ShouldBe("Updated");
+        modified.CurrentOperationMessage.ShouldBe("Updated");
     }
 
     [Theory]
@@ -208,6 +217,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Idle,
             ProcessedFiles = processed,
             TotalFiles = total
         };
@@ -220,11 +230,12 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
-            CurrentOperation = string.Empty
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = string.Empty
         };
 
-        progress.CurrentOperation.ShouldBe(string.Empty);
-        progress.CurrentOperation.ShouldBeEmpty();
+        progress.CurrentOperationMessage.ShouldBe(string.Empty);
+        progress.CurrentOperationMessage.ShouldBeEmpty();
     }
 
     [Theory]
@@ -237,10 +248,11 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
-            CurrentOperation = operation
+            OperationType = SyncOperationType.Syncing,
+            CurrentOperationMessage = operation
         };
 
-        progress.CurrentOperation.ShouldBe(operation);
+        progress.CurrentOperationMessage.ShouldBe(operation);
     }
 
     [Fact]
@@ -248,6 +260,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             PendingDownloads = 0
         };
 
@@ -259,6 +272,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             PendingUploads = 0
         };
 
@@ -274,6 +288,7 @@ public sealed class SyncProgressShould
     {
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             PendingDownloads = downloads,
             PendingUploads = uploads
         };
@@ -288,6 +303,7 @@ public sealed class SyncProgressShould
         // Verify it recalculates based on current values
         SyncProgress progress1 = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 25,
             TotalFiles = 100
         };
@@ -306,15 +322,16 @@ public sealed class SyncProgressShould
         DateTimeOffset timestamp = new(2024, 1, 15, 10, 30, 0, TimeSpan.Zero);
         SyncProgress progress = new()
         {
+            OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 50,
             TotalFiles = 100,
             PendingDownloads = 10,
             PendingUploads = 5,
-            CurrentOperation = "Test",
+            CurrentOperationMessage = "Test",
             Timestamp = timestamp
         };
 
-        string result = progress.ToString();
+        var result = progress.ToString();
 
         result.ShouldNotBeNullOrWhiteSpace();
         result.ShouldContain("50");

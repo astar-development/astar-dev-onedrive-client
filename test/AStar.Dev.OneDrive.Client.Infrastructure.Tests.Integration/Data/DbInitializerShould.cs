@@ -32,13 +32,13 @@ public sealed class DbInitializerShould : IDisposable
             }
 
             // Clean up WAL and SHM files
-            string walPath = _dbPath + "-wal";
+            var walPath = _dbPath + "-wal";
             if (File.Exists(walPath))
             {
                 File.Delete(walPath);
             }
 
-            string shmPath = _dbPath + "-shm";
+            var shmPath = _dbPath + "-shm";
             if (File.Exists(shmPath))
             {
                 File.Delete(shmPath);
@@ -81,9 +81,9 @@ public sealed class DbInitializerShould : IDisposable
         
         using SqliteCommand cmd = _connection.CreateCommand();
         cmd.CommandText = "PRAGMA journal_mode;";
-        object? result = cmd.ExecuteScalar();
-        
-        result.ShouldNotBeNull();
+        var result = cmd.ExecuteScalar();
+
+        _ = result.ShouldNotBeNull();
         result.ToString()?.ToUpperInvariant().ShouldBe("WAL");
     }
 
@@ -151,7 +151,7 @@ public sealed class DbInitializerShould : IDisposable
             // Verify we can perform database operations after initialization
             DeltaToken token = new("test1", "token123", DateTimeOffset.UtcNow);
             _ = context.DeltaTokens.Add(token);
-            int rowsAffected = context.SaveChanges();
+            var rowsAffected = context.SaveChanges();
 
             rowsAffected.ShouldBe(1);
         }
@@ -170,7 +170,7 @@ public sealed class DbInitializerShould : IDisposable
             // Verify async operations work after initialization
             DeltaToken token = new("test1", "token123", DateTimeOffset.UtcNow);
             _ = context.DeltaTokens.Add(token);
-            int rowsAffected = await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            var rowsAffected = await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             rowsAffected.ShouldBe(1);
 

@@ -19,7 +19,7 @@ public class MainWindowCoordinator(ISettingsAndPreferencesService settingsAndPre
         themeService.ApplyThemePreference(userPreferences);
 
         mainWindowViewModel.UserPreferences = userPreferences;
-        mainWindowViewModel.SyncStatus = userPreferences.UiSettings.LastAction;
+        mainWindowViewModel.SyncStatusMessage = userPreferences.UiSettings.LastAction;
 
         ApplyWindowSettings(window, userPreferences.WindowSettings);
     }

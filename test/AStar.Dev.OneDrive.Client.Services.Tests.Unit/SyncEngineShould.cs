@@ -1,9 +1,9 @@
-using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using AStar.Dev.OneDrive.Client.Services;
 using Microsoft.Extensions.Logging;
+
+namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
 public class SyncEngineShould
 {
@@ -12,7 +12,6 @@ public class SyncEngineShould
     private readonly ITransferService _transfer = Substitute.For<ITransferService>();
     private readonly IFileSystemAdapter _fs = Substitute.For<IFileSystemAdapter>();
     private readonly ILogger<SyncEngine> _logger = Substitute.For<ILogger<SyncEngine>>();
-    private readonly Subject<SyncProgress> _progressSubject = new();
 
     private SyncEngine CreateSut() => new(_repo, _graph, _transfer, _fs, _logger);
 
