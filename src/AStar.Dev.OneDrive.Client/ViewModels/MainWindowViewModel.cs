@@ -170,27 +170,28 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 #pragma warning disable S2139 // Exceptions should be either logged or rethrown but not both
             try
             {
-                SyncStatus = "Processing local file scan...";
-                AddRecentTransfer("Processing Local file scan...");
+                SyncStatus = "Processing local file sync...";
+                AddRecentTransfer("Processing Local file sync...");
                 ProgressPercent = 0;
+                await Task.Yield();
                 await _sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
                 ProgressPercent = 100;
                 _ = RefreshStatsAsync();
-                AddRecentTransfer("Local file scan completed successfully");
-                _logger.LogInformation("Local file scan completed successfully");
+                AddRecentTransfer("Local file sync completed successfully");
+                _logger.LogInformation("Local file sync completed successfully");
             }
             catch(OperationCanceledException)
             {
                 ProgressPercent = 0;
-                AddRecentTransfer("Local file scan was cancelled");
-                _logger.LogInformation("Local file scan was cancelled by user");
+                AddRecentTransfer("Local file sync was cancelled");
+                _logger.LogInformation("Local file sync was cancelled by user");
             }
             catch(Exception ex)
             {
                 ProgressPercent = 0;
-                var errorMsg = $"Scan error: {ex.Message}";
+                var errorMsg = $"Sync error: {ex.Message}";
                 AddRecentTransfer($"ERROR: {errorMsg}");
-                _logger.LogError(ex, "Local file scan failed");
+                _logger.LogError(ex, "Local file sync failed");
                 throw;
             }
             finally
