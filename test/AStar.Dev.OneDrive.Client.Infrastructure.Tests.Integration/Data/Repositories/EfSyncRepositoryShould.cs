@@ -98,7 +98,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
 
         await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
 
-        var allItems = await _context.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
+        List<DriveItemRecord> allItems = await _context.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
         allItems.Count.ShouldBe(2);
         allItems.ShouldContain(i => i.Id == "id1");
         allItems.ShouldContain(i => i.Id == "id2");
@@ -135,7 +135,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
         ];
         await _repository.ApplyDriveItemsAsync(mixed, CancellationToken.None);
 
-        var allItems = await _context.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
+        List<DriveItemRecord> allItems = await _context.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
         allItems.Count.ShouldBe(2);
         allItems.First(i => i.Id == "id1").ETag.ShouldBe("etag2");
     }
@@ -420,7 +420,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
             await _repository.LogTransferAsync(log, CancellationToken.None);
         }
 
-        var allLogs = await _context.TransferLogs.ToListAsync(TestContext.Current.CancellationToken);
+        List<TransferLog> allLogs = await _context.TransferLogs.ToListAsync(TestContext.Current.CancellationToken);
         allLogs.Count.ShouldBe(3);
         allLogs.ShouldContain(l => l.Type == TransferType.Download);
         allLogs.ShouldContain(l => l.Type == TransferType.Upload);

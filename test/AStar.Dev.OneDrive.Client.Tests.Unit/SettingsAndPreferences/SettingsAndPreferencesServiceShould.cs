@@ -1,4 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
+using System.Text.Json;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.Utilities;
@@ -21,7 +22,7 @@ public class SettingsAndPreferencesServiceShould
         fileSystem.AddFile(appSettings.FullUserPreferencesPath, new MockFileData(expectedPreferences.ToJson()));
         var sut = new SettingsAndPreferencesService(fileSystem, appSettings);
 
-        var result = sut.Load();
+        UserPreferences result = sut.Load();
 
         result.WindowSettings.WindowWidth.ShouldBe(800);
         result.WindowSettings.WindowHeight.ShouldBe(600);
@@ -42,7 +43,7 @@ public class SettingsAndPreferencesServiceShould
         sut.Save(preferences);
 
         var savedContent = fileSystem.File.ReadAllText(appSettings.FullUserPreferencesPath);
-        var savedPreferences = savedContent.FromJson<UserPreferences>();
+        UserPreferences savedPreferences = savedContent.FromJson<UserPreferences>();
         savedPreferences.WindowSettings.WindowWidth.ShouldBe(1024);
         savedPreferences.WindowSettings.WindowHeight.ShouldBe(768);
     }
@@ -54,7 +55,7 @@ public class SettingsAndPreferencesServiceShould
         var appSettings = new ApplicationSettings { UserPreferencesPath = @"C:\TestPath", UserPreferencesFile = "missing.json" };
         var sut = new SettingsAndPreferencesService(fileSystem, appSettings);
 
-        var exception = Should.Throw<FileNotFoundException>(() => sut.Load());
+        FileNotFoundException exception = Should.Throw<FileNotFoundException>(() => sut.Load());
 
         exception.ShouldNotBeNull();
     }
@@ -67,7 +68,7 @@ public class SettingsAndPreferencesServiceShould
         fileSystem.AddFile(appSettings.FullUserPreferencesPath, new MockFileData("{ invalid json }"));
         var sut = new SettingsAndPreferencesService(fileSystem, appSettings);
 
-        var exception = Should.Throw<System.Text.Json.JsonException>(() => sut.Load());
+        JsonException exception = Should.Throw<System.Text.Json.JsonException>(() => sut.Load());
 
         exception.ShouldNotBeNull();
     }
@@ -97,7 +98,7 @@ public class SettingsAndPreferencesServiceShould
         };
 
         sut.Save(originalPreferences);
-        var loadedPreferences = sut.Load();
+        UserPreferences loadedPreferences = sut.Load();
 
         loadedPreferences.WindowSettings.WindowWidth.ShouldBe(1920);
         loadedPreferences.WindowSettings.WindowHeight.ShouldBe(1080);
@@ -125,7 +126,7 @@ public class SettingsAndPreferencesServiceShould
         };
 
         sut.Save(newPreferences);
-        var loadedPreferences = sut.Load();
+        UserPreferences loadedPreferences = sut.Load();
 
         loadedPreferences.WindowSettings.WindowWidth.ShouldBe(1024);
         loadedPreferences.WindowSettings.WindowHeight.ShouldBe(768);
@@ -141,7 +142,7 @@ public class SettingsAndPreferencesServiceShould
         var emptyPreferences = new UserPreferences();
 
         sut.Save(emptyPreferences);
-        var loadedPreferences = sut.Load();
+        UserPreferences loadedPreferences = sut.Load();
 
         loadedPreferences.ShouldNotBeNull();
         loadedPreferences.WindowSettings.ShouldNotBeNull();

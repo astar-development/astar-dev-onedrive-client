@@ -53,19 +53,19 @@ public sealed class EfSyncRepository : ISyncRepository
         var totalFiles = await _db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted).CountAsync(ct);
         var downloadedFiles = await _db.LocalFiles.Where(l => l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded).CountAsync(ct);
 
-        _logger.LogDebug("Repository stats: {TotalItems} total items, {TotalFiles} files, {Downloaded} already downloaded", 
+        _logger.LogDebug("Repository stats: {TotalItems} total items, {TotalFiles} files, {Downloaded} already downloaded",
             totalDriveItems, totalFiles, downloadedFiles);
 
-        var query = _db.DriveItems
+        IQueryable<DriveItemRecord> query = _db.DriveItems
                             .Where(d => !d.IsFolder && !d.IsDeleted)
                             .Where(d => !_db.LocalFiles.Any(l => l.Id == d.Id && (l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded)))
                             .OrderBy(d => d.LastModifiedUtc)
                             .Skip(offset*pageSize)
                             .Take(pageSize);
 
-        var results = await query.ToListAsync(ct);
+        List<DriveItemRecord> results = await query.ToListAsync(ct);
 
-        _logger.LogDebug("GetPendingDownloadsAsync(pageSize={PageSize}, offset={Offset}): returning {Count} items", 
+        _logger.LogDebug("GetPendingDownloadsAsync(pageSize={PageSize}, offset={Offset}): returning {Count} items",
             pageSize, offset, results.Count);
 
         return results;

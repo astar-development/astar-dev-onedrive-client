@@ -73,7 +73,7 @@ public sealed class GraphClientWrapper : IGraphClient
                 HttpResponseMessage res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
                 _ = res.EnsureSuccessStatusCode();
 
-                var stream = await res.Content.ReadAsStreamAsync(ct);
+            Stream stream = await res.Content.ReadAsStreamAsync(ct);
                 _logger.LogDebug("Download stream acquired for DriveItemId: {DriveItemId}", driveItemId);
                 return stream;
             }
