@@ -51,7 +51,6 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _repo = repo;
         _logger = logger;
         UserPreferences = settingsAndPreferencesService.Load();
-
         SignInCommand = SignIn();
 
         IObservable<bool> isSyncing = this.WhenAnyValue(x => x.OperationType)

@@ -20,6 +20,7 @@ public partial class MainWindow : Window, IWindowPositionable
         _themeHandler = themeHandler;
         _autoSaveService = autoSaveService;
         _viewModel = vm;
+        _coordinator.Initialize(this, vm);
         WireUpEventHandlers();
         InitializeThemeSelector();
         DataContext = vm;
