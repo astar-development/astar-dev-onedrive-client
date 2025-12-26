@@ -1,0 +1,9 @@
+﻿{
+  "cacheTag": 42,
+  "applicationVersion": "1.2.3",
+  "userPreferencesPath": "TestUserPreferencesPath",
+  "userPreferencesFile": "TestUserPreferencesFile",
+  "databaseName": "MockDatabaseName",
+  "oneDriveRootDirectory": "TestOneDriveRootPath",
+  "cachePrefix": "TestCachePrefix_"
+}

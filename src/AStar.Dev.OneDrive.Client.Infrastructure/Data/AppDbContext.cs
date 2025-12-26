@@ -4,14 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data;
 
-public sealed class AppDbContext : DbContext
+public sealed class AppDbContext(DbContextOptions<AppDbContext> opts) : DbContext(opts)
 {
     public DbSet<DriveItemRecord> DriveItems { get; init; } = null!;
     public DbSet<LocalFileRecord> LocalFiles { get; init; } = null!;
     public DbSet<DeltaToken> DeltaTokens { get; init; } = null!;
     public DbSet<TransferLog> TransferLogs { get; init; } = null!;
-
-    public AppDbContext(DbContextOptions<AppDbContext> opts) : base(opts) { }
 
     protected override void OnModelCreating(ModelBuilder mb)
     {

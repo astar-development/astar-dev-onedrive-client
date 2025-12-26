@@ -5,7 +5,7 @@ namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit.ConfigurationSettings;
 public sealed class AppPathHelperShould
 {
     [Fact]
-    public void GetAppDataPath_WithAppName_ReturnsNonEmptyPath()
+    public void GetAppDataPathWithAppNameReturnsNonEmptyPath()
     {
         var result = AppPathHelper.GetAppDataPath("TestApp");
 
@@ -14,7 +14,7 @@ public sealed class AppPathHelperShould
     }
 
     [Fact]
-    public void GetAppDataPath_OnWindows_ContainsAppData()
+    public void GetAppDataPathOnWindowsContainsAppData()
     {
         // Only run on Windows
         if (!OperatingSystem.IsWindows())
@@ -30,7 +30,7 @@ public sealed class AppPathHelperShould
     }
 
     [Fact]
-    public void GetAppDataPath_OnMacOS_ContainsLibraryApplicationSupport()
+    public void GetAppDataPathOnMacOsContainsLibraryApplicationSupport()
     {
         // Only run on macOS
         if (!OperatingSystem.IsMacOS())
@@ -46,7 +46,7 @@ public sealed class AppPathHelperShould
     }
 
     [Fact]
-    public void GetAppDataPath_OnLinux_ContainsConfigDirectory()
+    public void GetAppDataPathOnLinuxContainsConfigDirectory()
     {
         // Only run on Linux
         if (!OperatingSystem.IsLinux())
@@ -66,7 +66,7 @@ public sealed class AppPathHelperShould
     [InlineData("Test.Application")]
     [InlineData("app-with-dashes")]
     [InlineData("App_With_Underscores")]
-    public void GetAppDataPath_WithVariousAppNames_IncludesAppNameInPath(string appName)
+    public void GetAppDataPathWithVariousAppNamesIncludesAppNameInPath(string appName)
     {
         var result = AppPathHelper.GetAppDataPath(appName);
 
@@ -74,7 +74,7 @@ public sealed class AppPathHelperShould
     }
 
     [Fact]
-    public void GetAppDataPath_ReturnsAbsolutePath()
+    public void GetAppDataPathReturnsAbsolutePath()
     {
         var result = AppPathHelper.GetAppDataPath("TestApp");
 

@@ -10,13 +10,13 @@ public static class ModelBuilderExtensions
 {
     public static void UseSqliteFriendlyConversions(this ModelBuilder mb)
     {
-        Type[] targetEntities = new[]
-        {
+        Type[] targetEntities =
+        [
             typeof(AStar.Dev.OneDrive.Client.Core.Entities.DriveItemRecord),
             typeof(AStar.Dev.OneDrive.Client.Core.Entities.LocalFileRecord),
             typeof(AStar.Dev.OneDrive.Client.Core.Entities.DeltaToken),
             typeof(AStar.Dev.OneDrive.Client.Core.Entities.TransferLog)
-        };
+        ];
 
         foreach(IMutableEntityType? et in mb.Model.GetEntityTypes().Where(e => targetEntities.Contains(e.ClrType)))
             ApplyConversionsForEntity(mb, et);

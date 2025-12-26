@@ -7,11 +7,8 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 /// Repository for TransferLog entities with safe upsert logic
 /// Not used at the moment; example of handling tracked vs detached entities
 /// </summary>
-public sealed class TransferLogRepository
+public sealed class TransferLogRepository(DbContextOptions<AppDbContext> options)
 {
-    private readonly DbContextOptions<AppDbContext> _options;
-
-    public TransferLogRepository(DbContextOptions<AppDbContext> options) => _options = options;
 
     /// <summary>
     /// Upsert a TransferLog safely: avoids duplicate tracked instances.
@@ -19,7 +16,7 @@ public sealed class TransferLogRepository
     /// </summary>
     public async Task UpsertAsync(TransferLog detached)
     {
-        await using var db = new AppDbContext(_options);
+        await using var db = new AppDbContext(options);
 
         // 1) Check local ChangeTracker for an already tracked instance
         TransferLog? local = db.ChangeTracker.Entries<TransferLog>()
@@ -50,7 +47,7 @@ public sealed class TransferLogRepository
     /// <summary>Simple read helper</summary>
     public async Task<TransferLog?> GetByIdAsync(Guid id)
     {
-        await using var db = new AppDbContext(_options);
+        await using var db = new AppDbContext(options);
         return await db.TransferLogs.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id.ToString());
     }
 }

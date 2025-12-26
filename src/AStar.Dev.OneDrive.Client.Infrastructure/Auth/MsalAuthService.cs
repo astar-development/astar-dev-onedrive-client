@@ -3,20 +3,18 @@ using Microsoft.Identity.Client;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Auth;
 
-public sealed class MsalAuthService : IAuthService
+public sealed class MsalAuthService(string clientId) : IAuthService
 {
 #pragma warning disable S1075 // URIs should not be hardcoded - Required by MSAL for local OAuth redirect
     private const string RedirectUri = "http://localhost";
 #pragma warning restore S1075
-    private readonly IPublicClientApplication _pca;
-    private IAccount? _account;
-    private readonly string[] _scopes = new[] { "Files.ReadWrite.All", "offline_access", "User.Read" };
-
-    public bool IsSignedIn => _account is not null;
-
-    public MsalAuthService(string clientId) => _pca = PublicClientApplicationBuilder.Create(clientId)
+    private readonly IPublicClientApplication _pca = PublicClientApplicationBuilder.Create(clientId)
             .WithRedirectUri(RedirectUri)
             .Build();
+    private IAccount? _account;
+    private readonly string[] _scopes = ["Files.ReadWrite.All", "offline_access", "User.Read"];
+
+    public bool IsSignedIn => _account is not null;
 
     public async Task SignInAsync(CancellationToken ct)
     {

@@ -11,7 +11,7 @@
 | UI | Avalonia UI with ReactiveUI |
 | Testing | xUnit V3, Shouldly, NSubstitute |
 | Architecture | Folder-based (Auth, Views, ViewModels, Services) |
-| Code Style | `var` for locals, warnings as errors, nullable enabled |
+| Code Style | Use var for local variables (IDE0007) except for test mocks and when the type is not obvious, warnings as errors, nullable enabled |
 
 ---
 
@@ -171,7 +171,7 @@ public sealed class SyncEngine : ISyncEngine { }
 4. Check for file content duplication
 
 ### Build Warnings
-1. Convert explicit types to `var` (except test mocks)
+1. Convert explicit types to `var` (Use var for local variables (IDE0007) except for test mocks and when the type is not obvious)
 2. Add `#pragma` suppressions with justification
 3. Prefix private fields with `_`
 4. Use discard `_` for unused variables

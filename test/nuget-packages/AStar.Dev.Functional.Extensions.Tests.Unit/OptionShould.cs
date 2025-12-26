@@ -644,7 +644,7 @@ public class OptionShould
     [Fact]
     public void ExtractValuesFromCollectionOfOptions()
     {
-        Option<int>[] options = new[] { Option.Some(1), Option.None<int>(), Option.Some(2), Option.None<int>(), Option.Some(3) };
+        Option<int>[] options = [Option.Some(1), Option.None<int>(), Option.Some(2), Option.None<int>(), Option.Some(3)];
 
         var result = options.Values().ToList();
 

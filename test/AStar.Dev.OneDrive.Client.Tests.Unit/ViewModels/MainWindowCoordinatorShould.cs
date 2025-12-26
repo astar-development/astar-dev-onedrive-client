@@ -6,7 +6,6 @@ using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
-using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.ViewModels;
 
@@ -27,21 +26,17 @@ public class MainWindowCoordinatorShould
 
     private static MainWindowViewModel CreateMockViewModel()
     {
-        IAuthService mockAuth = Substitute.For<IAuthService>();
+        ISyncCommandService syncCommandService = Substitute.For<ISyncCommandService>();
+
+        _ = Substitute.For<IAuthService>();
         ISyncEngine mockSync = Substitute.For<ISyncEngine>();
         ISyncRepository mockRepo = Substitute.For<ISyncRepository>();
         ITransferService mockTransfer = Substitute.For<ITransferService>();
         ISettingsAndPreferencesService mockSettings = Substitute.For<ISettingsAndPreferencesService>();
-        ILogger<MainWindowViewModel> mockLogger = Substitute.For<ILogger<MainWindowViewModel>>();
-
-        Subject<SyncProgress> syncProgressSubject = new();
-        Subject<SyncProgress> transferProgressSubject = new();
-
         mockSettings.Load().Returns(new UserPreferences());
-        mockSync.Progress.Returns(syncProgressSubject);
-        mockTransfer.Progress.Returns(transferProgressSubject);
-
-        return new MainWindowViewModel(mockAuth, mockSync, mockRepo, mockTransfer, mockSettings, mockLogger);
+        mockSync.Progress.Returns(new Subject<SyncProgress>());
+        mockTransfer.Progress.Returns(new Subject<SyncProgress>());
+        return new MainWindowViewModel(syncCommandService, mockSync, mockRepo, mockTransfer, mockSettings);
     }
 
     [Fact]

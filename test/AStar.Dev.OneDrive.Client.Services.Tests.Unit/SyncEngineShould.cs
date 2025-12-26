@@ -16,7 +16,7 @@ public class SyncEngineShould
     private SyncEngine CreateSut() => new(_repo, _graph, _transfer, _fs, _logger);
 
     [Fact]
-    public async Task Mark_new_local_file_as_pending_upload()
+    public async Task MarkNewLocalFileAsPendingUpload()
     {
         var localFile = new LocalFileInfo("new.txt", 100, DateTimeOffset.UtcNow, "hash1");
         _fs.EnumerateFilesAsync(Arg.Any<CancellationToken>()).Returns([localFile]);
@@ -24,7 +24,7 @@ public class SyncEngineShould
         _repo.GetDriveItemByPathAsync("new.txt", Arg.Any<CancellationToken>()).Returns((DriveItemRecord?)null);
         _repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
 
-        SyncEngine sut = CreateSut();
+        var sut = CreateSut();
         await sut.ScanLocalFilesAsync(CancellationToken.None);
 
         await _repo.Received().AddOrUpdateLocalFileAsync(
@@ -33,9 +33,9 @@ public class SyncEngineShould
     }
 
     [Fact]
-    public async Task Not_mark_unchanged_downloaded_file_as_pending_upload()
+    public async Task NotMarkUnchangedDownloadedFileAsPendingUpload()
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var localFile = new LocalFileInfo("file.txt", 100, now, "hash1");
         var driveItem = new DriveItemRecord("id1", "did1", "file.txt", "etag", "ctag", 100, now, false, false);
         var localRecord = new LocalFileRecord("id1", "file.txt", "hash1", 100, now, SyncState.Downloaded);
@@ -44,16 +44,16 @@ public class SyncEngineShould
         _repo.GetDriveItemByPathAsync("file.txt", Arg.Any<CancellationToken>()).Returns(driveItem);
         _repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(0);
 
-        SyncEngine sut = CreateSut();
+        var sut = CreateSut();
         await sut.ScanLocalFilesAsync(CancellationToken.None);
 
         await _repo.DidNotReceive().AddOrUpdateLocalFileAsync(Arg.Any<LocalFileRecord>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Mark_local_file_as_pending_upload_if_newer_than_onedrive()
+    public async Task MarkLocalFileAsPendingUploadIfNewerThanOnedrive()
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var localFile = new LocalFileInfo("file.txt", 100, now.AddMinutes(5), "hash1");
         var driveItem = new DriveItemRecord("id1", "did1", "file.txt", "etag", "ctag", 100, now, false, false);
         var localRecord = new LocalFileRecord("id1", "file.txt", "hash1", 100, now.AddMinutes(5), SyncState.Downloaded);
@@ -62,7 +62,7 @@ public class SyncEngineShould
         _repo.GetDriveItemByPathAsync("file.txt", Arg.Any<CancellationToken>()).Returns(driveItem);
         _repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
 
-        SyncEngine sut = CreateSut();
+        var sut = CreateSut();
         await sut.ScanLocalFilesAsync(CancellationToken.None);
 
         await _repo.Received().AddOrUpdateLocalFileAsync(
@@ -71,9 +71,9 @@ public class SyncEngineShould
     }
 
     [Fact]
-    public async Task Mark_local_file_as_pending_upload_if_size_differs_from_onedrive()
+    public async Task MarkLocalFileAsPendingUploadIfSizeDiffersFromOnedrive()
     {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var localFile = new LocalFileInfo("file.txt", 200, now, "hash1");
         var driveItem = new DriveItemRecord("id1", "did1", "file.txt", "etag", "ctag", 100, now, false, false);
         var localRecord = new LocalFileRecord("id1", "file.txt", "hash1", 200, now, SyncState.Downloaded);

@@ -18,7 +18,7 @@ public sealed class Serilog
     /// <remarks>Each element in the array specifies a destination and configuration for log output. Common
     /// sinks include file, console, or external log servers. The order of sinks in the array determines the sequence in
     /// which log events are dispatched.</remarks>
-    public WriteTo[] WriteTo { get; set; } = new WriteTo[] { new() { Args = new(), Name = "Seq" } };
+    public WriteTo[] WriteTo { get; set; } = [new() { Args = new(), Name = "Seq" }];
 
     /// <summary>
     /// Gets or sets the minimum log level that must be met for log events to be recorded.

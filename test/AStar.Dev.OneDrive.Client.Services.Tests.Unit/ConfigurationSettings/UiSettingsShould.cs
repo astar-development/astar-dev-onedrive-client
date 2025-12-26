@@ -7,7 +7,7 @@ public class UiSettingsShould
     [Fact]
     public void HaveExpectedDefaultValues()
     {
-        UiSettings settings = new();
+        var settings = new UiSettings();
 
         settings.DownloadFilesAfterSync.ShouldBeFalse();
         settings.UploadFilesAfterSync.ShouldBeFalse();
@@ -20,8 +20,8 @@ public class UiSettingsShould
     [Fact]
     public void UpdateFromAnotherUiSettingsInstance()
     {
-        UiSettings settings = new();
-        UiSettings other = new()
+        var settings = new UiSettings();
+        var other = new UiSettings
         {
             DownloadFilesAfterSync = true,
             UploadFilesAfterSync = true,
@@ -37,7 +37,7 @@ public class UiSettingsShould
             }
         };
 
-        UiSettings result = settings.Update(other);
+        var result = settings.Update(other);
 
         result.DownloadFilesAfterSync.ShouldBeTrue();
         result.UploadFilesAfterSync.ShouldBeTrue();
@@ -53,10 +53,10 @@ public class UiSettingsShould
     [Fact]
     public void ReturnSameInstanceAfterUpdate()
     {
-        UiSettings settings = new();
-        UiSettings other = new();
+        var settings = new UiSettings();
+        var other = new UiSettings();
 
-        UiSettings result = settings.Update(other);
+        var result = settings.Update(other);
 
         result.ShouldBeSameAs(settings);
     }
@@ -64,7 +64,7 @@ public class UiSettingsShould
     [Fact]
     public void UpdateSyncSettingsPropertiesIndependently()
     {
-        UiSettings settings = new()
+        var settings = new UiSettings
         {
             SyncSettings = new SyncSettings
             {
@@ -75,7 +75,7 @@ public class UiSettingsShould
             }
         };
 
-        UiSettings other = new()
+        var other = new UiSettings
         {
             SyncSettings = new SyncSettings
             {

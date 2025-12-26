@@ -3,9 +3,9 @@ namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 public sealed class SyncSettingsShould
 {
     [Fact]
-    public void DefaultConstructor_InitializesWithDefaultValues()
+    public void DefaultConstructorInitializesWithDefaultValues()
     {
-        SyncSettings settings = new();
+        var settings = new SyncSettings();
 
         settings.MaxParallelDownloads.ShouldBe(8);
         settings.DownloadBatchSize.ShouldBe(100);
@@ -14,9 +14,9 @@ public sealed class SyncSettingsShould
     }
 
     [Fact]
-    public void MaxParallelDownloads_CanBeModified()
+    public void MaxParallelDownloadsCanBeModified()
     {
-        SyncSettings settings = new()
+        var settings = new SyncSettings
         {
             MaxParallelDownloads = 16
         };
@@ -28,9 +28,9 @@ public sealed class SyncSettingsShould
     }
 
     [Fact]
-    public void DownloadBatchSize_CanBeModified()
+    public void DownloadBatchSizeCanBeModified()
     {
-        SyncSettings settings = new()
+        var settings = new SyncSettings
         {
             DownloadBatchSize = 200
         };
@@ -42,9 +42,9 @@ public sealed class SyncSettingsShould
     }
 
     [Fact]
-    public void MaxRetries_CanBeModified()
+    public void MaxRetriesCanBeModified()
     {
-        SyncSettings settings = new()
+        var settings = new SyncSettings
         {
             MaxRetries = 5
         };
@@ -56,9 +56,9 @@ public sealed class SyncSettingsShould
     }
 
     [Fact]
-    public void RetryBaseDelayMs_CanBeModified()
+    public void RetryBaseDelayMsCanBeModified()
     {
-        SyncSettings settings = new()
+        var settings = new SyncSettings
         {
             RetryBaseDelayMs = 1000
         };
@@ -70,9 +70,9 @@ public sealed class SyncSettingsShould
     }
 
     [Fact]
-    public void AllProperties_CanBeSetViaInitializer()
+    public void AllPropertiesCanBeSetViaInitializer()
     {
-        SyncSettings settings = new()
+        var settings = new SyncSettings
         {
             MaxParallelDownloads = 12,
             DownloadBatchSize = 150,

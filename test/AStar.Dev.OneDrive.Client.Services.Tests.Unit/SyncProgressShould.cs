@@ -3,9 +3,9 @@ namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 public sealed class SyncProgressShould
 {
     [Fact]
-    public void PercentComplete_WithZeroTotalFiles_ReturnsZero()
+    public void PercentCompleteWithZeroTotalFilesReturnsZero()
     {
-        SyncProgress progress = new()
+        var progress = new SyncProgress
         {
             OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 5,
@@ -16,9 +16,9 @@ public sealed class SyncProgressShould
     }
 
     [Fact]
-    public void PercentComplete_WithZeroProcessedAndZeroTotal_ReturnsZero()
+    public void PercentCompleteWithZeroProcessedAndZeroTotalReturnsZero()
     {
-        SyncProgress progress = new()
+        var progress = new SyncProgress
         {
             OperationType = SyncOperationType.Syncing,
             ProcessedFiles = 0,
@@ -34,12 +34,12 @@ public sealed class SyncProgressShould
     [InlineData(50, 100, 50.0)]
     [InlineData(75, 100, 75.0)]
     [InlineData(100, 100, 100.0)]
-    public void PercentComplete_WithVariousProgress_CalculatesCorrectPercentage(
+    public void PercentCompleteWithVariousProgressCalculatesCorrectPercentage(
         int processed,
         int total,
         double expected)
     {
-        SyncProgress progress = new()
+        var progress = new SyncProgress
         {
             OperationType = SyncOperationType.Syncing,
             ProcessedFiles = processed,
@@ -54,12 +54,12 @@ public sealed class SyncProgressShould
     [InlineData(2, 3, 66.666666666666671)]
     [InlineData(1, 7, 14.285714285714286)]
     [InlineData(1, 6, 16.666666666666668)]
-    public void PercentComplete_WithNonDivisibleNumbers_ReturnsAccurateDecimal(
+    public void PercentCompleteWithNonDivisibleNumbersReturnsAccurateDecimal(
         int processed,
         int total,
         double expected)
     {
-        SyncProgress progress = new()
+        var progress = new SyncProgress
         {
             OperationType = SyncOperationType.Syncing,
             ProcessedFiles = processed,
@@ -70,10 +70,10 @@ public sealed class SyncProgressShould
     }
 
     [Fact]
-    public void PercentComplete_WhenProcessedExceedsTotal_ReturnsOverOneHundred()
+    public void PercentCompleteWhenProcessedExceedsTotalReturnsOverOneHundred()
     {
         // This documents behavior when processed > total (edge case)
-        SyncProgress progress = new()
+        var progress = new SyncProgress
         {
             OperationType = SyncOperationType.Completed,
             ProcessedFiles = 150,

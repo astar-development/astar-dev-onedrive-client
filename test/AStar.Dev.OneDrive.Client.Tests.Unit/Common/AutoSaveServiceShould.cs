@@ -1,11 +1,10 @@
+using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.ViewModels;
-using Microsoft.Extensions.Logging;
-using System.Reactive.Subjects;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.Common;
 
@@ -143,18 +142,17 @@ public class AutoSaveServiceShould
 
     private static MainWindowViewModel CreateViewModel()
     {
-        IAuthService auth = Substitute.For<IAuthService>();
+        ISyncCommandService syncCommandService = Substitute.For<ISyncCommandService>();
+
+        _ = Substitute.For<IAuthService>();
         ISyncEngine sync = Substitute.For<ISyncEngine>();
         ISyncRepository repo = Substitute.For<ISyncRepository>();
         ITransferService transfer = Substitute.For<ITransferService>();
         ISettingsAndPreferencesService settings = Substitute.For<ISettingsAndPreferencesService>();
-        ILogger<MainWindowViewModel> logger = Substitute.For<ILogger<MainWindowViewModel>>();
-
         settings.Load().Returns(new UserPreferences());
-
         sync.Progress.Returns(new Subject<SyncProgress>());
         transfer.Progress.Returns(new Subject<SyncProgress>());
 
-        return new MainWindowViewModel(auth, sync, repo, transfer, settings, logger);
+        return new MainWindowViewModel(syncCommandService, sync, repo, transfer, settings);
     }
 }

@@ -41,7 +41,7 @@ public class SerilogShould
     {
         var serilog = new Serilog();
 
-        WriteTo[] writeToConfigs = new[] { new WriteTo { Name = "Console", Args = new() { ServerUrl = "http://localhost" } }, new WriteTo { Name = "File", Args = new() { ServerUrl = "C:\\Logs" } } };
+        WriteTo[] writeToConfigs = [new WriteTo { Name = "Console", Args = new() { ServerUrl = "http://localhost" } }, new WriteTo { Name = "File", Args = new() { ServerUrl = "C:\\Logs" } }];
 
         serilog.WriteTo = writeToConfigs;
 

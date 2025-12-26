@@ -514,11 +514,18 @@
             <summary>
                 Represents a successful outcome.
             </summary>
+            <remarks>
+                Creates a successful result.
+            </remarks>
+            <param name="value">The result value.</param>
         </member>
         <member name="M:AStar.Dev.Functional.Extensions.Result`2.Ok.#ctor(`0)">
             <summary>
-                Creates a successful result.
+                Represents a successful outcome.
             </summary>
+            <remarks>
+                Creates a successful result.
+            </remarks>
             <param name="value">The result value.</param>
         </member>
         <member name="P:AStar.Dev.Functional.Extensions.Result`2.Ok.Value">
@@ -530,11 +537,18 @@
             <summary>
                 Represents an error outcome.
             </summary>
+            <remarks>
+                Creates an error result.
+            </remarks>
+            <param name="reason">The failure reason.</param>
         </member>
         <member name="M:AStar.Dev.Functional.Extensions.Result`2.Error.#ctor(`1)">
             <summary>
-                Creates an error result.
+                Represents an error outcome.
             </summary>
+            <remarks>
+                Creates an error result.
+            </remarks>
             <param name="reason">The failure reason.</param>
         </member>
         <member name="P:AStar.Dev.Functional.Extensions.Result`2.Error.Reason">

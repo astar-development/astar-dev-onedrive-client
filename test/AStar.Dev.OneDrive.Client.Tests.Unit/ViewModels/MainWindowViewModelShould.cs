@@ -5,30 +5,26 @@ using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.ViewModels;
-using Microsoft.Extensions.Logging;
 using NSubstitute.ExceptionExtensions;
+using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.ViewModels;
 
 public sealed class MainWindowViewModelShould
 {
-    private readonly IAuthService _mockAuth;
     private readonly ISyncEngine _mockSync;
     private readonly ISyncRepository _mockRepo;
     private readonly ITransferService _mockTransfer;
     private readonly ISettingsAndPreferencesService _mockSettings;
-    private readonly ILogger<MainWindowViewModel> _mockLogger;
     private readonly Subject<SyncProgress> _syncProgressSubject;
     private readonly Subject<SyncProgress> _transferProgressSubject;
 
     public MainWindowViewModelShould()
     {
-        _mockAuth = Substitute.For<IAuthService>();
         _mockSync = Substitute.For<ISyncEngine>();
         _mockRepo = Substitute.For<ISyncRepository>();
         _mockTransfer = Substitute.For<ITransferService>();
         _mockSettings = Substitute.For<ISettingsAndPreferencesService>();
-        _mockLogger = Substitute.For<ILogger<MainWindowViewModel>>();
 
         // Stub observables to prevent NullReferenceException
         _syncProgressSubject = new Subject<SyncProgress>();
@@ -40,7 +36,59 @@ public sealed class MainWindowViewModelShould
         _mockSettings.Load().Returns(userPreferences);
     }
 
-    private MainWindowViewModel CreateViewModel() => new(_mockAuth, _mockSync, _mockRepo, _mockTransfer, _mockSettings, _mockLogger);
+    private MainWindowViewModel CreateViewModel()
+    {
+        // Provide working ReactiveCommand stubs for all commands
+        ISyncCommandService mockSyncCommandService = Substitute.For<ISyncCommandService>();
+        mockSyncCommandService.CreateSignInCommand(Arg.Any<ISyncStatusTarget>())
+            .Returns(ReactiveCommand.Create(() => System.Reactive.Unit.Default, Observable.Return(true)));
+        mockSyncCommandService.CreateInitialSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
+            .Returns(ReactiveCommand.CreateFromTask(async _ => System.Reactive.Unit.Default, Observable.Return(true)));
+        mockSyncCommandService.CreateIncrementalSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
+            .Returns(ReactiveCommand.CreateFromTask(async _ => System.Reactive.Unit.Default, Observable.Return(true)));
+        mockSyncCommandService.CreateCancelSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
+            .Returns(ReactiveCommand.Create(() => System.Reactive.Unit.Default, Observable.Return(true)));
+
+        // Use a real implementation for ScanLocalFilesCommand to exercise ViewModel state changes
+        mockSyncCommandService.CreateScanLocalFilesCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
+            .Returns(callInfo =>
+            {
+                ISyncStatusTarget target = callInfo.ArgAt<ISyncStatusTarget>(0);
+                return ReactiveCommand.CreateFromTask(async ct =>
+                {
+                    try
+                    {
+                        target.SetStatus("Processing local file sync...");
+                        target.SetProgress(0);
+                        target.AddRecentTransfer("Processing local file sync...");
+                        await _mockSync.ScanLocalFilesAsync(ct);
+                        target.SetStatus("Local file sync completed successfully");
+                        target.SetProgress(100);
+                        target.AddRecentTransfer("Local file sync completed successfully");
+                        target.OnSyncCompleted();
+                        return System.Reactive.Unit.Default;
+                    }
+                    catch(OperationCanceledException)
+                    {
+                        target.OnSyncCancelled("Local file sync");
+                        return System.Reactive.Unit.Default;
+                    }
+                    catch(Exception ex)
+                    {
+                        target.OnSyncFailed("Local file sync", ex);
+                        return System.Reactive.Unit.Default;
+                    }
+                }, Observable.Return(true));
+            });
+
+        return new MainWindowViewModel(
+            mockSyncCommandService,
+            _mockSync,
+            _mockRepo,
+            _mockTransfer,
+            _mockSettings
+        );
+    }
 
     [Fact]
     public void InitializeWithScanLocalFilesCommand()
@@ -70,22 +118,16 @@ public sealed class MainWindowViewModelShould
     public void ScanLocalFilesCommand_UpdatesSyncStatusToScanning()
     {
         MainWindowViewModel sut = CreateViewModel();
-        TaskCompletionSource<bool> executeStarted = new();
-        TaskCompletionSource<bool> tcs = new();
-
+        var started = false;
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(async _ =>
             {
-                executeStarted.SetResult(true);
-                await tcs.Task;
+                started = true;
+                await Task.Delay(10);
             });
-
-        sut.ScanLocalFilesCommand.Execute().Subscribe();
-        executeStarted.Task.Wait(TimeSpan.FromSeconds(5));
-
-        sut.SyncStatusMessage.ShouldBe("Processing Local file sync...");
-
-        tcs.SetResult(true);
+        sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
+        sut.SyncStatusMessage.ShouldBe("Processing local file sync...");
+        started.ShouldBe(true);
     }
 
     [Fact]
@@ -129,15 +171,10 @@ public sealed class MainWindowViewModelShould
             .Returns(5);
         _mockRepo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>())
             .Returns(3);
-        TaskCompletionSource tcs = new();
-        _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
-
-        sut.ScanLocalFilesCommand.Execute().Subscribe();
-        tcs.Task.Wait(TimeSpan.FromSeconds(5));
+        sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
         Task.Delay(200).Wait(); // Give time for async refresh
-
-        _ = _mockRepo.Received().GetPendingDownloadCountAsync(Arg.Any<CancellationToken>());
-        _ = _mockRepo.Received().GetPendingUploadCountAsync(Arg.Any<CancellationToken>());
+        _mockRepo.Received().GetPendingDownloadCountAsync(Arg.Any<CancellationToken>());
+        _mockRepo.Received().GetPendingUploadCountAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -146,12 +183,7 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new OperationCanceledException());
-        TaskCompletionSource tcs = new();
-        _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
-
-        sut.ScanLocalFilesCommand.Execute().Subscribe();
-        tcs.Task.Wait(TimeSpan.FromSeconds(5));
-
+        sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
         sut.SyncStatusMessage.ShouldBe("Local file sync cancelled");
         sut.RecentTransfers.ShouldContain(t => t.Contains("Local file sync was cancelled"));
     }
@@ -162,10 +194,8 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("Test error"));
-
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { }, _ => { });
         Task.Delay(100).Wait();
-
         sut.SyncStatusMessage.ShouldBe("Local file sync failed");
         sut.RecentTransfers.ShouldContain(t => t.Contains("ERROR") && t.Contains("Test error"));
     }

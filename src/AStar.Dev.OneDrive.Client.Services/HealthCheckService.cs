@@ -26,31 +26,27 @@ public interface IHealthCheckService
 /// <summary>
 /// Implementation of health check service wrapper.
 /// </summary>
-public sealed class ApplicationHealthCheckService : IHealthCheckService
+/// <remarks>
+/// Initializes a new instance of the <see cref="ApplicationHealthCheckService"/> class.
+/// </remarks>
+/// <param name="healthCheckService">The underlying health check service.</param>
+public sealed class ApplicationHealthCheckService(HealthCheckService healthCheckService) : IHealthCheckService
 {
-    private readonly HealthCheckService _healthCheckService;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ApplicationHealthCheckService"/> class.
-    /// </summary>
-    /// <param name="healthCheckService">The underlying health check service.</param>
-    public ApplicationHealthCheckService(HealthCheckService healthCheckService) => _healthCheckService = healthCheckService;
 
     /// <inheritdoc/>
-    public async Task<HealthReport> GetHealthAsync(CancellationToken ct = default) 
-        => await _healthCheckService.CheckHealthAsync(ct);
+    public async Task<HealthReport> GetHealthAsync(CancellationToken ct = default)
+        => await healthCheckService.CheckHealthAsync(ct);
 
-        /// <inheritdoc/>
-        public async Task<HealthCheckResult?> GetHealthCheckAsync(string checkName, CancellationToken ct = default)
-        {
-            HealthReport report = await _healthCheckService.CheckHealthAsync(ct);
-            if (!report.Entries.TryGetValue(checkName, out HealthReportEntry entry))
-            {
-                return null;
-            }
-
-            return entry.Status == HealthStatus.Healthy
-                ? HealthCheckResult.Healthy(entry.Description, entry.Data)
-                : HealthCheckResult.Unhealthy(entry.Description, entry.Exception, entry.Data);
-        }
+    /// <inheritdoc/>
+    public async Task<HealthCheckResult?> GetHealthCheckAsync(string checkName, CancellationToken ct = default)
+    {
+        HealthReport report = await healthCheckService.CheckHealthAsync(ct);
+        return !report.Entries.TryGetValue(checkName, out HealthReportEntry entry)
+                ? null
+                : UpdateStatus(entry);
     }
+
+    private static HealthCheckResult UpdateStatus(HealthReportEntry entry) => entry.Status == HealthStatus.Healthy
+                    ? HealthCheckResult.Healthy(entry.Description, entry.Data)
+                    : HealthCheckResult.Unhealthy(entry.Description, entry.Exception, entry.Data);
+}

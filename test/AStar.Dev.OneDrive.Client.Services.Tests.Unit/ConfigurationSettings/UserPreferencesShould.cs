@@ -7,7 +7,7 @@ public class UserPreferencesShould
     [Fact]
     public void InitializeWithDefaultWindowSettings()
     {
-        UserPreferences preferences = new();
+        var preferences = new UserPreferences();
 
         preferences.WindowSettings.ShouldNotBeNull();
         preferences.WindowSettings.WindowWidth.ShouldBe(1000);
@@ -19,7 +19,7 @@ public class UserPreferencesShould
     [Fact]
     public void InitializeWithDefaultUiSettings()
     {
-        UserPreferences preferences = new();
+        var preferences = new UserPreferences();
 
         preferences.UiSettings.ShouldNotBeNull();
         preferences.UiSettings.RememberMe.ShouldBeTrue();
@@ -30,8 +30,8 @@ public class UserPreferencesShould
     [Fact]
     public void UpdateFromAnotherUserPreferencesInstance()
     {
-        UserPreferences preferences = new();
-        UserPreferences other = new()
+        var preferences = new UserPreferences();
+        var other = new UserPreferences
         {
             WindowSettings = new WindowSettings
             {
@@ -49,7 +49,7 @@ public class UserPreferencesShould
             }
         };
 
-        UserPreferences result = preferences.Update(other);
+        var result = preferences.Update(other);
 
         result.WindowSettings.WindowWidth.ShouldBe(1920);
         result.WindowSettings.WindowHeight.ShouldBe(1080);
@@ -64,10 +64,10 @@ public class UserPreferencesShould
     [Fact]
     public void ReturnSameInstanceAfterUpdate()
     {
-        UserPreferences preferences = new();
-        UserPreferences other = new();
+        var preferences = new UserPreferences();
+        var other = new UserPreferences();
 
-        UserPreferences result = preferences.Update(other);
+        var result = preferences.Update(other);
 
         result.ShouldBeSameAs(preferences);
     }
@@ -75,7 +75,7 @@ public class UserPreferencesShould
     [Fact]
     public void UpdateBothWindowAndUiSettingsSimultaneously()
     {
-        UserPreferences preferences = new()
+        var preferences = new UserPreferences
         {
             WindowSettings = new WindowSettings
             {

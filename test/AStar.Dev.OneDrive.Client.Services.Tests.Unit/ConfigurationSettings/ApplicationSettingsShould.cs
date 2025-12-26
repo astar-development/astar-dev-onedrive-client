@@ -6,78 +6,98 @@ namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit.ConfigurationSettings;
 public class ApplicationSettingsShould
 {
     [Fact]
-    public void ContainTheExpectedPropertiesWithTheExpectedValues()
-        => new ApplicationSettings() { CachePrefix = "TestCachePrefix_", OneDriveRootDirectory = "TestOneDriveRootPath", UserPreferencesFile = "TestUserPreferencesFile", DatabaseName = "MockDatabaseName", UserPreferencesPath = "TestUserPreferencesPath", CacheTag = 42, ApplicationVersion = "1.2.3" }
-            .ToJson()
-            .ShouldMatchApproved();
-
-        [Fact]
-        public void CombineUserPreferencesDirectoryAndFileNameForFullPath()
+    public void ContainExpectedPropertiesWithExpectedValues()
+    {
+        var settings = new ApplicationSettings
         {
-            ApplicationSettings settings = new() { UserPreferencesFile = "test-preferences.json" };
+            CachePrefix = "TestCachePrefix_",
+            OneDriveRootDirectory = "TestOneDriveRootPath",
+            UserPreferencesFile = "TestUserPreferencesFile",
+            DatabaseName = "MockDatabaseName",
+            UserPreferencesPath = "TestUserPreferencesPath",
+            CacheTag = 42,
+            ApplicationVersion = "1.2.3"
+        };
 
-            var result = settings.FullUserPreferencesPath;
+        var result = settings.ToJson();
 
-            result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "test-preferences.json"));
-        }
+        result.ShouldMatchApproved();
+    }
 
-        [Fact]
-        public void UseDefaultUserPreferencesFileWhenNotSet()
-        {
-            ApplicationSettings settings = new();
 
-            var result = settings.FullUserPreferencesPath;
+    [Fact]
+    public void CombineUserPreferencesDirectoryAndFileNameForFullPath()
+    {
+        var settings = new ApplicationSettings { UserPreferencesFile = "test-preferences.json" };
 
-            result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "user-preferences.json"));
-        }
+        var result = settings.FullUserPreferencesPath;
 
-        [Fact]
-        public void BuildFullUserPreferencesDirectoryFromAppDataPath()
-        {
-            var result = ApplicationSettings.FullUserPreferencesDirectory;
+        result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "test-preferences.json"));
+    }
 
-            result.ShouldEndWith("astar-dev-onedrive-client");
-            result.ShouldNotBeNullOrWhiteSpace();
-        }
 
-        [Fact]
-        public void CombineDatabaseDirectoryAndFileNameForFullDatabasePath()
-        {
-            ApplicationSettings settings = new() { DatabaseName = "test-sync.db" };
+    [Fact]
+    public void UseDefaultUserPreferencesFileWhenNotSet()
+    {
+        var settings = new ApplicationSettings();
 
-            var result = settings.FullDatabasePath;
+        var result = settings.FullUserPreferencesPath;
 
-            result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database", "test-sync.db"));
-        }
+        result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "user-preferences.json"));
+    }
 
-        [Fact]
-        public void UseDefaultDatabaseNameWhenNotSet()
-        {
-            ApplicationSettings settings = new();
 
-            var result = settings.FullDatabasePath;
+    [Fact]
+    public void BuildFullUserPreferencesDirectoryFromAppDataPath()
+    {
+        var result = ApplicationSettings.FullUserPreferencesDirectory;
 
-            result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database", "onedrive-sync.db"));
-        }
+        result.ShouldEndWith("astar-dev-onedrive-client");
+        result.ShouldNotBeNullOrWhiteSpace();
+    }
 
-        [Fact]
-        public void BuildFullDatabaseDirectoryFromAppDataPath()
-        {
-            var result = ApplicationSettings.FullDatabaseDirectory;
 
-            result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database"));
-            result.ShouldNotBeNullOrWhiteSpace();
-        }
+    [Fact]
+    public void CombineDatabaseDirectoryAndFileNameForFullDatabasePath()
+    {
+        var settings = new ApplicationSettings { DatabaseName = "test-sync.db" };
 
-        [Fact]
-        public void CombineUserHomeFolderAndOneDriveRootForFullSyncPath()
-        {
-            ApplicationSettings settings = new() { OneDriveRootDirectory = "CustomSync" };
+        var result = settings.FullDatabasePath;
 
-            var result = settings.FullUserSyncPath;
+        result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database", "test-sync.db"));
+    }
 
-            result.ShouldEndWith("CustomSync");
-            result.ShouldNotBeNullOrWhiteSpace();
+
+    [Fact]
+    public void UseDefaultDatabaseNameWhenNotSet()
+    {
+        var settings = new ApplicationSettings();
+
+        var result = settings.FullDatabasePath;
+
+        result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database", "onedrive-sync.db"));
+    }
+
+
+    [Fact]
+    public void BuildFullDatabaseDirectoryFromAppDataPath()
+    {
+        var result = ApplicationSettings.FullDatabaseDirectory;
+
+        result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database"));
+        result.ShouldNotBeNullOrWhiteSpace();
+    }
+
+
+    [Fact]
+    public void CombineUserHomeFolderAndOneDriveRootForFullSyncPath()
+    {
+        var settings = new ApplicationSettings { OneDriveRootDirectory = "CustomSync" };
+
+        var result = settings.FullUserSyncPath;
+
+        result.ShouldEndWith("CustomSync");
+        result.ShouldNotBeNullOrWhiteSpace();
         }
 
         [Fact]
