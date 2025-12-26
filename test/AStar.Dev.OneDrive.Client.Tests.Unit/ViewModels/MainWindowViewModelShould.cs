@@ -10,9 +10,6 @@ using NSubstitute.ExceptionExtensions;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.ViewModels;
 
-/// <summary>
-/// Unit tests for MainWindowViewModel.ScanLocalFilesCommand.
-/// </summary>
 public sealed class MainWindowViewModelShould
 {
     private readonly IAuthService _mockAuth;
@@ -56,7 +53,6 @@ public sealed class MainWindowViewModelShould
     [Fact]
     public void ScanLocalFilesCommand_CallsSyncEngineScanLocalFilesAsync()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -64,18 +60,15 @@ public sealed class MainWindowViewModelShould
         TaskCompletionSource tcs = new();
         _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
-        // Assert
         _ = _mockSync.Received(1).ScanLocalFilesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void ScanLocalFilesCommand_UpdatesSyncStatusToScanning()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         TaskCompletionSource<bool> executeStarted = new();
         TaskCompletionSource<bool> tcs = new();
@@ -87,21 +80,17 @@ public sealed class MainWindowViewModelShould
                 await tcs.Task;
             });
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         executeStarted.Task.Wait(TimeSpan.FromSeconds(5));
 
-        // Assert
-        sut.SyncStatusMessage.ShouldBe("Scanning local files");
+        sut.SyncStatusMessage.ShouldBe("Processing local file sync...");
 
-        // Cleanup
         tcs.SetResult(true);
     }
 
     [Fact]
     public void ScanLocalFilesCommand_UpdatesSyncStatusToCompleteWhenFinished()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -109,37 +98,30 @@ public sealed class MainWindowViewModelShould
         TaskCompletionSource tcs = new();
         _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
-        // Assert
-        sut.SyncStatusMessage.ShouldBe("Local file scan complete");
+        sut.SyncStatusMessage.ShouldBe("Local file sync completed successfully");
     }
 
     [Fact]
     public void ScanLocalFilesCommand_AddsSuccessMessageToRecentTransfers()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-
         TaskCompletionSource tcs = new();
         _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
-        // Assert
-        sut.RecentTransfers.ShouldContain(t => t.Contains("Local file scan completed successfully"));
+        sut.RecentTransfers.ShouldContain(t => t.Contains("Local file sync completed successfully"));
     }
 
     [Fact]
     public void ScanLocalFilesCommand_RefreshesStatsAfterCompletion()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -147,16 +129,13 @@ public sealed class MainWindowViewModelShould
             .Returns(5);
         _mockRepo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>())
             .Returns(3);
-
         TaskCompletionSource tcs = new();
         _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
         Task.Delay(200).Wait(); // Give time for async refresh
 
-        // Assert
         _ = _mockRepo.Received().GetPendingDownloadCountAsync(Arg.Any<CancellationToken>());
         _ = _mockRepo.Received().GetPendingUploadCountAsync(Arg.Any<CancellationToken>());
     }
@@ -164,27 +143,22 @@ public sealed class MainWindowViewModelShould
     [Fact]
     public void ScanLocalFilesCommand_HandlesCancellation()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new OperationCanceledException());
-
         TaskCompletionSource tcs = new();
         _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
-        // Assert
-        sut.SyncStatusMessage.ShouldBe("Local file scan cancelled");
-        sut.RecentTransfers.ShouldContain(t => t.Contains("Local file scan was cancelled"));
+        sut.SyncStatusMessage.ShouldBe("Local file sync cancelled");
+        sut.RecentTransfers.ShouldContain(t => t.Contains("Local file sync was cancelled"));
     }
 
     [Fact]
     public void ScanLocalFilesCommand_HandlesExceptions()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("Test error"));
@@ -192,12 +166,10 @@ public sealed class MainWindowViewModelShould
         var errorThrown = false;
         _ = sut.ScanLocalFilesCommand.ThrownExceptions.Subscribe(_ => errorThrown = true);
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { }, _ => { });
         Task.Delay(100).Wait();
 
-        // Assert
-        sut.SyncStatusMessage.ShouldBe("Local file scan failed");
+        sut.SyncStatusMessage.ShouldBe("Local file sync failed");
         sut.RecentTransfers.ShouldContain(t => t.Contains("ERROR") && t.Contains("Test error"));
         errorThrown.ShouldBeTrue();
     }
@@ -205,34 +177,26 @@ public sealed class MainWindowViewModelShould
     [Fact]
     public void IsSyncingStatus_ReturnsTrueForScanningStatus()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
 
-        // Act
         sut.SyncStatusMessage = "Scanning local files";
 
-        // Assert - The command should be disabled (cannot execute) when scanning
-        // We test this indirectly by checking that the status contains "Scanning"
         sut.SyncStatusMessage.Contains("Scanning", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
     }
 
     [Fact]
     public void IsSyncingStatus_ReturnsFalseForScanCompleteStatus()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
 
-        // Act
         sut.SyncStatusMessage = "Local file scan complete";
 
-        // Assert - The status contains "complete" so syncing should be considered done
         sut.SyncStatusMessage.Contains("complete", StringComparison.OrdinalIgnoreCase).ShouldBeTrue();
     }
 
     [Fact]
     public void ScanLocalFilesCommand_ReceivesProgressUpdatesFromSyncEngine()
     {
-        // Arrange
         MainWindowViewModel sut = CreateViewModel();
         TaskCompletionSource<bool> executeStarted = new();
         TaskCompletionSource<bool> tcs = new();
@@ -262,16 +226,13 @@ public sealed class MainWindowViewModelShould
             }
         };
 
-        // Act
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         executeStarted.Task.Wait(TimeSpan.FromSeconds(5));
         Task.Delay(600).Wait(); // Wait for throttled progress update
 
-        // Assert
         progressReceived.ShouldBeTrue();
         sut.PendingUploads.ShouldBe(15);
 
-        // Cleanup
         tcs.SetResult(true);
     }
 }

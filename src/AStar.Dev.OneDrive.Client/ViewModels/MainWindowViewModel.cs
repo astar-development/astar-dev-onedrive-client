@@ -121,11 +121,13 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             await _sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
             ProgressPercent = 100;
             _ = RefreshStatsAsync();
+            SyncStatusMessage = "Local file sync completed successfully";
             AddRecentTransfer("Local file sync completed successfully");
             _logger.LogInformation("Local file sync completed successfully");
         }
         catch(OperationCanceledException)
         {
+            SyncStatusMessage = "Local file sync cancelled";
             ProgressPercent = 0;
             AddRecentTransfer("Local file sync was cancelled");
             _logger.LogInformation("Local file sync was cancelled by user");
@@ -133,6 +135,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         catch(Exception ex)
         {
             ProgressPercent = 0;
+            SyncStatusMessage = "Local file sync failed";
             var errorMsg = $"Sync error: {ex.Message}";
             AddRecentTransfer($"ERROR: {errorMsg}");
             _logger.LogError(ex, "Local file sync failed");

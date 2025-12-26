@@ -25,7 +25,7 @@ public class TryTests
     [Fact]
     public void RunActionShouldReturnOkTrueWhenActionSucceeds()
     {
-        // Act
+        
         Result<bool, Exception> result = Try.Run(() =>
         {
             /* no-op */
@@ -56,7 +56,7 @@ public class TryTests
     [Fact]
     public async Task RunAsyncActionShouldReturnOkTrueWhenActionSucceedsAsync()
     {
-        // Act
+        
         Result<bool, Exception> result = await Try.RunAsync(async () => await Task.Delay(1));
 
         _ = result.ShouldBeOfType<Result<bool, Exception>.Ok>();

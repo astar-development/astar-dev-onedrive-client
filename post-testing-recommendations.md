@@ -121,7 +121,7 @@ public async Task InitialFullSyncAsync_WhenCancelled_StopsGracefully()
             return deltaPage;
         });
     
-    // Act & Assert
+     & Assert
     await Should.ThrowAsync<OperationCanceledException>(
         async () => await engine.InitialFullSyncAsync(cts.Token)
     );
@@ -154,17 +154,17 @@ public sealed class MainWindowViewModelShould
     [Fact]
     public void SignInCommand_WhenExecuted_UpdatesSignedInStatus()
     {
-        // Arrange
+        
         IAuthService mockAuth = Substitute.For<IAuthService>();
         mockAuth.SignInAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         
         MainWindowViewModel vm = CreateViewModel(mockAuth);
         
-        // Act
+        
         await vm.SignInCommand.Execute();
         
-        // Assert
+        
         vm.SignedIn.ShouldBeTrue();
         vm.SyncStatus.ShouldBe("Signed in");
     }
