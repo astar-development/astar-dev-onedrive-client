@@ -3,8 +3,6 @@ using System.Text.Json;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.Utilities;
-using Shouldly;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.SettingsAndPreferences;
 

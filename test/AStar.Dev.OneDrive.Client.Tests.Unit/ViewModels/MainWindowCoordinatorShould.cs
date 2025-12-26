@@ -7,8 +7,6 @@ using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 using Microsoft.Extensions.Logging;
-using NSubstitute;
-using Shouldly;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.ViewModels;
 

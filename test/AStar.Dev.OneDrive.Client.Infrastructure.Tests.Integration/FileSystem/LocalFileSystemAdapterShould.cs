@@ -1,7 +1,5 @@
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
-using Shouldly;
-using System.IO.Abstractions;
 using FileSystemImpl = System.IO.Abstractions.FileSystem;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.FileSystem;

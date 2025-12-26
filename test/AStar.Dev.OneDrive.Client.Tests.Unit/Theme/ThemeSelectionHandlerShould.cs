@@ -1,9 +1,6 @@
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Theme;
 using Avalonia.Controls;
-using NSubstitute;
-using Shouldly;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.Theme;
 

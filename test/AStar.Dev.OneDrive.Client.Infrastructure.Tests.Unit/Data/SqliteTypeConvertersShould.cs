@@ -1,6 +1,4 @@
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
-using Shouldly;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.Data;
 

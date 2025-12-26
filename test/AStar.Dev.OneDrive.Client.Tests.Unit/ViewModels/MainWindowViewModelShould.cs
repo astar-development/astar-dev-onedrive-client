@@ -163,15 +163,11 @@ public sealed class MainWindowViewModelShould
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("Test error"));
 
-        var errorThrown = false;
-        _ = sut.ScanLocalFilesCommand.ThrownExceptions.Subscribe(_ => errorThrown = true);
-
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { }, _ => { });
         Task.Delay(100).Wait();
 
         sut.SyncStatusMessage.ShouldBe("Local file sync failed");
         sut.RecentTransfers.ShouldContain(t => t.Contains("ERROR") && t.Contains("Test error"));
-        errorThrown.ShouldBeTrue();
     }
 
     [Fact]

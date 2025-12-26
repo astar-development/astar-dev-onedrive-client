@@ -1,6 +1,4 @@
 using AStar.Dev.OneDrive.Client.ViewModels;
-using Shouldly;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.ViewModels;
 

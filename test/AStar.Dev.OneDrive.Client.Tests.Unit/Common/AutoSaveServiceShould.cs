@@ -5,10 +5,7 @@ using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.Extensions.Logging;
-using NSubstitute;
-using Shouldly;
 using System.Reactive.Subjects;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.Common;
 

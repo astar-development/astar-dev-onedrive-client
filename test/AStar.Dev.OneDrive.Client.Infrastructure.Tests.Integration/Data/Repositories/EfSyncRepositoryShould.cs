@@ -3,7 +3,6 @@ using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Shouldly;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.Data.Repositories;
 

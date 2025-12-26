@@ -11,7 +11,6 @@ using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
 
-#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
 public sealed class MainWindowViewModel : ViewModelBase, IDisposable
 {
     private readonly IAuthService _auth;
@@ -56,22 +55,16 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         IObservable<bool> isSyncing = this.WhenAnyValue(x => x.OperationType)
             .Select(type => type == SyncOperationType.Syncing);
 
-        InitialSyncCommand = InitialSync(isSyncing);
+        InitialSyncCommand = CreateInitialSyncCommand(isSyncing);
 
-        IncrementalSyncCommand = IncrementatlSync(isSyncing);
+        IncrementalSyncCommand = CreateIncrementalSyncCommand(isSyncing);
 
-        CancelSyncCommand = ReactiveCommand.Create(() =>
-        {
-            _currentSyncCancellation?.Cancel();
-            SyncStatusMessage = "Cancelling...";
-            AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
-        }, isSyncing);
+        CancelSyncCommand = CreateCancelSyncCommand(isSyncing);
 
-        ScanLocalFilesCommand = ScanLocalFiles(isSyncing);
+        ScanLocalFilesCommand = CreateScanLocalFilesCommand(isSyncing);
 
-        // Subscribe to SyncEngine progress
         _ = _sync.Progress
-            .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
+            .Throttle(TimeSpan.FromMilliseconds(500))
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(progress =>
             {
@@ -81,16 +74,14 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 PendingDownloads = progress.PendingDownloads;
                 PendingUploads = progress.PendingUploads;
 
-                // Update performance metrics
                 UpdatePerformanceMetrics(progress);
 
                 AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperationMessage} ({progress.ProcessedFiles}/{progress.TotalFiles})");
             })
             .DisposeWith(_disposables);
 
-        // Subscribe to TransferService progress
         _ = transfer.Progress
-            .Throttle(TimeSpan.FromMilliseconds(500)) // Throttle to avoid UI flooding
+            .Throttle(TimeSpan.FromMilliseconds(500))
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(progress =>
             {
@@ -98,10 +89,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
                 PendingDownloads = progress.PendingDownloads;
                 PendingUploads = progress.PendingUploads;
 
-                // Update performance metrics
                 UpdatePerformanceMetrics(progress);
 
-                if(progress.ProcessedFiles % 100 == 0) // Log every 100 files
+                if(progress.ProcessedFiles % 100 == 0)
                 {
                     AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperationMessage}");
                 }
@@ -109,28 +99,30 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             .DisposeWith(_disposables);
     }
 
-    private ReactiveCommand<Unit, Unit> ScanLocalFiles(IObservable<bool> isSyncing) => ReactiveCommand.CreateFromTask(async ct =>
+    private ReactiveCommand<Unit, Unit> CreateCancelSyncCommand(IObservable<bool> isSyncing) => ReactiveCommand.Create(() =>
+    {
+        _currentSyncCancellation?.Cancel();
+        SyncStatusMessage = "Cancelling...";
+        AddRecentTransfer($"{DateTimeOffset.Now:HH:mm:ss} - Sync cancellation requested");
+    }, isSyncing);
+    private ReactiveCommand<Unit, Unit> CreateScanLocalFilesCommand(IObservable<bool> isSyncing) => ReactiveCommand.CreateFromTask(async ct =>
     {
         _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
-#pragma warning disable S2139 // Exceptions should be either logged or rethrown but not both
         try
         {
             SyncStatusMessage = "Processing local file sync...";
-            AddRecentTransfer("Processing Local file sync...");
             ProgressPercent = 0;
+            AddRecentTransfer("Processing Local file sync...");
             await _sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
+            SyncStatusMessage = "Local file sync completed successfully";
             ProgressPercent = 100;
             _ = RefreshStatsAsync();
-            SyncStatusMessage = "Local file sync completed successfully";
             AddRecentTransfer("Local file sync completed successfully");
             _logger.LogInformation("Local file sync completed successfully");
         }
         catch(OperationCanceledException)
         {
-            SyncStatusMessage = "Local file sync cancelled";
-            ProgressPercent = 0;
-            AddRecentTransfer("Local file sync was cancelled");
-            _logger.LogInformation("Local file sync was cancelled by user");
+            UpdateCancelled("Local file sync");
         }
         catch(Exception ex)
         {
@@ -139,48 +131,46 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             var errorMsg = $"Sync error: {ex.Message}";
             AddRecentTransfer($"ERROR: {errorMsg}");
             _logger.LogError(ex, "Local file sync failed");
-            throw;
         }
         finally
         {
             _currentSyncCancellation?.Dispose();
             _currentSyncCancellation = null;
         }
-#pragma warning restore S2139 // Exceptions should be either logged or rethrown but not both
     }, isSyncing.Select(syncing => !syncing));
-    private ReactiveCommand<Unit, Unit> IncrementatlSync(IObservable<bool> isSyncing) => ReactiveCommand.CreateFromTask(async ct =>
+    private ReactiveCommand<Unit, Unit> CreateIncrementalSyncCommand(IObservable<bool> isSyncing) => ReactiveCommand.CreateFromTask(async ct =>
     {
         _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
             SyncStatusMessage = "Running incremental sync";
+            ProgressPercent = 0;
             await _sync.IncrementalSyncAsync(_currentSyncCancellation.Token);
             SyncStatusMessage = "Incremental sync complete";
+            ProgressPercent = 100;
             _ = RefreshStatsAsync();
             AddRecentTransfer("Incremental sync completed successfully");
             _logger.LogInformation("Incremental sync completed successfully");
         }
         catch(OperationCanceledException)
         {
-            SyncStatusMessage = "Incremental sync cancelled";
-            AddRecentTransfer("Incremental sync was cancelled");
-            _logger.LogInformation("Incremental sync was cancelled by user");
+            UpdateCancelled("Incremental file sync");
         }
         catch(InvalidOperationException ex) when(ex.Message.Contains("Delta token missing"))
         {
-            SyncStatusMessage = "Incremental sync failed - run initial sync first";
+            SyncStatusMessage = "Incremental sync failed";
+            ProgressPercent = 0;
             var errorMsg = "Must run initial sync before incremental sync";
             AddRecentTransfer($"ERROR: {errorMsg}");
             _logger.LogWarning(ex, "Incremental sync attempted before initial sync");
-            throw;
         }
         catch(Exception ex)
         {
             SyncStatusMessage = "Incremental sync failed";
+            ProgressPercent = 0;
             var errorMsg = $"Sync error: {ex.Message}";
             AddRecentTransfer($"ERROR: {errorMsg}");
             _logger.LogError(ex, "Incremental sync failed");
-            throw;
         }
         finally
         {
@@ -188,39 +178,39 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             _currentSyncCancellation = null;
         }
     }, isSyncing.Select(syncing => !syncing));
-    private ReactiveCommand<Unit, Unit> InitialSync(IObservable<bool> isSyncing) => ReactiveCommand.CreateFromTask(async ct =>
+    private ReactiveCommand<Unit, Unit> CreateInitialSyncCommand(IObservable<bool> isSyncing) => ReactiveCommand.CreateFromTask(async ct =>
     {
         _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
             SyncStatusMessage = "Running initial full sync";
+            ProgressPercent = 0;
             await _sync.InitialFullSyncAsync(_currentSyncCancellation.Token);
             SyncStatusMessage = "Initial sync complete";
+            ProgressPercent = 100;
             _ = RefreshStatsAsync();
             AddRecentTransfer("Initial sync completed successfully");
             _logger.LogInformation("Initial sync completed successfully");
         }
         catch(OperationCanceledException)
         {
-            SyncStatusMessage = "Initial sync cancelled";
-            AddRecentTransfer("Initial sync was cancelled");
-            _logger.LogInformation("Initial sync was cancelled by user");
+            UpdateCancelled("Initial file sync");
         }
         catch(InvalidOperationException ex)
         {
-            SyncStatusMessage = "Initial sync failed - missing configuration";
+            SyncStatusMessage = "Initial sync failed";
+            ProgressPercent = 0;
             var errorMsg = $"Configuration error: {ex.Message}";
             AddRecentTransfer($"ERROR: {errorMsg}");
             _logger.LogError(ex, "Initial sync failed due to configuration error");
-            throw;
         }
         catch(Exception ex)
         {
             SyncStatusMessage = "Initial sync failed";
+            ProgressPercent = 0;
             var errorMsg = $"Sync error: {ex.Message}";
             AddRecentTransfer($"ERROR: {errorMsg}");
             _logger.LogError(ex, "Initial sync failed");
-            throw;
         }
         finally
         {
@@ -228,6 +218,15 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             _currentSyncCancellation = null;
         }
     }, isSyncing.Select(syncing => !syncing));
+
+    private void UpdateCancelled(string operation)
+    {
+        SyncStatusMessage = $"{operation} cancelled";
+        ProgressPercent = 0;
+        AddRecentTransfer($"{operation} was cancelled");
+        _logger.LogInformation("{OperationName} was cancelled by user", operation);
+    }
+
     private ReactiveCommand<Unit, Unit> SignIn() => ReactiveCommand.CreateFromTask(async ct =>
     {
         try
@@ -246,16 +245,13 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             var errorMsg = $"Sign-in failed: {ex.Message}";
             RecentTransfers.Insert(0, $"{DateTimeOffset.Now:HH:mm:ss} - ERROR: {errorMsg}");
             _logger.LogError(ex, "Sign-in failed");
-            throw;
         }
     });
 
     private void UpdatePerformanceMetrics(SyncProgress progress)
     {
-        // Transfer speed
         TransferSpeed = progress.BytesPerSecond > 0 ? $"{progress.MegabytesPerSecond:F2} MB/s" : string.Empty;
 
-        // Estimated time remaining
         if(progress.EstimatedTimeRemaining.HasValue)
         {
             TimeSpan eta = progress.EstimatedTimeRemaining.Value;
@@ -266,7 +262,6 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
             EstimatedTimeRemaining = string.Empty;
         }
 
-        // Elapsed time
         if(progress.ElapsedTime.TotalSeconds > 0)
         {
             TimeSpan elapsed = progress.ElapsedTime;
@@ -325,4 +320,3 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable
         _currentSyncCancellation?.Dispose();
     }
 }
-#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.

@@ -1,7 +1,5 @@
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Theme;
-using Shouldly;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.Theme;
 

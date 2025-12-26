@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using AStar.Dev.OneDrive.Client.Data;
 using Avalonia;
 using Avalonia.ReactiveUI;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +13,7 @@ using static AStar.Dev.Logging.Extensions.Serilog.SerilogExtensions;
 
 namespace AStar.Dev.OneDrive.Client;
 
+[ExcludeFromCodeCoverage]
 internal class Program
 {
     protected Program() { }
@@ -19,12 +22,12 @@ internal class Program
 
     public static async Task Main(string[] args)
     {
-        var applicationName = "AStar.Dev.OneDrive.Client"; // Default name in case of failure before assembly load
+        var applicationName = new ApplicationName("AStar.Dev.OneDrive.Client"); // Default name in case of failure before assembly load
         Log.Logger = CreateMinimalLogger();
 
         try
         {
-            applicationName = Assembly.GetExecutingAssembly().GetName().Name!;
+            applicationName = new ApplicationName(Assembly.GetExecutingAssembly().GetName().Name!);
             using IHost host = CreateHostBuilder(args).Build();
             Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();

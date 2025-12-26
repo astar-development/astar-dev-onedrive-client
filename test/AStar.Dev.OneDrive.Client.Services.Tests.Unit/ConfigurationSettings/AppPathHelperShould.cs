@@ -1,5 +1,4 @@
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
-using Shouldly;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit.ConfigurationSettings;
 

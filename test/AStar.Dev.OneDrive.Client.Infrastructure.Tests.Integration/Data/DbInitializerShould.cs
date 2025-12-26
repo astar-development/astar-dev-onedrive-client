@@ -2,7 +2,6 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Shouldly;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.Data;
 

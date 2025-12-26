@@ -1,6 +1,3 @@
-using AStar.Dev.OneDrive.Client.Services;
-using Shouldly;
-
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
 public sealed class SyncSettingsShould

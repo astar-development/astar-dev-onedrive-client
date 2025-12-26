@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AStar.Dev.OneDrive.Client;
 
+[ExcludeFromCodeCoverage]
 public partial class App : Application
 {
     public static IServiceProvider? Services { get; set; }
