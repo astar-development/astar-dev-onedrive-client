@@ -83,7 +83,7 @@ public sealed class MainWindowViewModelShould
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         executeStarted.Task.Wait(TimeSpan.FromSeconds(5));
 
-        sut.SyncStatusMessage.ShouldBe("Processing local file sync...");
+        sut.SyncStatusMessage.ShouldBe("Processing Local file sync...");
 
         tcs.SetResult(true);
     }
