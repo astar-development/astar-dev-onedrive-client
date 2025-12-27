@@ -13,9 +13,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
     public async Task<DeltaPage> GetDriveDeltaPageAsync(string? deltaOrNextLink, CancellationToken ct)
     {
 #pragma warning disable S1075 // URIs should not be hardcoded
-        var url = string.IsNullOrEmpty(deltaOrNextLink)
-            ? "https://graph.microsoft.com/v1.0/me/drive/root/delta"
-            : deltaOrNextLink;
+        var url = GetDeltaOrNextUrl(deltaOrNextLink);
 #pragma warning restore S1075 // URIs should not be hardcoded
 
         var token = await auth.GetAccessTokenAsync(ct);
@@ -28,29 +26,10 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
         await using Stream stream = await res.Content.ReadAsStreamAsync(ct);
         using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
 
-        var items = new List<DriveItemRecord>();
-        if(doc.RootElement.TryGetProperty("value", out JsonElement arr))
-        {
-            foreach(JsonElement el in arr.EnumerateArray())
-            {
-                var id = el.GetProperty("id").GetString()!;
-                var isFolder = el.TryGetProperty("folder", out _);
-                var size = el.TryGetProperty("size", out JsonElement sProp) ? sProp.GetInt64() : 0L;
-                var parentPath = el.TryGetProperty("parentReference", out JsonElement pr) && pr.TryGetProperty("path", out JsonElement p) ? p.GetString() ?? string.Empty : string.Empty;
-                var name = el.TryGetProperty("name", out JsonElement n) ? n.GetString() ?? id : id;
-                var relativePath = GraphPathHelpers.BuildRelativePath(parentPath, name);
-                var eTag = el.TryGetProperty("eTag", out JsonElement et) ? et.GetString() : null;
-                var cTag = el.TryGetProperty("cTag", out JsonElement ctProp) ? ctProp.GetString() : null;
-                DateTimeOffset last = el.TryGetProperty("lastModifiedDateTime", out JsonElement lm)
-                    ? DateTimeOffset.Parse(lm.GetString()!, CultureInfo.InvariantCulture)
-                    : DateTimeOffset.UtcNow;
-                var isDeleted = el.TryGetProperty("deleted", out _);
-                items.Add(new DriveItemRecord(id, id, relativePath, eTag, cTag, size, last, isFolder, isDeleted));
-            }
-        }
+        var items = ParseDriveItemRecords(doc);
 
-        var next = doc.RootElement.TryGetProperty("@odata.nextLink", out JsonElement nl) ? nl.GetString() : null;
-        var delta = doc.RootElement.TryGetProperty("@odata.deltaLink", out JsonElement dl) ? dl.GetString() : null;
+        var next = TryGetODataProperty(doc, "@odata.nextLink");
+        var delta = TryGetODataProperty(doc, "@odata.deltaLink");
         return new DeltaPage(items, next, delta);
     }
 
@@ -129,4 +108,42 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
         if(res.StatusCode is not System.Net.HttpStatusCode.NoContent and not System.Net.HttpStatusCode.NotFound)
             _ = res.EnsureSuccessStatusCode();
     }
+
+    private static string GetDeltaOrNextUrl(string? deltaOrNextLink) =>
+        string.IsNullOrEmpty(deltaOrNextLink)
+            ? "https://graph.microsoft.com/v1.0/me/drive/root/delta"
+            : deltaOrNextLink;
+
+    private static List<DriveItemRecord> ParseDriveItemRecords(JsonDocument doc)
+    {
+        var items = new List<DriveItemRecord>();
+        if (doc.RootElement.TryGetProperty("value", out JsonElement arr))
+        {
+            foreach (JsonElement el in arr.EnumerateArray())
+            {
+                items.Add(ParseDriveItemRecord(el));
+            }
+        }
+        return items;
+    }
+
+    private static DriveItemRecord ParseDriveItemRecord(JsonElement el)
+    {
+        var id = el.GetProperty("id").GetString()!;
+        var isFolder = el.TryGetProperty("folder", out _);
+        var size = el.TryGetProperty("size", out JsonElement sProp) ? sProp.GetInt64() : 0L;
+        var parentPath = el.TryGetProperty("parentReference", out JsonElement pr) && pr.TryGetProperty("path", out JsonElement p) ? p.GetString() ?? string.Empty : string.Empty;
+        var name = el.TryGetProperty("name", out JsonElement n) ? n.GetString() ?? id : id;
+        var relativePath = GraphPathHelpers.BuildRelativePath(parentPath, name);
+        var eTag = el.TryGetProperty("eTag", out JsonElement et) ? et.GetString() : null;
+        var cTag = el.TryGetProperty("cTag", out JsonElement ctProp) ? ctProp.GetString() : null;
+        DateTimeOffset last = el.TryGetProperty("lastModifiedDateTime", out JsonElement lm)
+            ? DateTimeOffset.Parse(lm.GetString()!, CultureInfo.InvariantCulture)
+            : DateTimeOffset.UtcNow;
+        var isDeleted = el.TryGetProperty("deleted", out _);
+        return new DriveItemRecord(id, id, relativePath, eTag, cTag, size, last, isFolder, isDeleted);
+    }
+
+    private static string? TryGetODataProperty(JsonDocument doc, string propertyName)
+        => doc.RootElement.TryGetProperty(propertyName, out JsonElement prop) ? prop.GetString() : null;
 }

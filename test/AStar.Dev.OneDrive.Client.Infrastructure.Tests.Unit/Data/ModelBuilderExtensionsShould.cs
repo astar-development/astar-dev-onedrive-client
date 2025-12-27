@@ -1,12 +1,7 @@
-using System;
-using System.Linq;
-using System.Reflection;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Shouldly;
-using Xunit;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.Data;
 
@@ -32,32 +27,32 @@ public class ModelBuilderExtensionsShould
     {
         var connection = new Microsoft.Data.Sqlite.SqliteConnection("DataSource=:memory:");
         connection.Open();
-        var options = new DbContextOptionsBuilder<TestContext>()
+        DbContextOptions<TestContext> options = new DbContextOptionsBuilder<TestContext>()
             .UseSqlite(connection)
             .Options;
         using var ctx = new TestContext(options);
         ctx.Database.EnsureCreated();
-        var model = ctx.Model;
+        IModel model = ctx.Model;
         // Check DriveItemRecord DateTimeOffset property
-        var driveItemType = model.FindEntityType(typeof(DriveItemRecord));
+        IEntityType? driveItemType = model.FindEntityType(typeof(DriveItemRecord));
         driveItemType.ShouldNotBeNull();
-        var lastModified = driveItemType.FindProperty("LastModifiedUtc");
+        IProperty? lastModified = driveItemType.FindProperty("LastModifiedUtc");
         lastModified.ShouldNotBeNull();
         lastModified.GetColumnType().ShouldBe("INTEGER");
         lastModified.GetColumnName().ShouldEndWith("_Ticks");
         // Check LocalFileRecord Guid property
-        var localFileType = model.FindEntityType(typeof(LocalFileRecord));
+        IEntityType? localFileType = model.FindEntityType(typeof(LocalFileRecord));
         localFileType.ShouldNotBeNull();
-        var idProp = localFileType.FindProperty("Id");
+        IProperty? idProp = localFileType.FindProperty("Id");
         idProp.ShouldNotBeNull();
         idProp.GetColumnType().ShouldBe("TEXT");
         // Check DeltaToken decimal property (none, but test for coverage)
-        var deltaTokenType = model.FindEntityType(typeof(DeltaToken));
+        IEntityType? deltaTokenType = model.FindEntityType(typeof(DeltaToken));
         deltaTokenType.ShouldNotBeNull();
         // Check TransferLog enum property
-        var transferLogType = model.FindEntityType(typeof(TransferLog));
+        IEntityType? transferLogType = model.FindEntityType(typeof(TransferLog));
         transferLogType.ShouldNotBeNull();
-        var statusProp = transferLogType.FindProperty("Status");
+        IProperty? statusProp = transferLogType.FindProperty("Status");
         statusProp.ShouldNotBeNull();
         statusProp.GetColumnType().ShouldBe("INTEGER");
     }

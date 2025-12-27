@@ -41,6 +41,33 @@ Inherits all standards from `copilot-instructions-starter.md`, plus:
 - **ReactiveUI patterns**: Property notifications with `this.RaiseAndSetIfChanged`
 - **Observable subscriptions**: Always dispose with `.DisposeWith(_disposables)`
 
+- **Complex conditions**: When an `if`, `while`, or similar statement contains multiple clauses or is hard to read, extract the logic into a clearly named private method. This improves readability, maintainability, and testability.
+
+  Example:
+  ```csharp
+  // Instead of:
+  if (existingFile.SyncState != SyncState.PendingUpload ||
+      existingFile.LastWriteUtc != localFile.LastWriteUtc ||
+      existingFile.Size != localFile.Size ||
+      (localFile.Hash is not null && localFile.Hash != existingFile.Hash))
+  {
+      // ...
+  }
+
+  // Use:
+  if (ShouldUpdateExistingFileForUpload(existingFile, localFile))
+  {
+      // ...
+  }
+
+  // With a descriptive private method:
+  private static bool ShouldUpdateExistingFileForUpload(LocalFileRecord existingFile, LocalFileInfo localFile) =>
+      existingFile.SyncState != SyncState.PendingUpload ||
+      existingFile.LastWriteUtc != localFile.LastWriteUtc ||
+      existingFile.Size != localFile.Size ||
+      (localFile.Hash is not null && localFile.Hash != existingFile.Hash);
+  ```
+
 ---
 
 ## Testing: ReactiveUI & Avalonia Specifics
