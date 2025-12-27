@@ -25,4 +25,6 @@ public interface ISyncStatusTarget
 
     /// <summary>Sets the signed-in state for the user.</summary>
     void SetSignedIn(bool value);
+    void SetFullSync(bool value);
+    void SetIncrementalSync(bool value);
 }

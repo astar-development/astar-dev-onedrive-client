@@ -1,5 +1,6 @@
 using System.Reactive;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using Microsoft.Extensions.Logging;
@@ -130,6 +131,18 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
                 target.SetSignedIn(true);
                 target.AddRecentTransfer($"Signed in at {DateTimeOffset.Now}");
                 logger.LogInformation("User successfully signed in");
+
+                DeltaToken? token = sync.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult() ?? throw new InvalidOperationException("Delta token missing; run initial sync first.");
+                if(token != null)
+                {
+                    target.SetFullSync(false);
+                    target.SetIncrementalSync(true);
+                }
+                else
+                {
+                    target.SetFullSync(true);
+                    target.SetIncrementalSync(false);
+                }
             }
             catch(Exception ex)
             {

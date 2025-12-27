@@ -17,7 +17,7 @@ public sealed class AppPathHelperShould
     public void GetAppDataPathOnWindowsContainsAppData()
     {
         // Only run on Windows
-        if (!OperatingSystem.IsWindows())
+        if(!OperatingSystem.IsWindows())
         {
             return;
         }
@@ -33,7 +33,7 @@ public sealed class AppPathHelperShould
     public void GetAppDataPathOnMacOsContainsLibraryApplicationSupport()
     {
         // Only run on macOS
-        if (!OperatingSystem.IsMacOS())
+        if(!OperatingSystem.IsMacOS())
         {
             return;
         }
@@ -49,7 +49,7 @@ public sealed class AppPathHelperShould
     public void GetAppDataPathOnLinuxContainsConfigDirectory()
     {
         // Only run on Linux
-        if (!OperatingSystem.IsLinux())
+        if(!OperatingSystem.IsLinux())
         {
             return;
         }
@@ -145,7 +145,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_OnWindows_UsesCorrectPathSeparator()
     {
-        if (!OperatingSystem.IsWindows())
+        if(!OperatingSystem.IsWindows())
         {
             return;
         }
@@ -159,7 +159,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_OnUnix_UsesCorrectPathSeparator()
     {
-        if (OperatingSystem.IsWindows())
+        if(OperatingSystem.IsWindows())
         {
             return;
         }
@@ -201,7 +201,7 @@ public sealed class AppPathHelperShould
         finally
         {
             // Cleanup
-            if (Directory.Exists(appDataPath))
+            if(Directory.Exists(appDataPath))
             {
                 Directory.Delete(appDataPath);
             }

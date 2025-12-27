@@ -61,32 +61,32 @@ public class TransferService : ITransferService
         _operationStopwatch.Restart();
         _totalBytesTransferred = 0;
         _logger.LogInformation("Processing pending downloads");
-        int totalProcessed = 0;
-        int pageCount = 0;
-        int batchSize = GetDownloadBatchSize();
-        int total = await _repo.GetPendingDownloadCountAsync(ct);
+        var totalProcessed = 0;
+        var pageCount = 0;
+        var batchSize = GetDownloadBatchSize();
+        var total = await _repo.GetPendingDownloadCountAsync(ct);
 
         _logger.LogInformation("Found {TotalPending} pending downloads (batch size: {BatchSize})", total, batchSize);
 
-        if (NoPendingDownloads(total))
+        if(NoPendingDownloads(total))
         {
             _logger.LogInformation("No pending downloads found - sync complete");
             return;
         }
 
         long totalBytesForAllDownloads = 0;
-        bool batchProcessed = true;
-        while (!ct.IsCancellationRequested && batchProcessed)
+        var batchProcessed = true;
+        while(!ct.IsCancellationRequested && batchProcessed)
         {
-            var result = await ProcessDownloadBatchAsync(
+            (bool BatchProcessed, int PageCount, int TotalProcessed, long TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
                 ct, batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads);
-            batchProcessed = result.BatchProcessed;
-            pageCount = result.PageCount;
-            totalProcessed = result.TotalProcessed;
-            totalBytesForAllDownloads = result.TotalBytesForAllDownloads;
+            batchProcessed = BatchProcessed;
+            pageCount = PageCount;
+            totalProcessed = TotalProcessed;
+            totalBytesForAllDownloads = TotalBytesForAllDownloads;
         }
 
-        if (ct.IsCancellationRequested)
+        if(ct.IsCancellationRequested)
         {
             _logger.LogWarning("Download process cancelled after {Processed}/{Total} files", totalProcessed, total);
         }
@@ -109,7 +109,7 @@ public class TransferService : ITransferService
         var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount, ct)).ToList();
         pageCount++;
 
-        if (NoMoreItemsInBatch(items))
+        if(NoMoreItemsInBatch(items))
         {
             _logger.LogInformation("No more items in batch - all downloads complete");
             return (false, pageCount, totalProcessed, totalBytesForAllDownloads);
@@ -154,13 +154,14 @@ public class TransferService : ITransferService
         long totalBytesForAllDownloads,
         int pageCount)
     {
-        if (ShouldEstimateTotalBytes(totalBytesForAllDownloads, pageCount))
+        if(ShouldEstimateTotalBytes(totalBytesForAllDownloads, pageCount))
         {
             var avgSize = GetAverageFileSize(items);
             totalBytesForAllDownloads = avgSize * total;
             _logger.LogInformation("Estimated total download size: {TotalMB:F2} MB (avg file size: {AvgKB:F2} KB)",
                 totalBytesForAllDownloads / (1024.0 * 1024.0), avgSize / 1024.0);
         }
+
         return totalBytesForAllDownloads;
     }
 
@@ -188,8 +189,8 @@ public class TransferService : ITransferService
         int pendingUploads,
         long totalBytes)
     {
-        int totalProcessed = 0;
-        foreach (LocalFileRecord? local in uploads)
+        var totalProcessed = 0;
+        foreach(LocalFileRecord? local in uploads)
         {
             await _retryPolicy.ExecuteAsync(async ct2 =>
             {
@@ -199,6 +200,7 @@ public class TransferService : ITransferService
                 ReportProgress(processed, "Uploading files", uploads.Count, pendingUploads, totalBytes);
             }, ct);
         }
+
         return totalProcessed;
     }
 
@@ -309,7 +311,7 @@ public class TransferService : ITransferService
 
         // Calculate ETA
         TimeSpan? eta = null;
-        if (ShouldCalculateEta(bytesPerSecond, totalBytes, _totalBytesTransferred))
+        if(ShouldCalculateEta(bytesPerSecond, totalBytes, _totalBytesTransferred))
         {
             var remainingBytes = totalBytes - _totalBytesTransferred;
             var remainingSeconds = remainingBytes / bytesPerSecond;
@@ -344,20 +346,20 @@ public class TransferService : ITransferService
 
     private static bool NoMoreItemsInBatch(ICollection<DriveItemRecord> items) => items.Count == 0;
 
-    private static bool ShouldEstimateTotalBytes(long totalBytesForAllDownloads, int pageCount) =>
-        totalBytesForAllDownloads == 0 && pageCount == 1;
+    private static bool ShouldEstimateTotalBytes(long totalBytesForAllDownloads, int pageCount)
+        => totalBytesForAllDownloads == 0 && pageCount == 1;
 
-    private static long GetAverageFileSize(ICollection<DriveItemRecord> items) =>
-        items.Count != 0 ? (long)items.Average(i => i.Size) : 0;
+    private static long GetAverageFileSize(ICollection<DriveItemRecord> items)
+        => items.Count != 0 ? (long)items.Average(i => i.Size) : 0;
 
-    private static bool IsNetworkError(Exception ex) =>
-        ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
+    private static bool IsNetworkError(Exception ex)
+        => ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
 
-    private static string GetErrorDetail(bool isNetworkError, string exceptionType, Exception ex) =>
-        isNetworkError
+    private static string GetErrorDetail(bool isNetworkError, string exceptionType, Exception ex)
+        => isNetworkError
             ? "Network connection error - connection was forcibly closed or timed out"
             : $"{exceptionType}: {ex.Message}";
 
-    private static bool ShouldCalculateEta(double bytesPerSecond, long totalBytes, long totalBytesTransferred) =>
-        bytesPerSecond > 0 && totalBytes > 0 && totalBytesTransferred < totalBytes;
+    private static bool ShouldCalculateEta(double bytesPerSecond, long totalBytes, long totalBytesTransferred)
+        => bytesPerSecond > 0 && totalBytes > 0 && totalBytesTransferred < totalBytes;
 }

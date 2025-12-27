@@ -20,14 +20,14 @@ public static class GraphPathHelpers
     public static string BuildRelativePath(string parentReferencePath, string name)
     {
         // parentReference.path looks like "/drive/root:/Folder/SubFolder"
-        if (string.IsNullOrEmpty(parentReferencePath))
+        if(string.IsNullOrEmpty(parentReferencePath))
             return name;
 
         var idx = parentReferencePath.IndexOf(":/", StringComparison.Ordinal);
-        if (idx >= 0)
+        if(idx >= 0)
         {
             var after = parentReferencePath[(idx + 2)..].Trim('/');
-            if (string.IsNullOrEmpty(after))
+            if(string.IsNullOrEmpty(after))
                 return name;
 
             // Normalize forward slashes to Path.DirectorySeparatorChar before combining

@@ -53,7 +53,7 @@ public class SettingsAndPreferencesServiceShould
         var appSettings = new ApplicationSettings { UserPreferencesPath = @"C:\TestPath", UserPreferencesFile = "missing.json" };
         var sut = new SettingsAndPreferencesService(fileSystem, appSettings);
 
-        FileNotFoundException exception = Should.Throw<FileNotFoundException>(() => sut.Load());
+        FileNotFoundException exception = Should.Throw<FileNotFoundException>(sut.Load);
 
         exception.ShouldNotBeNull();
     }
@@ -66,7 +66,7 @@ public class SettingsAndPreferencesServiceShould
         fileSystem.AddFile(appSettings.FullUserPreferencesPath, new MockFileData("{ invalid json }"));
         var sut = new SettingsAndPreferencesService(fileSystem, appSettings);
 
-        JsonException exception = Should.Throw<System.Text.Json.JsonException>(() => sut.Load());
+        JsonException exception = Should.Throw<System.Text.Json.JsonException>(sut.Load);
 
         exception.ShouldNotBeNull();
     }

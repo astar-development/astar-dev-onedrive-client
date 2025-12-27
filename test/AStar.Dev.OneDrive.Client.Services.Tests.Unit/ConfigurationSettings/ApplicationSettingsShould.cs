@@ -91,52 +91,52 @@ public class ApplicationSettingsShould
 
         result.ShouldEndWith("CustomSync");
         result.ShouldNotBeNullOrWhiteSpace();
-        }
-
-        [Fact]
-        public void UseDefaultOneDriveRootDirectoryWhenNotSet()
-        {
-            ApplicationSettings settings = new();
-
-            var result = settings.FullUserSyncPath;
-
-            result.ShouldEndWith("OneDrive-Sync");
-        }
-
-        [Fact]
-        public void HaveExpectedDefaultValues()
-        {
-            ApplicationSettings settings = new();
-
-            settings.CacheTag.ShouldBe(1);
-            settings.ApplicationVersion.ShouldBe("1.0.0");
-            settings.UserPreferencesPath.ShouldBe(string.Empty);
-            settings.UserPreferencesFile.ShouldBe("user-preferences.json");
-            settings.DatabaseName.ShouldBe("onedrive-sync.db");
-            settings.OneDriveRootDirectory.ShouldBe("OneDrive-Sync");
-            settings.CachePrefix.ShouldBe(string.Empty);
-        }
-
-        [Fact]
-        public void AllowSettingAllProperties()
-        {
-            ApplicationSettings settings = new()
-            {
-                CacheTag = 42,
-                ApplicationVersion = "2.0.0",
-                UserPreferencesPath = "custom-path",
-                UserPreferencesFile = "custom-prefs.json",
-                DatabaseName = "custom-db.db",
-                OneDriveRootDirectory = "CustomOneDrive",
-                CachePrefix = "custom-prefix"
-            };
-
-            settings.CacheTag.ShouldBe(42);
-            settings.ApplicationVersion.ShouldBe("2.0.0");
-            settings.UserPreferencesPath.ShouldBe("custom-path");
-            settings.UserPreferencesFile.ShouldBe("custom-prefs.json");
-            settings.DatabaseName.ShouldBe("custom-db.db");
-            settings.OneDriveRootDirectory.ShouldBe("CustomOneDrive");
-            settings.CachePrefix.ShouldBe("custom-prefix");
-        }
     }
+
+    [Fact]
+    public void UseDefaultOneDriveRootDirectoryWhenNotSet()
+    {
+        ApplicationSettings settings = new();
+
+        var result = settings.FullUserSyncPath;
+
+        result.ShouldEndWith("OneDrive-Sync");
+    }
+
+    [Fact]
+    public void HaveExpectedDefaultValues()
+    {
+        ApplicationSettings settings = new();
+
+        settings.CacheTag.ShouldBe(1);
+        settings.ApplicationVersion.ShouldBe("1.0.0");
+        settings.UserPreferencesPath.ShouldBe(string.Empty);
+        settings.UserPreferencesFile.ShouldBe("user-preferences.json");
+        settings.DatabaseName.ShouldBe("onedrive-sync.db");
+        settings.OneDriveRootDirectory.ShouldBe("OneDrive-Sync");
+        settings.CachePrefix.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public void AllowSettingAllProperties()
+    {
+        ApplicationSettings settings = new()
+        {
+            CacheTag = 42,
+            ApplicationVersion = "2.0.0",
+            UserPreferencesPath = "custom-path",
+            UserPreferencesFile = "custom-prefs.json",
+            DatabaseName = "custom-db.db",
+            OneDriveRootDirectory = "CustomOneDrive",
+            CachePrefix = "custom-prefix"
+        };
+
+        settings.CacheTag.ShouldBe(42);
+        settings.ApplicationVersion.ShouldBe("2.0.0");
+        settings.UserPreferencesPath.ShouldBe("custom-path");
+        settings.UserPreferencesFile.ShouldBe("custom-prefs.json");
+        settings.DatabaseName.ShouldBe("custom-db.db");
+        settings.OneDriveRootDirectory.ShouldBe("CustomOneDrive");
+        settings.CachePrefix.ShouldBe("custom-prefix");
+    }
+}

@@ -30,6 +30,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     public double ProgressPercent { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public UserPreferences UserPreferences { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public bool SignedIn { get; set => this.RaiseAndSetIfChanged(ref field, value); }
+    public bool FullSync { get; set => this.RaiseAndSetIfChanged(ref field, value); }
+    public bool IncrementalSync { get; set => this.RaiseAndSetIfChanged(ref field, value); }
     public string TransferSpeed { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
     public string EstimatedTimeRemaining { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
     public string ElapsedTime { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
@@ -109,7 +111,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         ProgressPercent = 0d;
         AddRecentTransferInternal($"{operation} was cancelled");
     }
+
     public void SetSignedIn(bool value) => SignedIn = value;
+
+    public void SetFullSync(bool value) => FullSync = value;
+
+    public void SetIncrementalSync(bool value) => IncrementalSync = value;
 
     private void UpdatePerformanceMetrics(SyncProgress progress)
     {

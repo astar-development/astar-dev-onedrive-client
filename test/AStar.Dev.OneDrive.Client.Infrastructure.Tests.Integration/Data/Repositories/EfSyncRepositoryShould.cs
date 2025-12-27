@@ -71,7 +71,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
     {
         DeltaToken older = new("token1", "old", DateTimeOffset.UtcNow.AddHours(-2));
         DeltaToken newer = new("token2", "new", DateTimeOffset.UtcNow);
-        
+
         await _repository.SaveOrUpdateDeltaTokenAsync(older, CancellationToken.None);
         await _repository.SaveOrUpdateDeltaTokenAsync(newer, CancellationToken.None);
 
@@ -278,7 +278,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
     {
         DriveItemRecord driveItem = new("id1", "driveId1", "file1.txt", null, null, 150, DateTimeOffset.UtcNow, false, false);
         await _repository.ApplyDriveItemsAsync([driveItem], CancellationToken.None);
-        
+
         LocalFileRecord localFile = new("id1", "file1.txt", "hash123", 100, DateTimeOffset.UtcNow.AddHours(-1), SyncState.PendingDownload);
         await _repository.AddOrUpdateLocalFileAsync(localFile, CancellationToken.None);
 
@@ -309,8 +309,8 @@ public sealed class EfSyncRepositoryShould : IDisposable
             new LocalFileRecord("id3", "file3.txt", null, 150, DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("id4", "file4.txt", null, 250, DateTimeOffset.UtcNow, SyncState.Uploaded)
         ];
-        
-        foreach (LocalFileRecord file in files)
+
+        foreach(LocalFileRecord file in files)
         {
             await _repository.AddOrUpdateLocalFileAsync(file, CancellationToken.None);
         }
@@ -328,8 +328,8 @@ public sealed class EfSyncRepositoryShould : IDisposable
         LocalFileRecord[] files = Enumerable.Range(1, 5)
             .Select(i => new LocalFileRecord($"id{i}", $"file{i}.txt", null, i * 100, DateTimeOffset.UtcNow, SyncState.PendingUpload))
             .ToArray();
-        
-        foreach (LocalFileRecord file in files)
+
+        foreach(LocalFileRecord file in files)
         {
             await _repository.AddOrUpdateLocalFileAsync(file, CancellationToken.None);
         }
@@ -414,7 +414,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
             new TransferLog("log3", TransferType.Delete, "item3", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, TransferStatus.Success, null, null)
         ];
 
-        foreach (TransferLog log in logs)
+        foreach(TransferLog log in logs)
         {
             await _repository.LogTransferAsync(log, CancellationToken.None);
         }

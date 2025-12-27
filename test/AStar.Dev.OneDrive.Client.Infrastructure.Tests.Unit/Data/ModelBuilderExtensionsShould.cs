@@ -14,7 +14,7 @@ public class ModelBuilderExtensionsShould
         public DbSet<DeltaToken> DeltaTokens => Set<DeltaToken>();
         public DbSet<TransferLog> TransferLogs => Set<TransferLog>();
         private readonly DbContextOptions _options;
-        public TestContext(DbContextOptions options) : base(options) { _options = options; }
+        public TestContext(DbContextOptions options) : base(options) => _options = options;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.UseSqliteFriendlyConversions();

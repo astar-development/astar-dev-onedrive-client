@@ -89,9 +89,10 @@ public sealed class SyncSettingsShould
     [Fact]
     public void MaxParallelDownloads_AcceptsPositiveValues()
     {
-        SyncSettings settings = new();
-
-        settings.MaxParallelDownloads = 1;
+        SyncSettings settings = new()
+        {
+            MaxParallelDownloads = 1
+        };
         settings.MaxParallelDownloads.ShouldBe(1);
 
         settings.MaxParallelDownloads = 32;
@@ -105,9 +106,10 @@ public sealed class SyncSettingsShould
     public void MaxParallelDownloads_AcceptsZeroAndNegativeValues()
     {
         // Documents that class allows any int value - validation is responsibility of consumer
-        SyncSettings settings = new();
-
-        settings.MaxParallelDownloads = 0;
+        SyncSettings settings = new()
+        {
+            MaxParallelDownloads = 0
+        };
         settings.MaxParallelDownloads.ShouldBe(0);
 
         settings.MaxParallelDownloads = -1;
@@ -117,9 +119,10 @@ public sealed class SyncSettingsShould
     [Fact]
     public void DownloadBatchSize_AcceptsVariousPositiveValues()
     {
-        SyncSettings settings = new();
-
-        settings.DownloadBatchSize = 10;
+        SyncSettings settings = new()
+        {
+            DownloadBatchSize = 10
+        };
         settings.DownloadBatchSize.ShouldBe(10);
 
         settings.DownloadBatchSize = 500;
@@ -155,9 +158,10 @@ public sealed class SyncSettingsShould
     [Fact]
     public void RetryBaseDelayMs_AcceptsVariousDelayValues()
     {
-        SyncSettings settings = new();
-
-        settings.RetryBaseDelayMs = 100;
+        SyncSettings settings = new()
+        {
+            RetryBaseDelayMs = 100
+        };
         settings.RetryBaseDelayMs.ShouldBe(100);
 
         settings.RetryBaseDelayMs = 2000;

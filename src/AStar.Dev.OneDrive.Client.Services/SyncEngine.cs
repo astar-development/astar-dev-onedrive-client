@@ -302,4 +302,6 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
     private static bool ShouldMarkAsModified(LocalFileInfo localFile, DriveItemRecord driveItem, LocalFileRecord? existingFile) => localFile.LastWriteUtc > driveItem.LastModifiedUtc ||
             localFile.Size != driveItem.Size ||
             (localFile.Hash is not null && driveItem.Size > 0 && existingFile != null && localFile.Hash != existingFile.Hash);
+
+    public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken ct) => await repo.GetDeltaTokenAsync(ct);
 }

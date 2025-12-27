@@ -13,7 +13,7 @@ public sealed class AppDbContextShould : IDisposable
     {
         DbContextOptionsBuilder<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite("DataSource=:memory:");
-        
+
         _context = new AppDbContext(options.Options);
         _context.Database.OpenConnection();
         _ = _context.Database.EnsureCreated();
@@ -28,10 +28,7 @@ public sealed class AppDbContextShould : IDisposable
     #region Schema Tests
 
     [Fact]
-    public void CreateDatabaseSuccessfully()
-    {
-        _context.Database.CanConnect().ShouldBeTrue();
-    }
+    public void CreateDatabaseSuccessfully() => _context.Database.CanConnect().ShouldBeTrue();
 
     [Fact]
     public void HaveDriveItemsTable()
@@ -128,7 +125,7 @@ public sealed class AppDbContextShould : IDisposable
         _context.ChangeTracker.Clear();
 
         DeltaToken? retrieved = await _context.DeltaTokens.FindAsync(["test1"], TestContext.Current.CancellationToken);
-        
+
         _ = retrieved.ShouldNotBeNull();
         retrieved.LastSyncedUtc.ShouldBe(testTime);
     }
@@ -140,16 +137,16 @@ public sealed class AppDbContextShould : IDisposable
         // Let's verify the type converter is registered
         IEntityType? entityType = _context.Model.FindEntityType(typeof(TransferLog));
         _ = entityType.ShouldNotBeNull();
-        
+
         // The fact that we can save and retrieve entities with string IDs that could be GUIDs is sufficient
         TransferLog log = new(Guid.NewGuid().ToString(), TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);
-        
+
         _ = _context.TransferLogs.Add(log);
         _ = await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
         _context.ChangeTracker.Clear();
 
         TransferLog? retrieved = await _context.TransferLogs.FindAsync([log.Id], TestContext.Current.CancellationToken);
-        
+
         _ = retrieved.ShouldNotBeNull();
         retrieved.Id.ShouldBe(log.Id);
     }
@@ -164,7 +161,7 @@ public sealed class AppDbContextShould : IDisposable
         _context.ChangeTracker.Clear();
 
         TransferLog? retrieved = await _context.TransferLogs.FindAsync(["test1"], TestContext.Current.CancellationToken);
-        
+
         _ = retrieved.ShouldNotBeNull();
         retrieved.Type.ShouldBe(TransferType.Upload);
         retrieved.Status.ShouldBe(TransferStatus.InProgress);
@@ -186,7 +183,7 @@ public sealed class AppDbContextShould : IDisposable
         _context.ChangeTracker.Clear();
 
         List<TransferLog> retrieved = await _context.TransferLogs.ToListAsync(TestContext.Current.CancellationToken);
-        
+
         retrieved.Count.ShouldBe(4);
         retrieved.ShouldContain(l => l.Type == TransferType.Download);
         retrieved.ShouldContain(l => l.Type == TransferType.Upload);
@@ -216,7 +213,7 @@ public sealed class AppDbContextShould : IDisposable
         _context.ChangeTracker.Clear();
 
         List<LocalFileRecord> retrieved = await _context.LocalFiles.ToListAsync(TestContext.Current.CancellationToken);
-        
+
         retrieved.Count.ShouldBe(7);
         retrieved.ShouldContain(f => f.SyncState == SyncState.Unknown);
         retrieved.ShouldContain(f => f.SyncState == SyncState.PendingDownload);
@@ -239,10 +236,10 @@ public sealed class AppDbContextShould : IDisposable
 
         TransferLog? retrieved1 = await _context.TransferLogs.FindAsync(["test1"], TestContext.Current.CancellationToken);
         TransferLog? retrieved2 = await _context.TransferLogs.FindAsync(["test2"], TestContext.Current.CancellationToken);
-        
+
         _ = retrieved1.ShouldNotBeNull();
         retrieved1.CompletedUtc.ShouldBeNull();
-        
+
         _ = retrieved2.ShouldNotBeNull();
         _ = retrieved2.CompletedUtc.ShouldNotBeNull();
     }
@@ -259,11 +256,11 @@ public sealed class AppDbContextShould : IDisposable
 
         DriveItemRecord? retrieved1 = await _context.DriveItems.FindAsync(["id1"], TestContext.Current.CancellationToken);
         DriveItemRecord? retrieved2 = await _context.DriveItems.FindAsync(["id2"], TestContext.Current.CancellationToken);
-        
+
         _ = retrieved1.ShouldNotBeNull();
         retrieved1.ETag.ShouldBeNull();
         retrieved1.CTag.ShouldBeNull();
-        
+
         _ = retrieved2.ShouldNotBeNull();
         retrieved2.ETag.ShouldBe("etag123");
         retrieved2.CTag.ShouldBe("ctag456");
@@ -287,7 +284,7 @@ public sealed class AppDbContextShould : IDisposable
             .Where(d => !d.IsFolder && !d.IsDeleted)
             .OrderBy(d => d.LastModifiedUtc)
             .ToListAsync(TestContext.Current.CancellationToken);
-        
+
         files.Count.ShouldBe(2);
         files[0].Id.ShouldBe("id1");
         files[1].Id.ShouldBe("id3");

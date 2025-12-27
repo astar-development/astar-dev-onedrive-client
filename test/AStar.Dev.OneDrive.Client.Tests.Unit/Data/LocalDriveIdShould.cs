@@ -18,7 +18,7 @@ public class LocalDriveIdShould
     public void ReturnEmptyStaticInstance()
     {
         LocalDriveId emptyLocalDriveId = LocalDriveId.Empty;
-        
+
         emptyLocalDriveId.Id.ShouldBe(Guid.Empty);
     }
 }

@@ -26,7 +26,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
         await using Stream stream = await res.Content.ReadAsStreamAsync(ct);
         using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
 
-        var items = ParseDriveItemRecords(doc);
+        List<DriveItemRecord> items = ParseDriveItemRecords(doc);
 
         var next = TryGetODataProperty(doc, "@odata.nextLink");
         var delta = TryGetODataProperty(doc, "@odata.deltaLink");
@@ -109,21 +109,22 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
             _ = res.EnsureSuccessStatusCode();
     }
 
-    private static string GetDeltaOrNextUrl(string? deltaOrNextLink) =>
-        string.IsNullOrEmpty(deltaOrNextLink)
+    private static string GetDeltaOrNextUrl(string? deltaOrNextLink)
+        => string.IsNullOrEmpty(deltaOrNextLink)
             ? "https://graph.microsoft.com/v1.0/me/drive/root/delta"
             : deltaOrNextLink;
 
     private static List<DriveItemRecord> ParseDriveItemRecords(JsonDocument doc)
     {
         var items = new List<DriveItemRecord>();
-        if (doc.RootElement.TryGetProperty("value", out JsonElement arr))
+        if(doc.RootElement.TryGetProperty("value", out JsonElement arr))
         {
-            foreach (JsonElement el in arr.EnumerateArray())
+            foreach(JsonElement el in arr.EnumerateArray())
             {
                 items.Add(ParseDriveItemRecord(el));
             }
         }
+
         return items;
     }
 
