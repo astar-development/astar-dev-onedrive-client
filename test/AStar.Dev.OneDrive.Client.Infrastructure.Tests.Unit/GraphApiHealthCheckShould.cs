@@ -14,7 +14,7 @@ public class GraphApiHealthCheckShould
 
         var check = new GraphApiHealthCheck(auth);
 
-        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext());
+        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Degraded);
     }
@@ -40,11 +40,12 @@ public class GraphApiHealthCheckShould
     {
         IAuthService auth = Substitute.For<IAuthService>();
         auth.IsSignedIn.Returns(true);
-        auth.GetAccessTokenAsync(Arg.Any<CancellationToken>()).Throws(new HttpRequestException());
+        auth.GetAccessTokenAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<string>(new HttpRequestException()));
 
         var check = new GraphApiHealthCheck(auth);
 
-        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext());
+        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         result.Data["errorType"].ShouldBe("NetworkError");
@@ -55,11 +56,12 @@ public class GraphApiHealthCheckShould
     {
         IAuthService auth = Substitute.For<IAuthService>();
         auth.IsSignedIn.Returns(true);
-        auth.GetAccessTokenAsync(Arg.Any<CancellationToken>()).Throws(new Exception("fail"));
+        auth.GetAccessTokenAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<string>(new Exception("fail")));
 
         var check = new GraphApiHealthCheck(auth);
 
-        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext());
+        HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }

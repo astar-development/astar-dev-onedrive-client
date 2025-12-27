@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
@@ -10,7 +11,7 @@ using Polly.Retry;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
-public sealed class TransferService : ITransferService
+public class TransferService : ITransferService
 {
     private readonly IFileSystemAdapter _fs;
     private readonly IGraphClient _graph;
@@ -123,70 +124,6 @@ public sealed class TransferService : ITransferService
             _totalBytesTransferred / (1024.0 * 1024.0) / _operationStopwatch.Elapsed.TotalSeconds);
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null)
-    {
-        try
-        {
-            await _retryPolicy.ExecuteAsync(async ct2 =>
-            {
-                await DownloadItemAsync(item, ct2);
-                onComplete?.Invoke();
-            }, ct);
-        }
-        catch(Exception ex)
-        {
-            var exceptionType = ex.GetType().Name;
-            var isNetworkError = ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
-            var errorDetail = isNetworkError
-                    ? "Network connection error - connection was forcibly closed or timed out"
-                    : $"{exceptionType}: {ex.Message}";
-
-            _logger.LogError(ex, "Failed to download {Path} after {MaxRetries} retries. {ErrorDetail}",
-                item.RelativePath, _settings.UiSettings.SyncSettings.MaxRetries, errorDetail);
-            throw;
-        }
-    }
-
-    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
-    {
-        _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
-        await _downloadSemaphore.WaitAsync(ct);
-        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
-        await _repo.LogTransferAsync(log, ct);
-        try
-        {
-            _logger.LogDebug("Downloading content for: {Path}", item.RelativePath);
-            await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
-
-            _logger.LogDebug("Writing file to disk: {Path}", item.RelativePath);
-            await _fs.WriteFileAsync(item.RelativePath, stream, ct);
-
-            _logger.LogDebug("Marking file as downloaded: {Path}", item.RelativePath);
-            await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
-
-            FileInfo fileInfo = _fs.GetFileInfo(item.RelativePath);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length };
-            await _repo.LogTransferAsync(log, ct);
-            _logger.LogInformation("Downloaded {Path} ({SizeKB:F2} KB)", item.RelativePath, fileInfo.Length / 1024.0);
-        }
-        catch(Exception ex)
-        {
-            var exceptionType = ex.GetType().Name;
-            var isNetworkError = ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
-
-            _logger.LogError(ex, "Download failed for {Path} (DriveItemId: {DriveItemId}). Type: {ExceptionType}, Network Error: {IsNetwork}",
-                item.RelativePath, item.DriveItemId, exceptionType, isNetworkError);
-
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
-            await _repo.LogTransferAsync(log, ct);
-            throw;
-        }
-        finally
-        {
-            _ = _downloadSemaphore.Release();
-        }
-    }
-
     /// <summary>
     /// Scans repository for pending uploads and uploads them using upload sessions and chunked uploads.
     /// </summary>
@@ -251,6 +188,70 @@ public sealed class TransferService : ITransferService
             _logger.LogError(ex, "Upload failed for {Id}", local.Id);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
+        }
+    }
+
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null)
+    {
+        try
+        {
+            await _retryPolicy.ExecuteAsync(async ct2 =>
+            {
+                await DownloadItemAsync(item, ct2);
+                onComplete?.Invoke();
+            }, ct);
+        }
+        catch(Exception ex)
+        {
+            var exceptionType = ex.GetType().Name;
+            var isNetworkError = ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
+            var errorDetail = isNetworkError
+                    ? "Network connection error - connection was forcibly closed or timed out"
+                    : $"{exceptionType}: {ex.Message}";
+
+            _logger.LogError(ex, "Failed to download {Path} after {MaxRetries} retries. {ErrorDetail}",
+                item.RelativePath, _settings.UiSettings.SyncSettings.MaxRetries, errorDetail);
+            throw new IOException($"Download failed for {item.RelativePath} after {_settings.UiSettings.SyncSettings.MaxRetries} retries. See inner exception for details.", ex);
+        }
+    }
+
+    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
+    {
+        _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
+        await _downloadSemaphore.WaitAsync(ct);
+        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
+        await _repo.LogTransferAsync(log, ct);
+        try
+        {
+            _logger.LogDebug("Downloading content for: {Path}", item.RelativePath);
+            await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
+
+            _logger.LogDebug("Writing file to disk: {Path}", item.RelativePath);
+            await _fs.WriteFileAsync(item.RelativePath, stream, ct);
+
+            _logger.LogDebug("Marking file as downloaded: {Path}", item.RelativePath);
+            await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
+
+            IFileInfo fileInfo = _fs.GetFileInfo(item.RelativePath);
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length };
+            await _repo.LogTransferAsync(log, ct);
+            _logger.LogInformation("Downloaded {Path} ({SizeKB:F2} KB)", item.RelativePath, fileInfo.Length / 1024.0);
+        }
+        catch(Exception ex)
+        {
+            var exceptionType = ex.GetType().Name;
+            var isNetworkError = ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);
+
+            _logger.LogError(ex, "Download failed for {Path} (DriveItemId: {DriveItemId}). Type: {ExceptionType}, Network Error: {IsNetwork}",
+                item.RelativePath, item.DriveItemId, exceptionType, isNetworkError);
+
+            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
+            await _repo.LogTransferAsync(log, ct);
+            throw new IOException($"Download failed for {item.RelativePath} after {_settings.UiSettings.SyncSettings.MaxRetries} retries. See inner exception for details.", ex);
+        }
+        finally
+        {
+            _ = _downloadSemaphore.Release();
         }
     }
 

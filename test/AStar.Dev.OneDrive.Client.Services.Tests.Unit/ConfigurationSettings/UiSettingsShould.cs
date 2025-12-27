@@ -37,7 +37,7 @@ public class UiSettingsShould
             }
         };
 
-        var result = settings.Update(other);
+        UiSettings result = settings.Update(other);
 
         result.DownloadFilesAfterSync.ShouldBeTrue();
         result.UploadFilesAfterSync.ShouldBeTrue();
@@ -56,7 +56,7 @@ public class UiSettingsShould
         var settings = new UiSettings();
         var other = new UiSettings();
 
-        var result = settings.Update(other);
+        UiSettings result = settings.Update(other);
 
         result.ShouldBeSameAs(settings);
     }

@@ -1,6 +1,6 @@
+using System.IO.Abstractions;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using System.IO.Abstractions;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
 
@@ -8,10 +8,10 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
 {
     private string FullPath(string relative) => Path.Combine(root, relative.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
 
-    public FileInfo GetFileInfo(string relativePath)
+    public IFileInfo GetFileInfo(string relativePath)
     {
         var full = FullPath(relativePath);
-        return new FileInfo(full);
+        return fileSystem.FileInfo.New(full);
     }
 
     public async Task WriteFileAsync(string relativePath, Stream content, CancellationToken ct)

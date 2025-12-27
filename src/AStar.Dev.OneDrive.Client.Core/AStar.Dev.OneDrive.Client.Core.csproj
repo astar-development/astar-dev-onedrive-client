@@ -5,4 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="TestableIO.System.IO.Abstractions" Version="22.1.0" />
+		<PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" Version="22.1.0" />
+	</ItemGroup>
 </Project>

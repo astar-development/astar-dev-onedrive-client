@@ -49,7 +49,7 @@ public class UserPreferencesShould
             }
         };
 
-        var result = preferences.Update(other);
+        UserPreferences result = preferences.Update(other);
 
         result.WindowSettings.WindowWidth.ShouldBe(1920);
         result.WindowSettings.WindowHeight.ShouldBe(1080);
@@ -67,7 +67,7 @@ public class UserPreferencesShould
         var preferences = new UserPreferences();
         var other = new UserPreferences();
 
-        var result = preferences.Update(other);
+        UserPreferences result = preferences.Update(other);
 
         result.ShouldBeSameAs(preferences);
     }

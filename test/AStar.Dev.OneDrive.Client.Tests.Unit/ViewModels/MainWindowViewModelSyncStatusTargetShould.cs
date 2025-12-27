@@ -29,7 +29,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     [InlineData(59, "59s")]
     public void BuildElapsed_FormatsCorrectly(double seconds, string expected)
     {
-        MethodInfo? method = typeof(MainWindowViewModel).GetMethod("BuildElapsed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        MethodInfo? method = typeof(MainWindowViewModel).GetMethod("BuildElapsed", BindingFlags.NonPublic | BindingFlags.Static);
         method.ShouldNotBeNull();
         var result = (string)method.Invoke(null, [TimeSpan.FromSeconds(seconds)])!;
         result.ShouldBe(expected);
@@ -41,7 +41,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     [InlineData(59, "ETA: 59s")]
     public void BuildEta_FormatsCorrectly(double seconds, string expected)
     {
-        MethodInfo? method = typeof(MainWindowViewModel).GetMethod("BuildEta", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        MethodInfo? method = typeof(MainWindowViewModel).GetMethod("BuildEta", BindingFlags.NonPublic | BindingFlags.Static);
         method.ShouldNotBeNull();
         var result = (string)method.Invoke(null, [TimeSpan.FromSeconds(seconds)])!;
         result.ShouldBe(expected);
@@ -79,7 +79,7 @@ public class MainWindowViewModelSyncStatusTargetShould
         ISyncRepository repo = Substitute.For<ISyncRepository>();
         repo.GetPendingDownloadCountAsync(default).ReturnsForAnyArgs(7);
         repo.GetPendingUploadCountAsync(default).ReturnsForAnyArgs(3);
-        FieldInfo? field = typeof(MainWindowViewModel).GetField("_repo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        FieldInfo? field = typeof(MainWindowViewModel).GetField("_repo", BindingFlags.NonPublic | BindingFlags.Instance);
         field.ShouldNotBeNull();
         field.SetValue(vm, repo);
         vm.OnSyncCompleted();

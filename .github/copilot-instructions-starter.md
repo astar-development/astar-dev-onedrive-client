@@ -5,12 +5,20 @@
 ## Quick Reference
 
 ### Code Style
-- Use `var` for local variables (IDE0007) except for test mocks and when the type is not obvious
+- Use var for all local variables except:
+    - For test mocks, always use the explicit type.
+    - When the type is not obvious from the right-hand side, use the explicit type (e.g., for async calls or methods returning interface types).
+    - If IDE0008 or similar analyzer suggests explicit type, prefer explicit type to avoid warnings.
 - Always use explicit types for test mocks and for parameters in test helpers.
 - Nullable reference types enabled
 - Warnings as errors
 - Expression-bodied members for simple operations
 - Primary constructors where appropriate
+- No blank lines between method signature and expression body / implementation
+- No multiple blank lines
+- No trailing whitespace
+- No unnecessary usings
+- No regions
 
 ```csharp
 // Correct
@@ -27,6 +35,9 @@
 - Naming: `<ClassName>Should` with `<Action><ExpectedBehavior>` methods. Example class name: ```HealthCheckShould```. Example Test name: ```ReturnHealthyStatusWhenUserIsSignedInAndTokenAcquired()```
 - For all async test methods, always pass TestContext.Current.CancellationToken to any method that accepts a CancellationToken.
 - AAA pattern (Arrange, Act, Assert) with blank lines as separators
+- All tests must be deterministic
+- Avoid redundant tests
+- All tests must have at least one assertion
 
 Example:
 ```csharp
@@ -255,3 +266,14 @@ public LoggingConfig Logging { get; set; } = new();
 - Specify `encoding="utf-8"` when working with text files
 - Use semantic commit messages (e.g., `feature:`, `fix:`, `refactor:`)
 - Ensure commits pass linting and tests before pushing
+
+### Examples of Correct `var` Usage
+```csharp
+// Use explicit type for mocks
+IAuthService auth = Substitute.For<IAuthService>();
+
+// Use explicit type when type is not obvious (e.g., async/await)
+HealthCheckResult result = await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
+
+// Use var when type is obvious
+var check = new GraphApiHealthCheck(auth);

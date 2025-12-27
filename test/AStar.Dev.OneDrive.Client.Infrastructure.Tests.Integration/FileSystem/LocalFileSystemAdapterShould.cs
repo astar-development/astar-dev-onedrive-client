@@ -1,3 +1,4 @@
+using System.IO.Abstractions;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Infrastructure.FileSystem;
 using FileSystemImpl = System.IO.Abstractions.FileSystem;
@@ -16,7 +17,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_testRoot))
+        if(Directory.Exists(_testRoot))
         {
             Directory.Delete(_testRoot, recursive: true);
         }
@@ -31,7 +32,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
         _ = Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         File.WriteAllText(fullPath, "content");
 
-        FileInfo result = adapter.GetFileInfo(relativePath);
+        IFileInfo result = adapter.GetFileInfo(relativePath);
 
         result.Exists.ShouldBeTrue();
         result.Name.ShouldBe("test.txt");
@@ -43,7 +44,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
         var relativePath = "nonexistent.txt";
         var adapter = new LocalFileSystemAdapter(_testRoot, new FileSystemImpl());
 
-        FileInfo result = adapter.GetFileInfo(relativePath);
+        IFileInfo result = adapter.GetFileInfo(relativePath);
 
         result.Exists.ShouldBeFalse();
     }
@@ -57,7 +58,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
         _ = Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
         File.WriteAllText(fullPath, "content");
 
-        FileInfo result = adapter.GetFileInfo(relativePath);
+        IFileInfo result = adapter.GetFileInfo(relativePath);
 
         result.Exists.ShouldBeTrue();
     }

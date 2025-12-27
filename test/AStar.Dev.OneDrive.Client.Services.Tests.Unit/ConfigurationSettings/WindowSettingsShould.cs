@@ -28,7 +28,7 @@ public class WindowSettingsShould
             WindowY = 75
         };
 
-        var result = settings.Update(other);
+        WindowSettings result = settings.Update(other);
 
         result.WindowWidth.ShouldBe(1920);
         result.WindowHeight.ShouldBe(1080);
@@ -42,7 +42,7 @@ public class WindowSettingsShould
         var settings = new WindowSettings();
         var other = new WindowSettings();
 
-        var result = settings.Update(other);
+        WindowSettings result = settings.Update(other);
 
         result.ShouldBeSameAs(settings);
     }
@@ -53,7 +53,7 @@ public class WindowSettingsShould
         var settings = new WindowSettings();
         var position = new PixelPoint(200, 300);
 
-        var result = settings.Update(position, 1280, 720);
+        WindowSettings result = settings.Update(position, 1280, 720);
 
         result.WindowWidth.ShouldBe(1280);
         result.WindowHeight.ShouldBe(720);
@@ -67,7 +67,7 @@ public class WindowSettingsShould
         var settings = new WindowSettings();
         var position = new PixelPoint(100, 100);
 
-        var result = settings.Update(position, 800, 600);
+        WindowSettings result = settings.Update(position, 800, 600);
 
         result.ShouldBeSameAs(settings);
     }

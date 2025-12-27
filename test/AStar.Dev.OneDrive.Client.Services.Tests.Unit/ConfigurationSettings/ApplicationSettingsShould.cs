@@ -24,7 +24,6 @@ public class ApplicationSettingsShould
         result.ShouldMatchApproved();
     }
 
-
     [Fact]
     public void CombineUserPreferencesDirectoryAndFileNameForFullPath()
     {
@@ -34,7 +33,6 @@ public class ApplicationSettingsShould
 
         result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "test-preferences.json"));
     }
-
 
     [Fact]
     public void UseDefaultUserPreferencesFileWhenNotSet()
@@ -46,7 +44,6 @@ public class ApplicationSettingsShould
         result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "user-preferences.json"));
     }
 
-
     [Fact]
     public void BuildFullUserPreferencesDirectoryFromAppDataPath()
     {
@@ -55,7 +52,6 @@ public class ApplicationSettingsShould
         result.ShouldEndWith("astar-dev-onedrive-client");
         result.ShouldNotBeNullOrWhiteSpace();
     }
-
 
     [Fact]
     public void CombineDatabaseDirectoryAndFileNameForFullDatabasePath()
@@ -67,7 +63,6 @@ public class ApplicationSettingsShould
         result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database", "test-sync.db"));
     }
 
-
     [Fact]
     public void UseDefaultDatabaseNameWhenNotSet()
     {
@@ -78,7 +73,6 @@ public class ApplicationSettingsShould
         result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database", "onedrive-sync.db"));
     }
 
-
     [Fact]
     public void BuildFullDatabaseDirectoryFromAppDataPath()
     {
@@ -87,7 +81,6 @@ public class ApplicationSettingsShould
         result.ShouldEndWith(Path.Combine("astar-dev-onedrive-client", "database"));
         result.ShouldNotBeNullOrWhiteSpace();
     }
-
 
     [Fact]
     public void CombineUserHomeFolderAndOneDriveRootForFullSyncPath()
