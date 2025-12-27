@@ -7,6 +7,6 @@ public class LinqExtensionsShould
     {
         Exception? exception = Record.Exception(() => new List<string> { "", "z", "a" }.AsEnumerable().ForEach(_ => { }));
 
-        Assert.Null(exception);
+        exception.ShouldBeNull();
     }
 }

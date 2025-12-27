@@ -6,22 +6,12 @@ namespace AStar.Dev.Logging.Extensions.Tests.Unit;
 public class AStarEventIdsShould
 {
     [Fact]
-    public void PageView_HasExpectedIdAndName()
+    public void HaveTheExpectedId()
     {
         const int    expectedId   = 1000;
 
         EventId eventId = AStarEventIds.Website.PageView;
 
-        Assert.Equal(expectedId, eventId.Id);
-    }
-
-    [Fact]
-    public void PageView_IsNotNull()
-    {
-        EventId eventId = AStarEventIds.Website.PageView;
-
-#pragma warning disable xUnit2002
-        Assert.NotNull(eventId);
-#pragma warning restore xUnit2002
+        eventId.Id.ShouldBe(expectedId);
     }
 }

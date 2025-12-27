@@ -10,8 +10,8 @@ public class ArgsShould
     {
         var args = new Args();
 
-        Assert.NotNull(args.ServerUrl);
-        Assert.Equal(string.Empty, args.ServerUrl);
+        args.ServerUrl.ShouldNotBeNull();
+        args.ServerUrl.ShouldBe(string.Empty);
     }
 
     [Theory]
@@ -22,7 +22,7 @@ public class ArgsShould
     {
         var args = new Args { ServerUrl = input };
 
-        Assert.Equal(input, args.ServerUrl);
+        args.ServerUrl.ShouldBe(input);
     }
 
     [Fact]
@@ -30,6 +30,6 @@ public class ArgsShould
     {
         var args = new Args { ServerUrl = string.Empty };
 
-        Assert.Equal(string.Empty, args.ServerUrl);
+        args.ServerUrl.ShouldBe(string.Empty);
     }
 }

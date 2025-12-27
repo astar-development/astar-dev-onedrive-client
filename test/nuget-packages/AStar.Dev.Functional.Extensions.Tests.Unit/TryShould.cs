@@ -1,6 +1,6 @@
 namespace AStar.Dev.Functional.Extensions.Tests.Unit;
 
-public class TryExtensionsShould
+public class TryShould
 {
     [Fact]
     public void ReturnOkResultWhenFunctionSucceeds()
@@ -25,7 +25,7 @@ public class TryExtensionsShould
     [Fact]
     public void ReturnOkTrueWhenActionSucceeds()
     {
-        
+
         Result<bool, Exception> result = Try.Run(() =>
         {
             /* no-op */
@@ -56,7 +56,7 @@ public class TryExtensionsShould
     [Fact]
     public async Task ReturnOkTrueWhenActionSucceedsAsync()
     {
-        
+
         Result<bool, Exception> result = await Try.RunAsync(async () => await Task.Delay(1));
 
         _ = result.ShouldBeOfType<Result<bool, Exception>.Ok>();
@@ -120,7 +120,9 @@ public class TryExtensionsShould
 
         static int ArgNullFunc()
         {
+#pragma warning disable S3928 // Parameter names used into ArgumentException constructors should match an existing one 
             throw new ArgumentNullException("testParam");
+#pragma warning restore S3928 // Parameter names used into ArgumentException constructors should match an existing one 
         }
     }
 
@@ -246,7 +248,7 @@ public class TryExtensionsShould
             ok => ok,
             ex => -1);
 
-        Assert.Equal(42, output);
+        output.ShouldBe(42);
     }
 
     [Fact]
@@ -258,7 +260,7 @@ public class TryExtensionsShould
             ok => ok,
             ex => -1);
 
-        Assert.Equal(-1, output);
+        output.ShouldBe(-1);
     }
 
     [Fact]
@@ -270,7 +272,7 @@ public class TryExtensionsShould
         var a = success.Match(x => $"OK: {x}", ex => $"ERR: {ex.Message}");
         var b = failure.Match(x => $"OK: {x}", ex => $"ERR: {ex.Message}");
 
-        Assert.Equal("OK: done", a);
-        Assert.Equal("ERR: fail", b);
+        a.ShouldBe("OK: done");
+        b.ShouldBe("ERR: fail");
     }
 }

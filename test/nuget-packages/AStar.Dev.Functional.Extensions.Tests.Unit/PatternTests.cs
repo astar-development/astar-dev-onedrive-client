@@ -8,11 +8,11 @@ public class PatternTests
         Option<string> some = new Option<string>.Some("value");
         var none = Option.None<string>();
 
-        Assert.True(Pattern.IsSome(some));
-        Assert.False(Pattern.IsNone(some));
+        Pattern.IsSome(some).ShouldBeTrue();
+        Pattern.IsNone(some).ShouldBeFalse();
 
-        Assert.True(Pattern.IsNone(none));
-        Assert.False(Pattern.IsSome(none));
+        Pattern.IsNone(none).ShouldBeTrue();
+        Pattern.IsSome(none).ShouldBeFalse();
     }
 
     [Fact]
@@ -21,11 +21,11 @@ public class PatternTests
         Result<int, string> ok = new Result<int, string>.Ok(1);
         Result<int, string> err = new Result<int, string>.Error("fail");
 
-        Assert.True(Pattern.IsOk(ok));
-        Assert.False(Pattern.IsError(ok));
+        Pattern.IsOk(ok).ShouldBeTrue();
+        Pattern.IsError(ok).ShouldBeFalse();
 
-        Assert.True(Pattern.IsError(err));
-        Assert.False(Pattern.IsOk(err));
+        Pattern.IsError(err).ShouldBeTrue();
+        Pattern.IsOk(err).ShouldBeFalse();
     }
 
     [Fact]
@@ -34,10 +34,10 @@ public class PatternTests
         Result<int, Exception> success = Try.Run(() => 1);
         Result<int, Exception> failure = Try.Run<int>(() => throw new ArgumentNullException("fail"));
 
-        Assert.True(Pattern.IsSuccess(success));
-        Assert.False(Pattern.IsFailure(success));
+        Pattern.IsSuccess(success).ShouldBeTrue();
+        Pattern.IsFailure(success).ShouldBeFalse();
 
-        Assert.True(Pattern.IsFailure(failure));
-        Assert.False(Pattern.IsSuccess(failure));
+        Pattern.IsFailure(failure).ShouldBeTrue();
+        Pattern.IsSuccess(failure).ShouldBeFalse();
     }
 }

@@ -14,7 +14,7 @@ public class JsonWriterOptionsShould
 
         var isIndented = options.Indented;
 
-        Assert.False(isIndented, "The default value for Indented should be false.");
+        isIndented.ShouldBeFalse();
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class JsonWriterOptionsShould
     {
         var options = new JsonWriterOptions { Indented = true };
 
-        Assert.True(options.Indented, "Setting Indented to true should result in true.");
+        options.Indented.ShouldBeTrue();
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class JsonWriterOptionsShould
     {
         var options = new JsonWriterOptions { Indented = false };
 
-        Assert.False(options.Indented, "Setting Indented to false should result in false.");
+        options.Indented.ShouldBeFalse();
     }
 
     [Theory]
@@ -40,6 +40,6 @@ public class JsonWriterOptionsShould
     {
         var options = new JsonWriterOptions { Indented = expectedValue };
 
-        Assert.Equal(expectedValue, options.Indented);
+        options.Indented.ShouldBe(expectedValue);
     }
 }

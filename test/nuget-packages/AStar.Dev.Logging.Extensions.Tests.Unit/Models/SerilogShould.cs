@@ -2,13 +2,13 @@ using AStar.Dev.Logging.Extensions.Models;
 
 namespace AStar.Dev.Logging.Extensions.Tests.Unit.Models;
 
-[TestSubject(typeof(Serilog))]
+[TestSubject(typeof(Extensions.Models.Serilog))]
 public class SerilogShould
 {
     [Fact]
     public void SetTheEnrichPropertyToAnEmptyArrayByDefault()
     {
-        var serilog = new Serilog();
+        var serilog = new Extensions.Models.Serilog();
 
         var enrich = serilog.Enrich;
 
@@ -19,7 +19,7 @@ public class SerilogShould
     [Fact]
     public void SetTheEnrichPropertyToTheProvidedValues()
     {
-        var serilog       = new Serilog();
+        var serilog       = new Extensions.Models.Serilog();
         var testEnrichers = new[] { "Enricher1", "Enricher2" };
 
         serilog.Enrich = testEnrichers;
@@ -30,7 +30,7 @@ public class SerilogShould
     [Fact]
     public void SetTheWriteToPropertyToAnEmptyArrayByDefault()
     {
-        var serilog = new Serilog();
+        var serilog = new Extensions.Models.Serilog();
 
         WriteTo[] writeTo = serilog.WriteTo;
 
@@ -41,7 +41,7 @@ public class SerilogShould
     [Fact]
     public void SetTheWriteToPropertyToTheProvidedValues()
     {
-        var serilog = new Serilog();
+        var serilog = new Extensions.Models.Serilog();
 
         WriteTo[] writeToConfigs = [new WriteTo { Name = "Console", Args = new() { ServerUrl = "http://localhost" } }, new WriteTo { Name = "File", Args = new() { ServerUrl = "C:\\Logs" } }];
 
@@ -53,7 +53,7 @@ public class SerilogShould
     [Fact]
     public void SetTheMinimumLevelPropertyToAnEmptyInstanceByDefault()
     {
-        var serilog = new Serilog();
+        var serilog = new Extensions.Models.Serilog();
 
         MinimumLevel minimumLevel = serilog.MinimumLevel;
 
@@ -65,7 +65,7 @@ public class SerilogShould
     [Fact]
     public void SetTheMinimumLevelPropertyToTheProvidedValues()
     {
-        var serilog              = new Serilog();
+        var serilog              = new Extensions.Models.Serilog();
         var modifiedMinimumLevel = new MinimumLevel { Default = "Error", Override = new() { MicrosoftAspNetCore = "Warning", SystemNetHttp = "Information", AStar = "Debug" } };
 
         serilog.MinimumLevel = modifiedMinimumLevel;

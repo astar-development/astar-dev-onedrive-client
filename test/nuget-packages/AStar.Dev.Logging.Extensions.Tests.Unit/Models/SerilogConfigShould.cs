@@ -19,14 +19,14 @@ public class SerilogConfigShould
     {
         var serilogConfig = new SerilogConfig();
 
-        var serilog = new Serilog
+        var serilog = new Extensions.Models.Serilog
         {
             Enrich       = ["ThreadId", "MachineName"],
             WriteTo      = [new WriteTo { Name                                              = "File", Args             = new() { ServerUrl = "http://localhost" } }],
             MinimumLevel = new() { Default = "Information", Override = new() { MicrosoftAspNetCore = "Warning", SystemNetHttp = "Error", AStar = "Debug" } }
         };
 
-        var logging = new Logging
+        var logging = new Extensions.Models.Logging
         {
             Console = new()
             {
@@ -53,7 +53,7 @@ public class SerilogConfigShould
     [Fact]
     public void Serilog_ShouldInitializeWithDefaultValues()
     {
-        var serilog = new Serilog();
+        var serilog = new Extensions.Models.Serilog();
 
         serilog.Enrich.ShouldBeEmpty();
         serilog.WriteTo.ShouldNotBeEmpty();
@@ -65,7 +65,7 @@ public class SerilogConfigShould
     [Fact]
     public void Logging_ShouldInitializeWithDefaultValues()
     {
-        var logging = new Logging();
+        var logging = new Extensions.Models.Logging();
 
         logging.Console.ShouldNotBeNull();
         logging.ApplicationInsights.ShouldNotBeNull();
@@ -96,7 +96,7 @@ public class SerilogConfigShould
     [Fact]
     public void Console_ShouldInitializeWithDefaultValues()
     {
-        var console = new Console();
+        var console = new Extensions.Models.Console();
 
         console.FormatterName.ShouldBeEmpty();
         console.FormatterOptions.ShouldNotBeNull();

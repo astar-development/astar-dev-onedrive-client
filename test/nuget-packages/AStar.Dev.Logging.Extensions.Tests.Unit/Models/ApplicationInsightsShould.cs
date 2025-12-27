@@ -12,8 +12,8 @@ public class ApplicationInsightsShould
     {
         var applicationInsights = new ApplicationInsights();
 
-        Assert.NotNull(applicationInsights.LogLevel);
-        Assert.IsType<LogLevel>(applicationInsights.LogLevel);
+        applicationInsights.LogLevel.ShouldNotBeNull();
+        applicationInsights.LogLevel.ShouldBeOfType<Extensions.Models.LogLevel>();
     }
 
     [Fact]
@@ -21,11 +21,11 @@ public class ApplicationInsightsShould
     {
         var applicationInsights = new ApplicationInsights();
 
-        LogLevel logLevel = applicationInsights.LogLevel;
+        Extensions.Models.LogLevel logLevel = applicationInsights.LogLevel;
 
-        Assert.Equal(string.Empty, logLevel.Default);
-        Assert.Equal(string.Empty, logLevel.MicrosoftAspNetCore);
-        Assert.Equal(string.Empty, logLevel.AStar);
+        logLevel.Default.ShouldBe(string.Empty);
+        logLevel.MicrosoftAspNetCore.ShouldBe(string.Empty);
+        logLevel.AStar.ShouldBe(string.Empty);
     }
 
     [Fact]
@@ -33,12 +33,12 @@ public class ApplicationInsightsShould
     {
         var applicationInsights = new ApplicationInsights();
 
-        var customLogLevel = new LogLevel { Default = "Information", MicrosoftAspNetCore = "Warning", AStar = "Debug" };
+        var customLogLevel = new Extensions.Models.LogLevel { Default = "Information", MicrosoftAspNetCore = "Warning", AStar = "Debug" };
         applicationInsights.LogLevel = customLogLevel;
 
-        Assert.Equal("Information", applicationInsights.LogLevel.Default);
-        Assert.Equal("Warning", applicationInsights.LogLevel.MicrosoftAspNetCore);
-        Assert.Equal("Debug", applicationInsights.LogLevel.AStar);
+        applicationInsights.LogLevel.Default.ShouldBe("Information");
+        applicationInsights.LogLevel.MicrosoftAspNetCore.ShouldBe("Warning");
+        applicationInsights.LogLevel.AStar.ShouldBe("Debug");
     }
 
     [Fact]
@@ -46,11 +46,11 @@ public class ApplicationInsightsShould
     {
         var applicationInsights = new ApplicationInsights();
 
-        var customLogLevel = new LogLevel { Default = null!, MicrosoftAspNetCore = "", AStar = new('A', 1000) };
+        var customLogLevel = new Extensions.Models.LogLevel { Default = null!, MicrosoftAspNetCore = "", AStar = new('A', 1000) };
         applicationInsights.LogLevel = customLogLevel;
 
-        Assert.Null(applicationInsights.LogLevel.Default);
-        Assert.Equal(string.Empty, applicationInsights.LogLevel.MicrosoftAspNetCore);
-        Assert.Equal(new('A', 1000), applicationInsights.LogLevel.AStar);
+        applicationInsights.LogLevel.Default.ShouldBeNull();
+        applicationInsights.LogLevel.MicrosoftAspNetCore.ShouldBe(string.Empty);
+        applicationInsights.LogLevel.AStar.ShouldBe(new('A', 1000));
     }
 }

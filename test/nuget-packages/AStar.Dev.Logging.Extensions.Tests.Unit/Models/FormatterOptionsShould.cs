@@ -12,7 +12,7 @@ public class FormatterOptionsShould
 
         var result = options.SingleLine;
 
-        Assert.False(result);
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class FormatterOptionsShould
     {
         var options = new FormatterOptions { SingleLine = true };
 
-        Assert.True(options.SingleLine);
+        options.SingleLine.ShouldBeTrue();
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class FormatterOptionsShould
 
         var result = options.IncludeScopes;
 
-        Assert.False(result);
+        result.ShouldBeFalse();
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public class FormatterOptionsShould
     {
         var options = new FormatterOptions { IncludeScopes = true };
 
-        Assert.True(options.IncludeScopes);
+        options.IncludeScopes.ShouldBeTrue();
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class FormatterOptionsShould
 
         var result = options.TimestampFormat;
 
-        Assert.Equal("HH:mm:ss ", result);
+        result.ShouldBe("HH:mm:ss ");
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class FormatterOptionsShould
 
         options.TimestampFormat = newFormat;
 
-        Assert.Equal(newFormat, options.TimestampFormat);
+        options.TimestampFormat.ShouldBe(newFormat);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class FormatterOptionsShould
 
         var result = options.UseUtcTimestamp;
 
-        Assert.True(result);
+        result.ShouldBeTrue();
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class FormatterOptionsShould
     {
         var options = new FormatterOptions { UseUtcTimestamp = false };
 
-        Assert.False(options.UseUtcTimestamp);
+        options.UseUtcTimestamp.ShouldBeFalse();
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class FormatterOptionsShould
 
         JsonWriterOptions result = options.JsonWriterOptions;
 
-        Assert.NotNull(result);
+        result.ShouldNotBeNull();
     }
 
     [Fact]
@@ -95,6 +95,6 @@ public class FormatterOptionsShould
     {
         var options = new FormatterOptions { JsonWriterOptions = { Indented = true } };
 
-        Assert.True(options.JsonWriterOptions.Indented);
+        options.JsonWriterOptions.Indented.ShouldBeTrue();
     }
 }
