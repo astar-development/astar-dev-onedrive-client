@@ -1,6 +1,8 @@
 // C:\repos\M\astar-dev-logging-extensions\tests\AStar.Dev.Logging.Extensions.Tests.Unit\Models\JsonWriterOptionsTest.cs
 
-namespace AStar.Dev.Logging.Extensions.Models;
+using AStar.Dev.Logging.Extensions.Models;
+
+namespace AStar.Dev.Logging.Extensions.Tests.Unit.Models;
 
 [TestSubject(typeof(JsonWriterOptions))]
 public class JsonWriterOptionsShould

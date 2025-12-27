@@ -1,6 +1,6 @@
 using NSubstitute;
 
-namespace AStar.Dev.Logging.Extensions;
+namespace AStar.Dev.Logging.Extensions.Tests.Unit;
 
 /// <summary>
 ///     Tests for <see cref="LoggingExtensions" />.

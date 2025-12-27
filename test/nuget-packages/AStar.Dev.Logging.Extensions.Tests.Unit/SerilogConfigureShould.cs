@@ -3,13 +3,13 @@ using Microsoft.ApplicationInsights.Extensibility;
 using NSubstitute;
 using Serilog;
 
-namespace AStar.Dev.Logging.Extensions;
+namespace AStar.Dev.Logging.Extensions.Tests.Unit;
 
 [TestSubject(typeof(SerilogConfigure))]
 public class SerilogConfigureShould
 {
     [Fact]
-    public void Configure_ShouldConfigureLogger_WithValidParameters()
+    public void ConfigureTheLoggerWhenParametersAreValid()
     {
         var loggerConfiguration = new LoggerConfiguration();
         var configurationMock   = new ConfigurationBuilder();
@@ -26,7 +26,7 @@ public class SerilogConfigureShould
     }
 
     [Fact]
-    public void Configure_ShouldThrowNullReferenceException_WhenLoggerConfigurationIsNull()
+    public void ThrowNullReferenceExceptionWhenLoggerConfigurationIsNull()
     {
         LoggerConfiguration? loggerConfiguration = null;
         var                  configurationMock   = new ConfigurationBuilder();
@@ -37,7 +37,7 @@ public class SerilogConfigureShould
     }
 
     [Fact]
-    public void Configure_ShouldThrowNullReferenceException_WhenConfigurationIsNull()
+    public void ThrowNullReferenceExceptionWhenConfigurationIsNull()
     {
         var             loggerConfiguration    = new LoggerConfiguration();
         IConfiguration? configuration          = null;
@@ -47,7 +47,7 @@ public class SerilogConfigureShould
     }
 
     [Fact]
-    public void Configure_ShouldThrowInvalidOperationException_WhenTelemetryConfigurationIsNull()
+    public void ThrowInvalidOperationExceptionWhenTelemetryConfigurationIsNull()
     {
         var                     loggerConfiguration    = new LoggerConfiguration();
         IConfiguration configurationMock      = Substitute.For<IConfiguration>();
@@ -57,7 +57,7 @@ public class SerilogConfigureShould
     }
 
     [Fact]
-    public void Configure_ShouldHandleEmptyConfiguration()
+    public void HandleEmptyConfiguration()
     {
         var loggerConfiguration = new LoggerConfiguration();
         var configurationMock   = new ConfigurationBuilder();
@@ -70,7 +70,7 @@ public class SerilogConfigureShould
     }
 
     [Fact]
-    public void Configure_ShouldHandleNullSectionsInsideConfiguration()
+    public void HandleNullSectionsInsideConfiguration()
     {
         var loggerConfiguration = new LoggerConfiguration();
         var configurationMock   = new ConfigurationBuilder();

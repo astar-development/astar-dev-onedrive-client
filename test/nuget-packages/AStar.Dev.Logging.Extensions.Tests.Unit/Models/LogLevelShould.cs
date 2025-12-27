@@ -1,6 +1,7 @@
+using AStar.Dev.Logging.Extensions.Models;
 using AStar.Dev.Utilities;
 
-namespace AStar.Dev.Logging.Extensions.Models;
+namespace AStar.Dev.Logging.Extensions.Tests.Unit.Models;
 
 [TestSubject(typeof(LogLevel))]
 public class LogLevelShould

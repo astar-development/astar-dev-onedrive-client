@@ -1,4 +1,6 @@
-namespace AStar.Dev.Logging.Extensions.Models;
+using AStar.Dev.Logging.Extensions.Models;
+
+namespace AStar.Dev.Logging.Extensions.Tests.Unit.Models;
 
 [TestSubject(typeof(Logging))]
 public class LoggingShould

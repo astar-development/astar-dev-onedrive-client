@@ -27,7 +27,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     [InlineData(3661, "1h 1m 1s")]
     [InlineData(61, "1m 1s")]
     [InlineData(59, "59s")]
-    public void BuildElapsed_FormatsCorrectly(double seconds, string expected)
+    public void BuildElapsedShouldFormatElapsedTimeCorrectly(double seconds, string expected)
     {
         MethodInfo? method = typeof(MainWindowViewModel).GetMethod("BuildElapsed", BindingFlags.NonPublic | BindingFlags.Static);
         method.ShouldNotBeNull();
@@ -39,7 +39,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     [InlineData(3661, "ETA: 1h 1m")]
     [InlineData(61, "ETA: 1m 1s")]
     [InlineData(59, "ETA: 59s")]
-    public void BuildEta_FormatsCorrectly(double seconds, string expected)
+    public void BuildEtaShouldFormatEtaCorrectly(double seconds, string expected)
     {
         MethodInfo? method = typeof(MainWindowViewModel).GetMethod("BuildEta", BindingFlags.NonPublic | BindingFlags.Static);
         method.ShouldNotBeNull();
@@ -48,7 +48,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public void SetStatus_UpdatesSyncStatusMessage()
+    public void SetStatusShouldUpdateSyncStatusMessage()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         vm.SetStatus("Test status");
@@ -56,7 +56,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public void SetProgress_UpdatesProgressPercent()
+    public void SetProgressShouldUpdateProgressPercent()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         vm.SetProgress(42.5);
@@ -64,7 +64,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public void AddRecentTransfer_AddsMessageToRecentTransfers()
+    public void AddRecentTransferShouldAddMessageToRecentTransfers()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         vm.AddRecentTransfer("Test transfer");
@@ -72,7 +72,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public async Task OnSyncCompleted_RefreshesStats()
+    public async Task OnSyncCompletedShouldRefreshStats()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         // Setup repo to return known values
@@ -90,7 +90,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public void OnSyncFailed_SetsStatusAndAddsError()
+    public void OnSyncFailedShouldSetStatusAndAddError()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         vm.OnSyncFailed("TestOp", new InvalidOperationException("fail reason"));
@@ -101,7 +101,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public void OnSyncCancelled_SetsStatusAndAddsCancelled()
+    public void OnSyncCancelledShouldSetStatusAndAddCancelled()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         vm.OnSyncCancelled("TestOp");
@@ -111,7 +111,7 @@ public class MainWindowViewModelSyncStatusTargetShould
     }
 
     [Fact]
-    public void SetSignedIn_UpdatesSignedIn()
+    public void SetSignedInShouldUpdateSignedIn()
     {
         MainWindowViewModel vm = CreateViewModelForTarget();
         vm.SetSignedIn(true);

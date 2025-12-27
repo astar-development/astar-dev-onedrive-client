@@ -1,7 +1,7 @@
 using AStar.Dev.Logging.Extensions.EventIds;
 using NSubstitute;
 
-namespace AStar.Dev.Logging.Extensions;
+namespace AStar.Dev.Logging.Extensions.Tests.Unit;
 
 [TestSubject(typeof(AStarLogger<>))]
 public class AStarLoggerTest

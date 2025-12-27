@@ -1,9 +1,9 @@
 namespace AStar.Dev.Functional.Extensions.Tests.Unit;
 
-public class TryTests
+public class TryExtensionsShould
 {
     [Fact]
-    public void RunShouldReturnOkResultWhenFunctionSucceeds()
+    public void ReturnOkResultWhenFunctionSucceeds()
     {
         const int expectedValue = 42;
 
@@ -23,7 +23,7 @@ public class TryTests
     }
 
     [Fact]
-    public void RunActionShouldReturnOkTrueWhenActionSucceeds()
+    public void ReturnOkTrueWhenActionSucceeds()
     {
         
         Result<bool, Exception> result = Try.Run(() =>
@@ -38,7 +38,7 @@ public class TryTests
     }
 
     [Fact]
-    public void RunActionShouldReturnErrorWhenActionThrows()
+    public void ReturnErrorWhenActionThrows()
     {
 
         var expected = new InvalidOperationException("sync boom");
@@ -54,7 +54,7 @@ public class TryTests
     }
 
     [Fact]
-    public async Task RunAsyncActionShouldReturnOkTrueWhenActionSucceedsAsync()
+    public async Task ReturnOkTrueWhenActionSucceedsAsync()
     {
         
         Result<bool, Exception> result = await Try.RunAsync(async () => await Task.Delay(1));

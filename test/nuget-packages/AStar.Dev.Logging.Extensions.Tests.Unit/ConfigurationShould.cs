@@ -1,10 +1,10 @@
-namespace AStar.Dev.Logging.Extensions;
+namespace AStar.Dev.Logging.Extensions.Tests.Unit;
 
 [TestSubject(typeof(Configuration))]
 public class ConfigurationShould
 {
     [Fact]
-    public void ExternalSettingsFile_ShouldReturn_DefaultFilename()
+    public void ReturnTheDefaultExternalSettingsFilename()
     {
         var expected = "astar-logging-settings.json";
 
@@ -14,7 +14,7 @@ public class ConfigurationShould
     }
 
     [Fact]
-    public void ExternalSettingsFile_ShouldNotReturn_EmptyString()
+    public void NotReturnAnEmptyStringForExternalSettingsFile()
     {
         var result = Configuration.ExternalSettingsFile;
 
@@ -22,7 +22,7 @@ public class ConfigurationShould
     }
 
     [Fact]
-    public void ExternalSettingsFile_ShouldNotReturn_Null()
+    public void NotReturnNullForExternalSettingsFile()
     {
         var result = Configuration.ExternalSettingsFile;
 
@@ -32,7 +32,7 @@ public class ConfigurationShould
     [Theory]
     [InlineData("astar-logging-settings.json")]
     [InlineData("ASTAR-LOGGING-SETTINGS.JSON")] // Case-insensitivity check
-    public void ExternalSettingsFile_ShouldMatch_ExpectedContentRegardlessOfCase(string comparisonValue)
+    public void MatchExpectedExternalSettingsFileContentRegardlessOfCase(string comparisonValue)
     {
         var result = Configuration.ExternalSettingsFile;
 

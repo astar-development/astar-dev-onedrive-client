@@ -1,7 +1,6 @@
-
 using AStar.Dev.Logging.Extensions.EventIds;
 
-namespace AStar.Dev.Logging.Extensions;
+namespace AStar.Dev.Logging.Extensions.Tests.Unit;
 
 [TestSubject(typeof(AStarEventIds))]
 public class AStarEventIdsShould

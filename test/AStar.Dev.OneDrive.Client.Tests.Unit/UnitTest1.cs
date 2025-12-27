@@ -1,7 +1,7 @@
 namespace AStar.Dev.OneDrive.Client.Tests.Unit;
 
-public class UnitTest1
+public class PlaceholderShould
 {
     [Fact]
-    public void Test1() => true.ShouldBeTrue();
+    public void DoNothing() => true.ShouldBeTrue();
 }
