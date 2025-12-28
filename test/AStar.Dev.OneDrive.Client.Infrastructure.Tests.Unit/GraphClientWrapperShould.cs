@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Infrastructure.Graph;
@@ -12,19 +13,15 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit;
 
 public class GraphClientWrapperShould
 {
-    private static (
-        GraphClientWrapper sut,
-        IAuthService auth,
-        TestHandler handler,
-        ILogger<GraphClientWrapper> logger
-    ) CreateSut()
+    private static (GraphClientWrapper sut, IAuthService auth, TestHandler handler, ILogger<GraphClientWrapper> logger) CreateSut()
     {
         IAuthService auth = Substitute.For<IAuthService>();
         auth.GetAccessTokenAsync(Arg.Any<CancellationToken>()).Returns("token");
         var handler = new TestHandler();
         var http = new HttpClient(handler);
         ILogger<GraphClientWrapper> logger = Substitute.For<ILogger<GraphClientWrapper>>();
-        var sut = new GraphClientWrapper(auth, http, logger);
+        var sut = new GraphClientWrapper(auth, http, new MsalConfigurationSettings("clientId", "http://redirect.example.com", "https://graph.example.com", ["MockScope"]), logger);
+        
         return (sut, auth, handler, logger);
     }
 

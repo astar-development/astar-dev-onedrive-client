@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
@@ -8,13 +9,11 @@ using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 
-public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogger<GraphClientWrapper> logger) : IGraphClient
+public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalConfigurationSettings msalConfigurationSettings, ILogger<GraphClientWrapper> logger) : IGraphClient
 {
     public async Task<DeltaPage> GetDriveDeltaPageAsync(string? deltaOrNextLink, CancellationToken ct)
     {
-#pragma warning disable S1075 // URIs should not be hardcoded
         var url = GetDeltaOrNextUrl(deltaOrNextLink);
-#pragma warning restore S1075 // URIs should not be hardcoded
 
         var token = await auth.GetAccessTokenAsync(ct);
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
@@ -30,6 +29,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
 
         var next = TryGetODataProperty(doc, "@odata.nextLink");
         var delta = TryGetODataProperty(doc, "@odata.deltaLink");
+
         return new DeltaPage(items, next, delta);
     }
 
@@ -39,7 +39,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
         {
             logger.LogDebug("Requesting download for DriveItemId: {DriveItemId}", driveItemId);
             var token = await auth.GetAccessTokenAsync(ct);
-            var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}/content";
+            var url = $"{msalConfigurationSettings.GraphUri}/items/{driveItemId}/content";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -48,6 +48,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
 
             Stream stream = await res.Content.ReadAsStreamAsync(ct);
             logger.LogDebug("Download stream acquired for DriveItemId: {DriveItemId}", driveItemId);
+            
             return stream;
         }
         catch(HttpRequestException ex)
@@ -74,7 +75,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
         var token = await auth.GetAccessTokenAsync(ct);
         // Build path under root
         var path = string.IsNullOrWhiteSpace(parentPath) ? fileName : $"{parentPath.Trim('/')}/{fileName}";
-        var url = $"https://graph.microsoft.com/v1.0/me/drive/root:/{Uri.EscapeDataString(path)}:/createUploadSession";
+        var url = $"{msalConfigurationSettings.GraphUri}/root:/{Uri.EscapeDataString(path)}:/createUploadSession";
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         req.Content = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
@@ -84,6 +85,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
         using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
         var uploadUrl = doc.RootElement.GetProperty("uploadUrl").GetString()!;
         DateTimeOffset expiration = doc.RootElement.TryGetProperty("expirationDateTime", out JsonElement ex) ? DateTimeOffset.Parse(ex.GetString()!, CultureInfo.InvariantCulture) : DateTimeOffset.UtcNow.AddHours(1);
+        
         return new UploadSessionInfo(uploadUrl, Guid.NewGuid().ToString(), expiration);
     }
 
@@ -101,7 +103,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
     public async Task DeleteDriveItemAsync(string driveItemId, CancellationToken ct)
     {
         var token = await auth.GetAccessTokenAsync(ct);
-        var url = $"https://graph.microsoft.com/v1.0/me/drive/items/{driveItemId}";
+        var url = $"{msalConfigurationSettings.GraphUri}/items/{driveItemId}";
         using var req = new HttpRequestMessage(HttpMethod.Delete, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using HttpResponseMessage res = await http.SendAsync(req, ct);
@@ -109,9 +111,9 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
             _ = res.EnsureSuccessStatusCode();
     }
 
-    private static string GetDeltaOrNextUrl(string? deltaOrNextLink)
+    private string GetDeltaOrNextUrl(string? deltaOrNextLink)
         => string.IsNullOrEmpty(deltaOrNextLink)
-            ? "https://graph.microsoft.com/v1.0/me/drive/root/delta"
+            ? $"{msalConfigurationSettings.GraphUri}/root/delta"
             : deltaOrNextLink;
 
     private static List<DriveItemRecord> ParseDriveItemRecords(JsonDocument doc)
@@ -142,6 +144,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, ILogg
             ? DateTimeOffset.Parse(lm.GetString()!, CultureInfo.InvariantCulture)
             : DateTimeOffset.UtcNow;
         var isDeleted = el.TryGetProperty("deleted", out _);
+        
         return new DriveItemRecord(id, id, relativePath, eTag, cTag, size, last, isFolder, isDeleted);
     }
 

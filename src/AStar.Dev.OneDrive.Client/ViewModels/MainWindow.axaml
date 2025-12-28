@@ -41,11 +41,11 @@
         <Border Grid.Column="0" Background="Gainsboro" BorderBrush="Black" BorderThickness="2" CornerRadius="5" Padding="10" Margin="10">
           <StackPanel Orientation="Vertical" Spacing="12" VerticalAlignment="Center">
             <TextBlock Text="OneDrive Sync" FontSize="30" FontWeight="ExtraBold" />
-            <Button Content="Sign In" Command="{Binding SignInCommand}" Margin="4" IsVisible="{Binding !SignedIn}"/>
-            <Button Content="Initial Full Sync" Command="{Binding InitialSyncCommand}" Margin="4" IsVisible="{Binding FullSync}"/>
-            <Button Content="Incremental Sync" Command="{Binding IncrementalSyncCommand}" Margin="4" IsVisible="{Binding IncrementalSync}"/>
-            <Button Content="Scan Local Files" Command="{Binding ScanLocalFilesCommand}" Margin="4" IsVisible="{Binding SignedIn}"/>
-            <Button Content="Cancel Sync" Command="{Binding CancelSyncCommand}" Margin="4" Background="OrangeRed"/>
+            <Button Content="Sign In" Command="{Binding SignInCommand}" Margin="4" HorizontalContentAlignment="Center" Width="220" IsVisible="{Binding !SignedIn}"/>
+            <Button Content="Initial Full Sync" Command="{Binding InitialSyncCommand}" Margin="4" HorizontalContentAlignment="Center" Width="220" IsVisible="{Binding FullSync}"/>
+            <Button Content="Incremental Sync" Command="{Binding IncrementalSyncCommand}" Margin="4" HorizontalContentAlignment="Center" Width="220" IsVisible="{Binding IncrementalSync}"/>
+            <Button Content="Scan Local Files" Command="{Binding ScanLocalFilesCommand}" Margin="4" HorizontalContentAlignment="Center" Width="220" IsVisible="{Binding SignedIn}"/>
+            <Button Content="Cancel Sync" Command="{Binding CancelSyncCommand}" Margin="4" HorizontalContentAlignment="Center" Width="220" Background="OrangeRed"/>
           </StackPanel>
         </Border>
 
@@ -96,19 +96,18 @@
 
         <Border Grid.Column="0" Background="Gainsboro" BorderBrush="Black" BorderThickness="2" CornerRadius="5" Padding="10" Margin="10">
         <StackPanel Grid.Column="0" Margin="8">
-          <TextBlock Text="Sync Stats" FontWeight="Bold" Margin="0,0,0,8"/>
+          <TextBlock Text="Sync Statistics" FontWeight="Bold" Margin="0,0,0,8"/>
           <TextBlock Text="{Binding SyncStatusMessage}" Margin="0,0,0,10"/>
-          <TextBlock Text="Pending Downloads:"/>
-          <TextBlock Text="{Binding PendingDownloads}" Margin="0,0,0,10"/>
-          <TextBlock Text="Pending Uploads:"/>
-          <TextBlock Text="{Binding PendingUploads}" Margin="0,0,0,10"/>
+          <TextBlock Text="Pending Downloads:" FontWeight="Bold" />
+          <TextBlock Text="{Binding PendingDownloads, StringFormat={}{0:N0}}" Margin="0,0,0,10"/>
+          <TextBlock Text="Pending Uploads:" FontWeight="Bold" />
+          <TextBlock Text="{Binding PendingUploads, StringFormat={}{0:N0}}" Margin="0,0,0,10"/>
 
-          <!-- Performance Metrics -->
-          <TextBlock Text="Transfer Speed:" IsVisible="{Binding TransferSpeed, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="Transfer Speed:" FontWeight="Bold" IsVisible="{Binding TransferSpeed, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
           <TextBlock Text="{Binding TransferSpeed}" Margin="0,0,0,10" IsVisible="{Binding TransferSpeed, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-          <TextBlock Text="Time Remaining:" IsVisible="{Binding EstimatedTimeRemaining, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="Time Remaining:" FontWeight="Bold" IsVisible="{Binding EstimatedTimeRemaining, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
           <TextBlock Text="{Binding EstimatedTimeRemaining}" Margin="0,0,0,10" IsVisible="{Binding EstimatedTimeRemaining, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-          <TextBlock Text="Elapsed Time:" IsVisible="{Binding ElapsedTime, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+          <TextBlock Text="Elapsed Time:" FontWeight="Bold" IsVisible="{Binding ElapsedTime, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
           <TextBlock Text="{Binding ElapsedTime}" Margin="0,0,0,10" IsVisible="{Binding ElapsedTime, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
 
           <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressPercent}" ShowProgressText="True" Foreground="Green" Background="LightGray" Height="20" Margin="0,8,0,8"/>

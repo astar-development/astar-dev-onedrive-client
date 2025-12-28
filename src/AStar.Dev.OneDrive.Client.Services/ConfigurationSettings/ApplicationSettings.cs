@@ -56,6 +56,8 @@ public class ApplicationSettings
     ///     Gets or sets the cache prefix used for naming cached items related to the OneDrive client.
     /// </summary>
     public string CachePrefix { get; set; } = string.Empty;
+    public string RedirectUri { get; set; } = "http://localhost";
+    public string GraphUri { get; set; } = "https://graph.microsoft.com/v1.0/me/drive";
 
     /// <summary>
     ///     Gets the full path to the user preferences file, combining the base user preferences path

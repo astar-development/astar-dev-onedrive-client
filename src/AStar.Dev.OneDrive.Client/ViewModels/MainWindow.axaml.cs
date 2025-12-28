@@ -11,8 +11,7 @@ public partial class MainWindow : Window, IWindowPositionable
     private readonly MainWindowViewModel _viewModel;
     private readonly IMainWindowCoordinator _coordinator;
 
-    public MainWindow(
-        IMainWindowCoordinator coordinator, IThemeSelectionHandler themeHandler, IAutoSaveService autoSaveService, MainWindowViewModel vm)
+    public MainWindow(IMainWindowCoordinator coordinator, IThemeSelectionHandler themeHandler, IAutoSaveService autoSaveService, MainWindowViewModel vm)
     {
         InitializeComponent();
 

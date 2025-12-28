@@ -1,4 +1,5 @@
 using System.IO.Abstractions;
+using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Infrastructure.Auth;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
@@ -15,12 +16,12 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 
 public static class InfrastructureServiceCollectionExtensions
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string sqliteConnectionString, string localRoot, string msalClientId)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string sqliteConnectionString, string localRoot, MsalConfigurationSettings msalConfigurationSettings)
     {
         _ = services.AddDbContext<AppDbContext>(opts => opts.UseSqlite(sqliteConnectionString));
         _ = services.AddScoped<ISyncRepository, EfSyncRepository>();
 
-        _ = services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalClientId));
+        _ = services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalConfigurationSettings));
         _ = services.AddHttpClient<IGraphClient, GraphClientWrapper>()
                 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
                 {
@@ -36,7 +37,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         // Health checks
         _ = services.AddHealthChecks()
-            .AddCheck<DatabaseHealthCheck>("database")
+                        .AddCheck<DatabaseHealthCheck>("database")
                         .AddCheck<GraphApiHealthCheck>("graph_api");
 
         _ = services.AddSingleton<Action<IServiceProvider>>(sp => provider =>

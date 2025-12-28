@@ -1,4 +1,5 @@
 using AStar.Dev.OneDrive.Client.Common;
+using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
@@ -58,8 +59,15 @@ internal static class HostExtensions
             localRoot = appSettings.FullUserSyncPath;
             msalClientId = entraId.ClientId;
         }
+        
+        var msalConfigurationSettings = new MsalConfigurationSettings(
+            msalClientId,
+            appSettings.RedirectUri,
+            appSettings.GraphUri,
+            ctx.Configuration.GetSection("EntraId:Scopes").Get<string[]>() ?? Array.Empty<string>());
 
-        _ = services.AddInfrastructure(connectionString, localRoot, msalClientId);
+        _ = services.AddSingleton(msalConfigurationSettings);
+        _ = services.AddInfrastructure(connectionString, localRoot, msalConfigurationSettings);
 
         // UI services and viewmodels
         _ = services.AddSingleton<MainWindow>();
