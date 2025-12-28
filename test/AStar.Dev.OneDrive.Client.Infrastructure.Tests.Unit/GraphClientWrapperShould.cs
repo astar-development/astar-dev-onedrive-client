@@ -19,9 +19,10 @@ public class GraphClientWrapperShould
         auth.GetAccessTokenAsync(Arg.Any<CancellationToken>()).Returns("token");
         var handler = new TestHandler();
         var http = new HttpClient(handler);
+        var cachePrefix = "test-cache-prefix";
         ILogger<GraphClientWrapper> logger = Substitute.For<ILogger<GraphClientWrapper>>();
-        var sut = new GraphClientWrapper(auth, http, new MsalConfigurationSettings("clientId", "http://redirect.example.com", "https://graph.example.com", ["MockScope"]), logger);
-        
+        var sut = new GraphClientWrapper(auth, http, new MsalConfigurationSettings("clientId", "http://redirect.example.com", "https://graph.example.com", ["MockScope"], cachePrefix), logger);
+
         return (sut, auth, handler, logger);
     }
 

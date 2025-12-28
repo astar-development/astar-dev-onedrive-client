@@ -59,12 +59,13 @@ internal static class HostExtensions
             localRoot = appSettings.FullUserSyncPath;
             msalClientId = entraId.ClientId;
         }
-        
+
         var msalConfigurationSettings = new MsalConfigurationSettings(
             msalClientId,
             appSettings.RedirectUri,
             appSettings.GraphUri,
-            ctx.Configuration.GetSection("EntraId:Scopes").Get<string[]>() ?? Array.Empty<string>());
+            ctx.Configuration.GetSection("EntraId:Scopes").Get<string[]>() ?? [],
+            appSettings.CachePrefix);
 
         _ = services.AddSingleton(msalConfigurationSettings);
         _ = services.AddInfrastructure(connectionString, localRoot, msalConfigurationSettings);

@@ -18,13 +18,12 @@ public sealed class GraphApiHealthCheck(IAuthService authService) : IHealthCheck
     {
         try
         {
-            // Check if user is signed in
-            if(!authService.IsSignedIn)
+            var signedIn = await authService.IsUserSignedInAsync(cancellationToken);
+            if(!signedIn)
             {
                 return HealthCheckResult.Degraded("User is not authenticated with Microsoft Graph API");
             }
 
-            // Try to get access token (validates auth is working)
             var token = await authService.GetAccessTokenAsync(cancellationToken);
 
             var data = new Dictionary<string, object>

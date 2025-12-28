@@ -48,6 +48,7 @@ public sealed class MainWindowViewModelShould
             .Returns(ReactiveCommand.CreateFromTask(async _ => System.Reactive.Unit.Default, Observable.Return(true)));
         mockSyncCommandService.CreateCancelSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
             .Returns(ReactiveCommand.Create(() => System.Reactive.Unit.Default, Observable.Return(true)));
+        IAuthService authService = Substitute.For<IAuthService>();
 
         // Use a real implementation for ScanLocalFilesCommand to exercise ViewModel state changes
         mockSyncCommandService.CreateScanLocalFilesCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
@@ -81,12 +82,7 @@ public sealed class MainWindowViewModelShould
                 }, Observable.Return(true));
             });
 
-        return new MainWindowViewModel(
-            mockSyncCommandService,
-            _mockSync,
-            _mockRepo,
-            _mockTransfer,
-            _mockSettings
+        return new MainWindowViewModel(mockSyncCommandService, _mockSync, _mockRepo, _mockTransfer, _mockSettings, authService
         );
     }
 

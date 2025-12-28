@@ -10,7 +10,9 @@ using AStar.Dev.OneDrive.Client.Infrastructure.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
+using Polly.CircuitBreaker;
 using Polly.Extensions.Http;
+using Polly.Retry;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 
@@ -54,7 +56,7 @@ public static class InfrastructureServiceCollectionExtensions
     /// Creates a retry policy with exponential backoff for transient HTTP failures.
     /// Retries on network failures, 5xx server errors, 429 rate limiting, and IOException.
     /// </summary>
-    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    private static AsyncRetryPolicy<HttpResponseMessage> GetRetryPolicy()
         => Policy<HttpResponseMessage>
             .Handle<HttpRequestException>()
             .Or<IOException>(ex => ex.Message.Contains("forcibly closed") || ex.Message.Contains("transport connection"))
@@ -72,7 +74,7 @@ public static class InfrastructureServiceCollectionExtensions
     /// Creates a circuit breaker policy to prevent cascading failures.
     /// Opens circuit after 5 consecutive failures, stays open for 30 seconds.
     /// </summary>
-    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+    private static AsyncCircuitBreakerPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
         => HttpPolicyExtensions
             .HandleTransientHttpError()
             .CircuitBreakerAsync(

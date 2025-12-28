@@ -10,7 +10,7 @@ public class GraphApiHealthCheckShould
     public async Task ReturnDegradedStatusWhenUserIsNotSignedIn()
     {
         IAuthService auth = Substitute.For<IAuthService>();
-        auth.IsSignedIn.Returns(false);
+        auth.IsUserSignedInAsync(TestContext.Current.CancellationToken).Returns(false);
 
         var check = new GraphApiHealthCheck(auth);
 
@@ -23,7 +23,7 @@ public class GraphApiHealthCheckShould
     public async Task ReturnHealthyStatusWhenUserIsSignedInAndTokenAcquired()
     {
         IAuthService auth = Substitute.For<IAuthService>();
-        auth.IsSignedIn.Returns(true);
+        auth.IsUserSignedInAsync(TestContext.Current.CancellationToken).Returns(true);
         auth.GetAccessTokenAsync(Arg.Any<CancellationToken>()).Returns("token");
 
         var check = new GraphApiHealthCheck(auth);
@@ -39,7 +39,7 @@ public class GraphApiHealthCheckShould
     public async Task ReturnUnhealthyStatusWhenHttpRequestExceptionIsThrown()
     {
         IAuthService auth = Substitute.For<IAuthService>();
-        auth.IsSignedIn.Returns(true);
+        auth.IsUserSignedInAsync(TestContext.Current.CancellationToken).Returns(true);
         auth.GetAccessTokenAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException<string>(new HttpRequestException()));
 
@@ -55,7 +55,7 @@ public class GraphApiHealthCheckShould
     public async Task ReturnUnhealthyStatusWhenUnexpectedExceptionIsThrown()
     {
         IAuthService auth = Substitute.For<IAuthService>();
-        auth.IsSignedIn.Returns(true);
+        auth.IsUserSignedInAsync(TestContext.Current.CancellationToken).Returns(true);
         auth.GetAccessTokenAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromException<string>(new Exception("fail")));
 

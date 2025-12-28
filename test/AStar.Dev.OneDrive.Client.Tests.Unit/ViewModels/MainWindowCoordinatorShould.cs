@@ -33,10 +33,11 @@ public class MainWindowCoordinatorShould
         ISyncRepository mockRepo = Substitute.For<ISyncRepository>();
         ITransferService mockTransfer = Substitute.For<ITransferService>();
         ISettingsAndPreferencesService mockSettings = Substitute.For<ISettingsAndPreferencesService>();
+        IAuthService authService = Substitute.For<IAuthService>();
         mockSettings.Load().Returns(new UserPreferences());
         mockSync.Progress.Returns(new Subject<SyncProgress>());
         mockTransfer.Progress.Returns(new Subject<SyncProgress>());
-        return new MainWindowViewModel(syncCommandService, mockSync, mockRepo, mockTransfer, mockSettings);
+        return new MainWindowViewModel(syncCommandService, mockSync, mockRepo, mockTransfer, mockSettings, authService);
     }
 
     [Fact]

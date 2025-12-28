@@ -22,6 +22,7 @@
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     <PrivateAssets>all</PrivateAssets>
   </PackageReference>
+  <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.79.2" />
   <PackageReference Include="TestableIO.System.IO.Abstractions" Version="22.1.0" />
   <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" Version="22.1.0" />
 </ItemGroup>

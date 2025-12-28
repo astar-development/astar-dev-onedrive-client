@@ -149,10 +149,11 @@ public class AutoSaveServiceShould
         ISyncRepository repo = Substitute.For<ISyncRepository>();
         ITransferService transfer = Substitute.For<ITransferService>();
         ISettingsAndPreferencesService settings = Substitute.For<ISettingsAndPreferencesService>();
+        IAuthService authService = Substitute.For<IAuthService>();
         settings.Load().Returns(new UserPreferences());
         sync.Progress.Returns(new Subject<SyncProgress>());
         transfer.Progress.Returns(new Subject<SyncProgress>());
 
-        return new MainWindowViewModel(syncCommandService, sync, repo, transfer, settings);
+        return new MainWindowViewModel(syncCommandService, sync, repo, transfer, settings, authService);
     }
 }

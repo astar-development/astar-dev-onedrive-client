@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
@@ -39,12 +40,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     private const int MaxRecentTransfers = 15;
 
     public MainWindowViewModel(ISyncCommandService syncCommandService, ISyncEngine sync, ISyncRepository repo, ITransferService transfer,
-      ISettingsAndPreferencesService settingsAndPreferencesService)
+      ISettingsAndPreferencesService settingsAndPreferencesService, IAuthService authService)
     {
         _sync = sync;
         _repo = repo;
         UserPreferences = settingsAndPreferencesService.Load();
-
+        SignedIn = authService.IsUserSignedInAsync(CancellationToken.None).GetAwaiter().GetResult();
         IObservable<bool> isSyncing = this.WhenAnyValue(x => x.OperationType)
             .Select(type => type == SyncOperationType.Syncing);
 
@@ -54,6 +55,9 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         CancelSyncCommand = syncCommandService.CreateCancelSyncCommand(this, isSyncing);
         ScanLocalFilesCommand = syncCommandService.CreateScanLocalFilesCommand(this, isSyncing);
 
+        DeltaToken? fullSync = _sync.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
+        SetFullSync(fullSync == null);
+        SetIncrementalSync(fullSync != null);
         SubscribeToSyncProgress();
         SubscribeToTransferProgress(transfer);
     }

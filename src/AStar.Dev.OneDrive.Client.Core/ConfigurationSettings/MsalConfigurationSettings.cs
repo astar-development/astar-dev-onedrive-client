@@ -6,5 +6,6 @@ public record MsalConfigurationSettings
     string ClientId,
     string RedirectUri,
     string GraphUri,
-    string[] Scopes
+    string[] Scopes,
+    string CachePrefix
 );
