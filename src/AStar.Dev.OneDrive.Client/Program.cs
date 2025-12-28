@@ -57,7 +57,12 @@ internal class Program
                 _ = cfg.AddJsonFile("appsettings.json", false, false);
                 _ = cfg.AddUserSecrets<App>(true);
             })
-            .ConfigureServices(HostExtensions.ConfigureApplicationServices);
+        .ConfigureServices(HostExtensions.ConfigureApplicationServices)
+        .UseSerilog((context, services, configuration) =>
+            configuration
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+        );
 
     private static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
