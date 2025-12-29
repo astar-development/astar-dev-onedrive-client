@@ -5,5 +5,6 @@ public enum SyncOperationType
     Idle,
     Syncing,
     Cancelled,
-    Completed
+    Completed,
+    Failed
 }

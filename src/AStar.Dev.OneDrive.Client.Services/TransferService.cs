@@ -7,7 +7,6 @@ using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Retry;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
@@ -19,7 +18,7 @@ public class TransferService : ITransferService
     private readonly ILogger<TransferService> _logger;
     private readonly UserPreferences _settings;
     private readonly SemaphoreSlim _downloadSemaphore;
-    private readonly AsyncRetryPolicy _retryPolicy;
+    private readonly AsyncPolicy _retryPolicy;
     private readonly Subject<SyncProgress> _progressSubject = new();
     private readonly Stopwatch _operationStopwatch = new();
     private long _totalBytesTransferred;
@@ -35,7 +34,8 @@ public class TransferService : ITransferService
         _settings = settings;
         _downloadSemaphore = new SemaphoreSlim(settings.UiSettings.SyncSettings.MaxParallelDownloads);
 
-        _retryPolicy = Policy.Handle<HttpRequestException>()
+        _retryPolicy = Policy.TimeoutAsync(TimeSpan.FromMinutes(5))
+            .WrapAsync(Policy.Handle<HttpRequestException>()
                              .Or<IOException>()
                              .WaitAndRetryAsync(
                                  settings.UiSettings.SyncSettings.MaxRetries,
@@ -50,7 +50,7 @@ public class TransferService : ITransferService
                                          "[{ErrorCategory}] Retry {Retry}/{MaxRetries} after {Delay}ms. Error: {Message}",
                                          errorCategory, retryCount, settings.UiSettings.SyncSettings.MaxRetries,
                                          ts.TotalMilliseconds, ex.Message);
-                                 });
+                                 }));
     }
 
     /// <summary>
@@ -76,25 +76,45 @@ public class TransferService : ITransferService
 
         long totalBytesForAllDownloads = 0;
         var batchProcessed = true;
-        while(!ct.IsCancellationRequested && batchProcessed)
+        try
         {
-            (var BatchProcessed, var PageCount, var TotalProcessed, var TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
-                ct, batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads);
-            batchProcessed = BatchProcessed;
-            pageCount = PageCount;
-            totalProcessed = TotalProcessed;
-            totalBytesForAllDownloads = TotalBytesForAllDownloads;
-        }
+            while(!ct.IsCancellationRequested && batchProcessed)
+            {
+                ct.ThrowIfCancellationRequested();
+                (var BatchProcessed, var PageCount, var TotalProcessed, var TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
+                    ct, batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads);
+                batchProcessed = BatchProcessed;
+                pageCount = PageCount;
+                totalProcessed = TotalProcessed;
+                totalBytesForAllDownloads = TotalBytesForAllDownloads;
+            }
 
-        if(ct.IsCancellationRequested)
+            if(ct.IsCancellationRequested)
+            {
+                _logger.LogWarning("Download process cancelled after {Processed}/{Total} files", totalProcessed, total);
+                ReportSyncCancelled("Download cancelled");
+            }
+            else
+            {
+                _operationStopwatch.Stop();
+                _logger.LogInformation("Completed downloads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
+                    totalProcessed, _totalBytesTransferred / (1024.0 * 1024.0), _operationStopwatch.Elapsed.TotalSeconds,
+                    _totalBytesTransferred / (1024.0 * 1024.0) / _operationStopwatch.Elapsed.TotalSeconds);
+            }
+        }
+        catch(OperationCanceledException)
         {
-            _logger.LogWarning("Download process cancelled after {Processed}/{Total} files", totalProcessed, total);
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            _logger.LogWarning("Download process cancelled by user");
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            ReportSyncCancelled("Download cancelled");
         }
-
-        _operationStopwatch.Stop();
-        _logger.LogInformation("Completed downloads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
-            totalProcessed, _totalBytesTransferred / (1024.0 * 1024.0), _operationStopwatch.Elapsed.TotalSeconds,
-            _totalBytesTransferred / (1024.0 * 1024.0) / _operationStopwatch.Elapsed.TotalSeconds);
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "Download process failed: {Message}", ex.Message);
+            ReportSyncFailed($"Download failed: {ex.Message}");
+            throw new IOException("Download process failed. See inner exception for details.", ex);
+        }
     }
 
     private async Task<(bool BatchProcessed, int PageCount, int TotalProcessed, long TotalBytesForAllDownloads)> ProcessDownloadBatchAsync(
@@ -219,6 +239,7 @@ public class TransferService : ITransferService
             long uploaded = 0;
             while(uploaded < stream.Length)
             {
+                ct.ThrowIfCancellationRequested();
                 var toRead = (int)Math.Min(chunkSize, stream.Length - uploaded);
                 var buffer = new byte[toRead];
                 _ = stream.Seek(uploaded, SeekOrigin.Begin);
@@ -232,6 +253,10 @@ public class TransferService : ITransferService
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = stream.Length };
             await _repo.LogTransferAsync(log, ct);
             _logger.LogInformation("Uploaded {Path}", local.RelativePath);
+        }
+        catch(OperationCanceledException)
+        {
+            _logger.LogWarning("Upload cancelled for {Id}", local.Id);
         }
         catch(Exception ex)
         {
@@ -267,7 +292,10 @@ public class TransferService : ITransferService
     private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
     {
         _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
+        _logger.LogDebug("Waiting to acquire semaphore for {Path}", item.RelativePath);
         await _downloadSemaphore.WaitAsync(ct);
+        _logger.LogDebug("Semaphore acquired for {Path}", item.RelativePath);
+
         var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
         await _repo.LogTransferAsync(log, ct);
         try
@@ -286,6 +314,8 @@ public class TransferService : ITransferService
             int read;
             while((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
             {
+                ct.ThrowIfCancellationRequested();
+                _logger.LogDebug("Read {Bytes} bytes from stream for {Path}", read, item.RelativePath);
                 await output.WriteAsync(buffer.AsMemory(0, read), ct);
                 totalWritten += read;
 
@@ -304,6 +334,8 @@ public class TransferService : ITransferService
                     nextLogThreshold += logIntervalBytes;
                 }
             }
+
+            _logger.LogDebug("Completed reading stream for {Path}", item.RelativePath);
 
             _logger.LogDebug("Marking file as downloaded: {Path}", item.RelativePath);
             await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
@@ -326,6 +358,7 @@ public class TransferService : ITransferService
         }
         finally
         {
+            _logger.LogDebug("Releasing semaphore for {Path}", item.RelativePath);
             _ = _downloadSemaphore.Release();
         }
     }
@@ -359,6 +392,44 @@ public class TransferService : ITransferService
             ElapsedTime = _operationStopwatch.Elapsed
         };
 
+        _progressSubject.OnNext(syncProgress);
+    }
+
+    private void ReportSyncFailed(string message)
+    {
+        var syncProgress = new SyncProgress
+        {
+            OperationType = SyncOperationType.Failed,
+            CurrentOperationMessage = message,
+            ProcessedFiles = 0,
+            TotalFiles = 0,
+            PendingDownloads = 0,
+            PendingUploads = 0,
+            BytesTransferred = 0,
+            TotalBytes = 0,
+            BytesPerSecond = 0,
+            EstimatedTimeRemaining = null,
+            ElapsedTime = _operationStopwatch.Elapsed
+        };
+        _progressSubject.OnNext(syncProgress);
+    }
+
+    private void ReportSyncCancelled(string message)
+    {
+        var syncProgress = new SyncProgress
+        {
+            OperationType = SyncOperationType.Cancelled,
+            CurrentOperationMessage = message,
+            ProcessedFiles = 0,
+            TotalFiles = 0,
+            PendingDownloads = 0,
+            PendingUploads = 0,
+            BytesTransferred = 0,
+            TotalBytes = 0,
+            BytesPerSecond = 0,
+            EstimatedTimeRemaining = null,
+            ElapsedTime = _operationStopwatch.Elapsed
+        };
         _progressSubject.OnNext(syncProgress);
     }
 
