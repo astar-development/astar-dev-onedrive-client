@@ -13,7 +13,7 @@ public class DatabaseHealthCheckShould
     public async Task ReturnHealthyStatusWhenDatabaseIsAccessible()
     {
         DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
-        .UseInMemoryDatabase(Guid.NewGuid().ToString())
+        .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
         .Options;
         await using var dbContext = new AppDbContext(options);
         dbContext.DeltaTokens.Add(new DeltaToken("MockId", "MockToken", DateTime.UtcNow));

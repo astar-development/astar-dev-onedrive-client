@@ -139,7 +139,7 @@ public sealed class AppDbContextShould : IDisposable
         _ = entityType.ShouldNotBeNull();
 
         // The fact that we can save and retrieve entities with string IDs that could be GUIDs is sufficient
-        TransferLog log = new(Guid.NewGuid().ToString(), TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);
+        TransferLog log = new(Guid.CreateVersion7().ToString(), TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);
 
         _ = _context.TransferLogs.Add(log);
         _ = await _context.SaveChangesAsync(TestContext.Current.CancellationToken);

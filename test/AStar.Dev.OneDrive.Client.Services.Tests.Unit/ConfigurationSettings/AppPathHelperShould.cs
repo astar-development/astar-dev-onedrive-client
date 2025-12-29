@@ -187,7 +187,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_PathExists_WhenDirectoryCreated()
     {
-        var testAppName = $"TestApp_{Guid.NewGuid()}";
+        var testAppName = $"TestApp_{Guid.CreateVersion7()}";
         var appDataPath = AppPathHelper.GetAppDataPath(testAppName);
 
         try

@@ -10,7 +10,7 @@ public sealed class DbInitializerShould : IDisposable
     private readonly string _dbPath;
     private SqliteConnection? _connection;
 
-    public DbInitializerShould() => _dbPath = Path.Combine(Path.GetTempPath(), $"DbInitializerTest_{Guid.NewGuid()}.db");
+    public DbInitializerShould() => _dbPath = Path.Combine(Path.GetTempPath(), $"DbInitializerTest_{Guid.CreateVersion7()}.db");
 
     public void Dispose()
     {

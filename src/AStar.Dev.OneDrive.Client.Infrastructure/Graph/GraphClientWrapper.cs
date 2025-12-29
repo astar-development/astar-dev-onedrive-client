@@ -48,7 +48,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
 
             Stream stream = await res.Content.ReadAsStreamAsync(ct);
             logger.LogDebug("Download stream acquired for DriveItemId: {DriveItemId}", driveItemId);
-            
+
             return stream;
         }
         catch(HttpRequestException ex)
@@ -73,7 +73,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
     public async Task<UploadSessionInfo> CreateUploadSessionAsync(string parentPath, string fileName, CancellationToken ct)
     {
         var token = await auth.GetAccessTokenAsync(ct);
-        // Build path under root
+
         var path = string.IsNullOrWhiteSpace(parentPath) ? fileName : $"{parentPath.Trim('/')}/{fileName}";
         var url = $"{msalConfigurationSettings.GraphUri}/root:/{Uri.EscapeDataString(path)}:/createUploadSession";
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
@@ -85,8 +85,8 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
         var uploadUrl = doc.RootElement.GetProperty("uploadUrl").GetString()!;
         DateTimeOffset expiration = doc.RootElement.TryGetProperty("expirationDateTime", out JsonElement ex) ? DateTimeOffset.Parse(ex.GetString()!, CultureInfo.InvariantCulture) : DateTimeOffset.UtcNow.AddHours(1);
-        
-        return new UploadSessionInfo(uploadUrl, Guid.NewGuid().ToString(), expiration);
+
+        return new UploadSessionInfo(uploadUrl, Guid.CreateVersion7().ToString(), expiration);
     }
 
     public async Task UploadChunkAsync(UploadSessionInfo session, Stream chunk, long rangeStart, long rangeEnd, CancellationToken ct)
@@ -95,7 +95,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         req.Content = new StreamContent(chunk);
         req.Content.Headers.Add("Content-Range", $"bytes {rangeStart}-{rangeEnd}/*");
         using HttpResponseMessage res = await http.SendAsync(req, ct);
-        // Graph returns 201/200 when upload completes, 202 for accepted chunk
+
         if(!res.IsSuccessStatusCode)
             _ = res.EnsureSuccessStatusCode();
     }
@@ -130,23 +130,27 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         return items;
     }
 
-    private static DriveItemRecord ParseDriveItemRecord(JsonElement el)
+    private static DriveItemRecord ParseDriveItemRecord(JsonElement jsonElement)
     {
-        var id = el.GetProperty("id").GetString()!;
-        var isFolder = el.TryGetProperty("folder", out _);
-        var size = el.TryGetProperty("size", out JsonElement sProp) ? sProp.GetInt64() : 0L;
-        var parentPath = el.TryGetProperty("parentReference", out JsonElement pr) && pr.TryGetProperty("path", out JsonElement p) ? p.GetString() ?? string.Empty : string.Empty;
-        var name = el.TryGetProperty("name", out JsonElement n) ? n.GetString() ?? id : id;
+        var id = jsonElement.GetProperty("id").GetString()!;
+        var isFolder = jsonElement.TryGetProperty("folder", out _);
+        var size = jsonElement.TryGetProperty("size", out JsonElement sProp) ? sProp.GetInt64() : 0L;
+        var parentPath = SetParentPath(jsonElement);
+        var name = jsonElement.TryGetProperty("name", out JsonElement n) ? n.GetString() ?? id : id;
         var relativePath = GraphPathHelpers.BuildRelativePath(parentPath, name);
-        var eTag = el.TryGetProperty("eTag", out JsonElement et) ? et.GetString() : null;
-        var cTag = el.TryGetProperty("cTag", out JsonElement ctProp) ? ctProp.GetString() : null;
-        DateTimeOffset last = el.TryGetProperty("lastModifiedDateTime", out JsonElement lm)
-            ? DateTimeOffset.Parse(lm.GetString()!, CultureInfo.InvariantCulture)
-            : DateTimeOffset.UtcNow;
-        var isDeleted = el.TryGetProperty("deleted", out _);
-        
-        return new DriveItemRecord(id, id, relativePath, eTag, cTag, size, last, isFolder, isDeleted);
+        var eTag = jsonElement.TryGetProperty("eTag", out JsonElement et) ? et.GetString() : null;
+        var cTag = jsonElement.TryGetProperty("cTag", out JsonElement ctProp) ? ctProp.GetString() : null;
+        DateTimeOffset lastModifiedUtc = GetLastModifiedUtc(jsonElement);
+        var isDeleted = jsonElement.TryGetProperty("deleted", out _);
+
+        return new DriveItemRecord(id, id, relativePath, eTag, cTag, size, lastModifiedUtc, isFolder, isDeleted);
     }
+
+    private static DateTimeOffset GetLastModifiedUtc(JsonElement jsonElement) => jsonElement.TryGetProperty("lastModifiedDateTime", out JsonElement lm)
+                ? DateTimeOffset.Parse(lm.GetString()!, CultureInfo.InvariantCulture)
+                : DateTimeOffset.UtcNow;
+    private static string SetParentPath(JsonElement jsonElement)
+        => jsonElement.TryGetProperty("parentReference", out JsonElement pr) && pr.TryGetProperty("path", out JsonElement p) ? p.GetString() ?? string.Empty : string.Empty;
 
     private static string? TryGetODataProperty(JsonDocument doc, string propertyName)
         => doc.RootElement.TryGetProperty(propertyName, out JsonElement prop) ? prop.GetString() : null;

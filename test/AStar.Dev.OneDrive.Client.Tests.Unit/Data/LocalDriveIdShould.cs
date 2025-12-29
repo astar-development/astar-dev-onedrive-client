@@ -7,7 +7,7 @@ public class LocalDriveIdShould
     [Fact]
     public void SetTheExpectedValue()
     {
-        var testGuid = Guid.NewGuid();
+        var testGuid = Guid.CreateVersion7();
 
         var localDriveId = new LocalDriveId(testGuid);
 

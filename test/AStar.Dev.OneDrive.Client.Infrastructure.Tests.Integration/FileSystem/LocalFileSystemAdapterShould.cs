@@ -11,7 +11,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
 
     public LocalFileSystemAdapterShould()
     {
-        _testRoot = Path.Combine(Path.GetTempPath(), $"LocalFileSystemAdapterTests_{Guid.NewGuid()}");
+        _testRoot = Path.Combine(Path.GetTempPath(), $"LocalFileSystemAdapterTests_{Guid.CreateVersion7()}");
         _ = Directory.CreateDirectory(_testRoot);
     }
 
@@ -162,7 +162,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
     [Fact]
     public async Task EnumerateFilesReturnEmptyListWhenDirectoryDoesNotExist()
     {
-        var nonExistentRoot = Path.Combine(Path.GetTempPath(), $"NonExistent_{Guid.NewGuid()}");
+        var nonExistentRoot = Path.Combine(Path.GetTempPath(), $"NonExistent_{Guid.CreateVersion7()}");
         var adapter = new LocalFileSystemAdapter(nonExistentRoot, new FileSystemImpl());
 
         IEnumerable<LocalFileInfo> result = await adapter.EnumerateFilesAsync(CancellationToken.None);

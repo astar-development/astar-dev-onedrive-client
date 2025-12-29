@@ -78,7 +78,7 @@ public class TransferService : ITransferService
         var batchProcessed = true;
         while(!ct.IsCancellationRequested && batchProcessed)
         {
-            (bool BatchProcessed, int PageCount, int TotalProcessed, long TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
+            (var BatchProcessed, var PageCount, var TotalProcessed, var TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
                 ct, batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads);
             batchProcessed = BatchProcessed;
             pageCount = PageCount;
@@ -206,7 +206,7 @@ public class TransferService : ITransferService
 
     private async Task UploadLocalFileAsync(LocalFileRecord local, CancellationToken ct)
     {
-        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Upload, local.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, null);
+        var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Upload, local.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, null);
         await _repo.LogTransferAsync(log, ct);
         try
         {
@@ -268,7 +268,7 @@ public class TransferService : ITransferService
     {
         _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
         await _downloadSemaphore.WaitAsync(ct);
-        var log = new TransferLog(Guid.NewGuid().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
+        var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
         await _repo.LogTransferAsync(log, ct);
         try
         {
@@ -296,7 +296,6 @@ public class TransferService : ITransferService
 
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
-            throw new IOException($"Download failed for {item.RelativePath} after {_settings.UiSettings.SyncSettings.MaxRetries} retries. See inner exception for details.", ex);
         }
         finally
         {

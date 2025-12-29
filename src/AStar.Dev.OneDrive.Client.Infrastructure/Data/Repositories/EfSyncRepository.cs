@@ -23,7 +23,6 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
     public async Task ApplyDriveItemsAsync(IEnumerable<DriveItemRecord> items, CancellationToken ct)
     {
-        // Batch apply inside a transaction to reduce contention on SQLite
         await using IDbContextTransaction tx = await db.Database.BeginTransactionAsync(ct);
         foreach(DriveItemRecord item in items)
         {
@@ -46,6 +45,11 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
         logger.LogDebug("Repository stats: {TotalItems} total items, {TotalFiles} files, {Downloaded} already downloaded",
             totalDriveItems, totalFiles, downloadedFiles);
+        var stats = string.Format("Repository stats: {0} total items, {1} files, {2} already downloaded",
+            totalDriveItems, totalFiles, downloadedFiles);
+        var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Download, "Stats", DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, stats);
+
+        _ = db.TransferLogs.Add(log);
 
         IQueryable<DriveItemRecord> query = db.DriveItems
                             .Where(d => !d.IsFolder && !d.IsDeleted)
@@ -58,6 +62,13 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
         logger.LogDebug("GetPendingDownloadsAsync(pageSize={PageSize}, offset={Offset}): returning {Count} items",
             pageSize, offset, results.Count);
+
+        var stats2 = string.Format("GetPendingDownloadsAsync(pageSize={0}, offset={1}): returning {2} items",
+            pageSize, offset, results.Count);
+        var log2 = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Download, "Stats2", DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, stats2);
+
+        _ = db.TransferLogs.Add(log2);
+        _ = await db.SaveChangesAsync(ct);
 
         return results;
     }
@@ -76,7 +87,6 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
     public async Task MarkLocalFileStateAsync(string driveItemId, SyncState state, CancellationToken ct)
     {
-        // Use driveItemId as the local file id mapping for simplicity
         DriveItemRecord? drive = await db.DriveItems.FindAsync([driveItemId], ct);
         if(drive is null)
             return;

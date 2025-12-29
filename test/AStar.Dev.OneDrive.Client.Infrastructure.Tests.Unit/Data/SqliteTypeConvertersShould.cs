@@ -165,7 +165,7 @@ public class SqliteTypeConvertersShould
     [Fact]
     public void ConvertGuidToBytesAndBack()
     {
-        var original = Guid.NewGuid();
+        var original = Guid.CreateVersion7();
 
         var bytes = (byte[])SqliteTypeConverters.GuidToBytes.ConvertToProvider(original)!;
         var roundTrip = (Guid)SqliteTypeConverters.GuidToBytes.ConvertFromProvider(bytes)!;
@@ -176,7 +176,7 @@ public class SqliteTypeConvertersShould
     [Fact]
     public void ConvertGuidToBytesProduces16Bytes()
     {
-        var original = Guid.NewGuid();
+        var original = Guid.CreateVersion7();
 
         var bytes = (byte[])SqliteTypeConverters.GuidToBytes.ConvertToProvider(original)!;
 
@@ -208,7 +208,7 @@ public class SqliteTypeConvertersShould
     [Fact]
     public void ConvertNullableGuidWithValueToBytesAndBack()
     {
-        Guid? original = Guid.NewGuid();
+        Guid? original = Guid.CreateVersion7();
 
         var bytes = (byte[]?)SqliteTypeConverters.NullableGuidToBytes.ConvertToProvider(original);
         var roundTrip = (Guid?)SqliteTypeConverters.NullableGuidToBytes.ConvertFromProvider(bytes);

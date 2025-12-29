@@ -78,7 +78,7 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
 
     private async Task SaveFinalDeltaTokenAsync(string finalDelta, int totalItemsProcessed, Stopwatch stopwatch, CancellationToken ct)
     {
-        var token = new DeltaToken(Guid.NewGuid().ToString(), finalDelta, DateTimeOffset.UtcNow);
+        var token = new DeltaToken(Guid.CreateVersion7().ToString(), finalDelta, DateTimeOffset.UtcNow);
         await repo.SaveOrUpdateDeltaTokenAsync(token, ct);
         logger.LogInformation("Saved delta token after processing {ItemCount} items in {ElapsedMs}ms",
             totalItemsProcessed, stopwatch.ElapsedMilliseconds);
@@ -254,7 +254,7 @@ public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransf
             if(existingFile is null)
             {
                 await repo.AddOrUpdateLocalFileAsync(new LocalFileRecord(
-                    Guid.NewGuid().ToString(), localFile.RelativePath, localFile.Hash, localFile.Size, localFile.LastWriteUtc, SyncState.PendingUpload), ct);
+                    Guid.CreateVersion7().ToString(), localFile.RelativePath, localFile.Hash, localFile.Size, localFile.LastWriteUtc, SyncState.PendingUpload), ct);
                 logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
                 return FileProcessResult.New;
             }

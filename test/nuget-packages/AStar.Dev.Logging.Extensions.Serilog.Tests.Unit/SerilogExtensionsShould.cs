@@ -10,9 +10,9 @@ public class SerilogExtensionsShould
     {
 
         ILogger logger = SerilogExtensions.CreateMinimalLogger();
-        var verboseToken = $"VERBOSE-{Guid.NewGuid():N}";
-        var debugToken = $"DEBUG-{Guid.NewGuid():N}";
-        var infoToken = $"INFO-{Guid.NewGuid():N}";
+        var verboseToken = $"VERBOSE-{Guid.CreateVersion7():N}";
+        var debugToken = $"DEBUG-{Guid.CreateVersion7():N}";
+        var infoToken = $"INFO-{Guid.CreateVersion7():N}";
 
         TextWriter originalOut = Console.Out;
         using var capture = new StringWriter();
@@ -49,7 +49,7 @@ public class SerilogExtensionsShould
         _ = loggerConfig.ConfigureAStarDevelopmentLoggingDefaults(cfg, addFileSink: false);
         ILogger logger = loggerConfig.CreateLogger();
 
-        var token = $"NOFILE-{Guid.NewGuid():N}";
+        var token = $"NOFILE-{Guid.CreateVersion7():N}";
         Should.NotThrow(() => logger.Information("{Token}", token));
     }
 
@@ -64,7 +64,7 @@ public class SerilogExtensionsShould
         _ = loggerConfig.ConfigureAStarDevelopmentLoggingDefaults(cfg, addFileSink: false);
         ILogger logger = loggerConfig.CreateLogger();
 
-        var infoToken = $"MS-I-{Guid.NewGuid():N}";
+        var infoToken = $"MS-I-{Guid.CreateVersion7():N}";
         ILogger microsoftLogger = logger.ForContext("SourceContext", "Microsoft");
         Should.NotThrow(() => microsoftLogger.Information("{Token}", infoToken));
     }
