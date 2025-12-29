@@ -56,7 +56,7 @@ public class TransferService : ITransferService
     /// <summary>
     /// Pulls pending downloads from repository in batches and downloads them with bounded concurrency.
     /// </summary>
-    public async Task ProcessPendingDownloadsAsync(CancellationToken ct)
+    public async Task ProcessPendingDownloadsAsync(CancellationToken cancellationToken)
     {
         _operationStopwatch.Restart();
         _totalBytesTransferred = 0;
@@ -64,7 +64,7 @@ public class TransferService : ITransferService
         var totalProcessed = 0;
         var pageCount = 0;
         var batchSize = GetDownloadBatchSize();
-        var total = await _repo.GetPendingDownloadCountAsync(ct);
+        var total = await _repo.GetPendingDownloadCountAsync(cancellationToken);
 
         _logger.LogInformation("Found {TotalPending} pending downloads (batch size: {BatchSize})", total, batchSize);
 
@@ -78,18 +78,18 @@ public class TransferService : ITransferService
         var batchProcessed = true;
         try
         {
-            while(!ct.IsCancellationRequested && batchProcessed)
+            while(!cancellationToken.IsCancellationRequested && batchProcessed)
             {
-                ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 (var BatchProcessed, var PageCount, var TotalProcessed, var TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
-                    ct, batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads);
+                    batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads, cancellationToken);
                 batchProcessed = BatchProcessed;
                 pageCount = PageCount;
                 totalProcessed = TotalProcessed;
                 totalBytesForAllDownloads = TotalBytesForAllDownloads;
             }
 
-            if(ct.IsCancellationRequested)
+            if(cancellationToken.IsCancellationRequested)
             {
                 _logger.LogWarning("Download process cancelled after {Processed}/{Total} files", totalProcessed, total);
                 ReportSyncCancelled("Download cancelled");
@@ -118,15 +118,15 @@ public class TransferService : ITransferService
     }
 
     private async Task<(bool BatchProcessed, int PageCount, int TotalProcessed, long TotalBytesForAllDownloads)> ProcessDownloadBatchAsync(
-        CancellationToken ct,
         int batchSize,
         int total,
         int pageCount,
         int totalProcessed,
-        long totalBytesForAllDownloads)
+        long totalBytesForAllDownloads,
+        CancellationToken cancellationToken)
     {
         _logger.LogDebug("Fetching batch {PageNumber} (offset: {Offset})", pageCount + 1, pageCount * batchSize);
-        var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount, ct)).ToList();
+        var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount, cancellationToken)).ToList();
         pageCount++;
 
         if(NoMoreItemsInBatch(items))
@@ -140,7 +140,7 @@ public class TransferService : ITransferService
         // First batch: calculate total bytes for progress tracking
         totalBytesForAllDownloads = EstimateTotalDownloadBytesIfFirstBatch(items, total, totalBytesForAllDownloads, pageCount);
 
-        totalProcessed = await ExecuteDownloadTasksAsync(items, ct, total, totalBytesForAllDownloads, totalProcessed);
+        totalProcessed = await ExecuteDownloadTasksAsync(items, total, totalBytesForAllDownloads, totalProcessed, cancellationToken);
 
         _logger.LogInformation("Batch {BatchNumber} complete: {Processed}/{Total} files downloaded so far",
             pageCount, totalProcessed, total);
@@ -150,17 +150,17 @@ public class TransferService : ITransferService
     /// <summary>
     /// Scans repository for pending uploads and uploads them using upload sessions and chunked uploads.
     /// </summary>
-    public async Task ProcessPendingUploadsAsync(CancellationToken ct)
+    public async Task ProcessPendingUploadsAsync(CancellationToken cancellationToken)
     {
         _operationStopwatch.Restart();
         _totalBytesTransferred = 0;
         _logger.LogInformation("Processing pending uploads");
-        var uploads = (await _repo.GetPendingUploadsAsync(_settings.UiSettings.SyncSettings.DownloadBatchSize, ct)).ToList();
+        var uploads = (await _repo.GetPendingUploadsAsync(_settings.UiSettings.SyncSettings.DownloadBatchSize, cancellationToken)).ToList();
         var totalProcessed = 0;
         var pendingUploads = uploads.Count;
         var totalBytes = uploads.Sum(u => u.Size);
 
-        totalProcessed = await ProcessUploadBatchAsync(uploads, ct, pendingUploads, totalBytes);
+        totalProcessed = await ProcessUploadBatchAsync(uploads, pendingUploads, totalBytes, cancellationToken);
 
         _operationStopwatch.Stop();
         _logger.LogInformation("Completed uploads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
@@ -186,95 +186,131 @@ public class TransferService : ITransferService
     }
 
     private async Task<int> ExecuteDownloadTasksAsync(
-        List<DriveItemRecord> items,
-        CancellationToken ct,
-        int total,
-        long totalBytesForAllDownloads,
-        int totalProcessed)
+    List<DriveItemRecord> items,
+    int total,
+    long totalBytesForAllDownloads,
+    int totalProcessed,
+    CancellationToken cancellationToken)
     {
         var processed = totalProcessed;
-        var tasks = items.Select(item => DownloadItemWithRetryAsync(item, ct, () =>
+        var maxParallel = Math.Max(1, _settings.UiSettings.SyncSettings.MaxParallelDownloads);
+        using var throttler = new SemaphoreSlim(maxParallel);
+
+        var tasks = items.Select(async item =>
         {
-            var p = Interlocked.Increment(ref processed);
-            _ = Interlocked.Add(ref _totalBytesTransferred, item.Size);
-            ReportProgress(p, "Downloading files", total, 0, totalBytesForAllDownloads);
-        })).ToList();
-        await Task.WhenAll(tasks);
+            await throttler.WaitAsync(cancellationToken);
+            try
+            {
+                await DownloadItemWithRetryAsync(item, cancellationToken, () =>
+                {
+                    var p = Interlocked.Increment(ref processed);
+                    _ = Interlocked.Add(ref _totalBytesTransferred, item.Size);
+                    ReportProgress(p, "Downloading files", total, 0, totalBytesForAllDownloads);
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // Optionally log or handle per-task cancellation
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Download failed for {Path}", item.RelativePath);
+            }
+            finally
+            {
+                _ = throttler.Release();
+            }
+        }).ToList();
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch(OperationCanceledException)
+        {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            _logger.LogWarning("Download tasks cancelled by user");
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            throw;
+        }
+
         return processed;
     }
 
     private async Task<int> ProcessUploadBatchAsync(
         List<LocalFileRecord> uploads,
-        CancellationToken ct,
         int pendingUploads,
-        long totalBytes)
+        long totalBytes,
+        CancellationToken cancellationToken)
     {
         var totalProcessed = 0;
         foreach(LocalFileRecord? local in uploads)
         {
-            await _retryPolicy.ExecuteAsync(async ct2 =>
+            await _retryPolicy.ExecuteAsync(async cancellationToken =>
             {
-                await UploadLocalFileAsync(local, ct2);
+                await UploadLocalFileAsync(local, cancellationToken);
                 var processed = Interlocked.Increment(ref totalProcessed);
                 _ = Interlocked.Add(ref _totalBytesTransferred, local.Size);
                 ReportProgress(processed, "Uploading files", uploads.Count, pendingUploads, totalBytes);
-            }, ct);
+            }, cancellationToken);
         }
 
         return totalProcessed;
     }
 
-    private async Task UploadLocalFileAsync(LocalFileRecord local, CancellationToken ct)
+    private async Task UploadLocalFileAsync(LocalFileRecord local, CancellationToken cancellationToken)
     {
         var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Upload, local.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, null);
-        await _repo.LogTransferAsync(log, ct);
+        await _repo.LogTransferAsync(log, cancellationToken);
         try
         {
             var parent = Path.GetDirectoryName(local.RelativePath) ?? "/";
             var fileName = Path.GetFileName(local.RelativePath);
-            UploadSessionInfo session = await _graph.CreateUploadSessionAsync(parent, fileName, ct);
+            UploadSessionInfo session = await _graph.CreateUploadSessionAsync(parent, fileName, cancellationToken);
 
-            await using Stream stream = await _fs.OpenReadAsync(local.RelativePath, ct) ?? throw new FileNotFoundException(local.RelativePath);
+            await using Stream stream = await _fs.OpenReadAsync(local.RelativePath, cancellationToken) ?? throw new FileNotFoundException(local.RelativePath);
             const int chunkSize = 320 * 1024; // 320KB
             long uploaded = 0;
             while(uploaded < stream.Length)
             {
-                ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 var toRead = (int)Math.Min(chunkSize, stream.Length - uploaded);
                 var buffer = new byte[toRead];
                 _ = stream.Seek(uploaded, SeekOrigin.Begin);
-                var read = await stream.ReadAsync(buffer.AsMemory(0, toRead), ct);
+                var read = await stream.ReadAsync(buffer.AsMemory(0, toRead), cancellationToken);
                 await using var ms = new MemoryStream(buffer, 0, read, writable: false);
-                await _graph.UploadChunkAsync(session, ms, uploaded, uploaded + read - 1, ct);
+                await _graph.UploadChunkAsync(session, ms, uploaded, uploaded + read - 1, cancellationToken);
                 uploaded += read;
             }
 
-            await _repo.MarkLocalFileStateAsync(local.Id, SyncState.Uploaded, ct);
+            await _repo.MarkLocalFileStateAsync(local.Id, SyncState.Uploaded, cancellationToken);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = stream.Length };
-            await _repo.LogTransferAsync(log, ct);
+            await _repo.LogTransferAsync(log, cancellationToken);
             _logger.LogInformation("Uploaded {Path}", local.RelativePath);
         }
         catch(OperationCanceledException)
         {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
             _logger.LogWarning("Upload cancelled for {Id}", local.Id);
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
         }
         catch(Exception ex)
         {
             _logger.LogError(ex, "Upload failed for {Id}", local.Id);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
-            await _repo.LogTransferAsync(log, ct);
+            await _repo.LogTransferAsync(log, cancellationToken);
         }
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken ct, Action? onComplete = null)
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken cancellationToken, Action? onComplete = null)
     {
         try
         {
-            await _retryPolicy.ExecuteAsync(async ct2 =>
+            await _retryPolicy.ExecuteAsync(async _ =>
             {
-                await DownloadItemAsync(item, ct2);
+                await DownloadItemAsync(item, cancellationToken);
                 onComplete?.Invoke();
-            }, ct);
+            }, cancellationToken);
         }
         catch(Exception ex)
         {
@@ -289,19 +325,19 @@ public class TransferService : ITransferService
         }
     }
 
-    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken ct)
+    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
         _logger.LogDebug("Waiting to acquire semaphore for {Path}", item.RelativePath);
-        await _downloadSemaphore.WaitAsync(ct);
+        await _downloadSemaphore.WaitAsync(cancellationToken);
         _logger.LogDebug("Semaphore acquired for {Path}", item.RelativePath);
 
         var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Download, item.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, item.Size, null);
-        await _repo.LogTransferAsync(log, ct);
+        await _repo.LogTransferAsync(log, cancellationToken);
         try
         {
             _logger.LogDebug("Downloading content for: {Path}", item.RelativePath);
-            await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
+            await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, cancellationToken);
 
             _logger.LogDebug("Writing file to disk: {Path}", item.RelativePath);
 
@@ -309,14 +345,14 @@ public class TransferService : ITransferService
             const long logIntervalBytes = 10 * 1024 * 1024; // 10 MB
             long totalWritten = 0;
             var nextLogThreshold = logIntervalBytes;
-            await using Stream output = await _fs.OpenWriteAsync(item.RelativePath, ct);
+            await using Stream output = await _fs.OpenWriteAsync(item.RelativePath, cancellationToken);
             var buffer = new byte[1024 * 1024]; // 1 MB buffer
             int read;
-            while((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
+            while((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
             {
-                ct.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
                 _logger.LogDebug("Read {Bytes} bytes from stream for {Path}", read, item.RelativePath);
-                await output.WriteAsync(buffer.AsMemory(0, read), ct);
+                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                 totalWritten += read;
 
                 if(item.Size > logIntervalBytes && totalWritten >= nextLogThreshold)
@@ -338,11 +374,11 @@ public class TransferService : ITransferService
             _logger.LogDebug("Completed reading stream for {Path}", item.RelativePath);
 
             _logger.LogDebug("Marking file as downloaded: {Path}", item.RelativePath);
-            await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
+            await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, cancellationToken);
 
             IFileInfo fileInfo = _fs.GetFileInfo(item.RelativePath);
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = fileInfo.Length };
-            await _repo.LogTransferAsync(log, ct);
+            await _repo.LogTransferAsync(log, cancellationToken);
             _logger.LogInformation("Downloaded {Path} ({SizeKB:F2} KB)", item.RelativePath, fileInfo.Length / 1024.0);
         }
         catch(Exception ex)
@@ -353,7 +389,7 @@ public class TransferService : ITransferService
                 item.RelativePath, item.DriveItemId, exceptionType, isNetworkError);
 
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
-            await _repo.LogTransferAsync(log, ct);
+            await _repo.LogTransferAsync(log, cancellationToken);
             throw new IOException($"Download failed for {item.RelativePath} after {_settings.UiSettings.SyncSettings.MaxRetries} retries. See inner exception for details.", ex);
         }
         finally
@@ -368,7 +404,6 @@ public class TransferService : ITransferService
         var elapsedSeconds = _operationStopwatch.Elapsed.TotalSeconds;
         var bytesPerSecond = elapsedSeconds > 0 ? _totalBytesTransferred / elapsedSeconds : 0;
 
-        // Calculate ETA
         TimeSpan? eta = null;
         if(ShouldCalculateEta(bytesPerSecond, totalBytes, _totalBytesTransferred))
         {
@@ -441,7 +476,7 @@ public class TransferService : ITransferService
 
     private static bool NoPendingDownloads(int total) => total == 0;
 
-    private static bool NoMoreItemsInBatch(ICollection<DriveItemRecord> items) => items.Count == 0;
+    private static bool NoMoreItemsInBatch(List<DriveItemRecord> items) => items.Count == 0;
 
     private static bool ShouldEstimateTotalBytes(long totalBytesForAllDownloads, int pageCount)
         => totalBytesForAllDownloads == 0 && pageCount == 1;

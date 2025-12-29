@@ -8,13 +8,13 @@ public interface IGraphClient
     /// If deltaOrNextLink is null, call /me/drive/root/delta to start full enumeration.
     /// If it is a nextLink or deltaLink, GET that URL.
     /// </summary>
-    Task<DeltaPage> GetDriveDeltaPageAsync(string? deltaOrNextLink, CancellationToken ct);
+    Task<DeltaPage> GetDriveDeltaPageAsync(string? deltaOrNextLink, CancellationToken cancellationToken);
 
-    Task<Stream> DownloadDriveItemContentAsync(string driveItemId, CancellationToken ct);
+    Task<Stream> DownloadDriveItemContentAsync(string driveItemId, CancellationToken cancellationToken);
 
-    Task<UploadSessionInfo> CreateUploadSessionAsync(string parentPath, string fileName, CancellationToken ct);
+    Task<UploadSessionInfo> CreateUploadSessionAsync(string parentPath, string fileName, CancellationToken cancellationToken);
 
-    Task UploadChunkAsync(UploadSessionInfo session, Stream chunk, long rangeStart, long rangeEnd, CancellationToken ct);
+    Task UploadChunkAsync(UploadSessionInfo session, Stream chunk, long rangeStart, long rangeEnd, CancellationToken cancellationToken);
 
-    Task DeleteDriveItemAsync(string driveItemId, CancellationToken ct);
+    Task DeleteDriveItemAsync(string driveItemId, CancellationToken cancellationToken);
 }

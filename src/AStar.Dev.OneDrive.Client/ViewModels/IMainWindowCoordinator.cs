@@ -19,6 +19,6 @@ public interface IMainWindowCoordinator
     ///     to durable storage for retrieval in future application sessions.
     /// </summary>
     /// <param name="window">The main application window whose state will be persisted.</param>
-    /// <param name="vm">The view model containing the user preferences to persist.</param>
-    void PersistUserPreferences(IWindowPositionable window, MainWindowViewModel vm);
+    /// <param name="mainWindowViewModel">The view model containing the user preferences to persist.</param>
+    void PersistUserPreferences(IWindowPositionable window, MainWindowViewModel mainWindowViewModel);
 }

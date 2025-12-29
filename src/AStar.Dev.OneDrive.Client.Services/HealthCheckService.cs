@@ -10,17 +10,17 @@ public interface IHealthCheckService
     /// <summary>
     /// Gets the current health status of all registered health checks.
     /// </summary>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Health report containing status of all checks.</returns>
-    Task<HealthReport> GetHealthAsync(CancellationToken ct = default);
+    Task<HealthReport> GetHealthAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the health status of a specific check by name.
     /// </summary>
     /// <param name="checkName">Name of the health check.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Health check result or null if not found.</returns>
-    Task<HealthCheckResult?> GetHealthCheckAsync(string checkName, CancellationToken ct = default);
+    Task<HealthCheckResult?> GetHealthCheckAsync(string checkName, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -34,13 +34,13 @@ public sealed class ApplicationHealthCheckService(HealthCheckService healthCheck
 {
 
     /// <inheritdoc/>
-    public async Task<HealthReport> GetHealthAsync(CancellationToken ct = default)
-        => await healthCheckService.CheckHealthAsync(ct);
+    public async Task<HealthReport> GetHealthAsync(CancellationToken cancellationToken = default)
+        => await healthCheckService.CheckHealthAsync(cancellationToken);
 
     /// <inheritdoc/>
-    public async Task<HealthCheckResult?> GetHealthCheckAsync(string checkName, CancellationToken ct = default)
+    public async Task<HealthCheckResult?> GetHealthCheckAsync(string checkName, CancellationToken cancellationToken = default)
     {
-        HealthReport report = await healthCheckService.CheckHealthAsync(ct);
+        HealthReport report = await healthCheckService.CheckHealthAsync(cancellationToken);
         return !report.Entries.TryGetValue(checkName, out HealthReportEntry entry)
                 ? null
                 : UpdateStatus(entry);

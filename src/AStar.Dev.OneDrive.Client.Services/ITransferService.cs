@@ -13,14 +13,14 @@ public interface ITransferService
     /// <summary>
     ///     Pulls pending downloads from repository in batches and downloads them with bounded concurrency.
     /// </summary>
-    /// <param name="ct">The cancellation token to cancel the operation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task ProcessPendingDownloadsAsync(CancellationToken ct);
+    Task ProcessPendingDownloadsAsync(CancellationToken cancellationToken);
 
     /// <summary>
     ///     Scans repository for pending uploads and uploads them using upload sessions and chunked uploads.
     /// </summary>
-    /// <param name="ct">The cancellation token to cancel the operation.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task ProcessPendingUploadsAsync(CancellationToken ct);
+    Task ProcessPendingUploadsAsync(CancellationToken cancellationToken);
 }

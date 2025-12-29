@@ -2,8 +2,8 @@ namespace AStar.Dev.OneDrive.Client.Core.Interfaces;
 
 public interface IAuthService
 {
-    Task SignInAsync(CancellationToken ct);
-    Task SignOutAsync(CancellationToken ct);
-    Task<string> GetAccessTokenAsync(CancellationToken ct);
-    Task<bool> IsUserSignedInAsync(CancellationToken ct);
+    Task SignInAsync(CancellationToken cancellationToken);
+    Task SignOutAsync(CancellationToken cancellationToken);
+    Task<string> GetAccessTokenAsync(CancellationToken cancellationToken);
+    Task<bool> IsUserSignedInAsync(CancellationToken cancellationToken);
 }
