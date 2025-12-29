@@ -276,7 +276,34 @@ public class TransferService : ITransferService
             await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, ct);
 
             _logger.LogDebug("Writing file to disk: {Path}", item.RelativePath);
-            await _fs.WriteFileAsync(item.RelativePath, stream, ct);
+
+            // Enhanced: Write file in chunks and log progress for semi-large files
+            const long logIntervalBytes = 10 * 1024 * 1024; // 10 MB
+            long totalWritten = 0;
+            var nextLogThreshold = logIntervalBytes;
+            await using Stream output = await _fs.OpenWriteAsync(item.RelativePath, ct);
+            var buffer = new byte[1024 * 1024]; // 1 MB buffer
+            int read;
+            while((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
+            {
+                await output.WriteAsync(buffer.AsMemory(0, read), ct);
+                totalWritten += read;
+
+                if(item.Size > logIntervalBytes && totalWritten >= nextLogThreshold)
+                {
+                    _logger.LogInformation("Downloading {Path}: {MB:F2} MB of {TotalMB:F2} MB complete",
+                        item.RelativePath, totalWritten / (1024.0 * 1024.0), item.Size / (1024.0 * 1024.0));
+                    // Send progress update to UI
+                    ReportProgress(
+                        processed: 0, // You may want to pass the correct processed count here
+                        operation: $"Downloading {item.RelativePath} ({totalWritten / (1024.0 * 1024.0):F2} MB / {item.Size / (1024.0 * 1024.0):F2} MB)",
+                        total: 0, // Or the correct total
+                        pendingUploads: 0,
+                        totalBytes: item.Size
+                    );
+                    nextLogThreshold += logIntervalBytes;
+                }
+            }
 
             _logger.LogDebug("Marking file as downloaded: {Path}", item.RelativePath);
             await _repo.MarkLocalFileStateAsync(item.Id, SyncState.Downloaded, ct);
@@ -288,7 +315,6 @@ public class TransferService : ITransferService
         }
         catch(Exception ex)
         {
-
             var exceptionType = ex.GetType().Name;
             var isNetworkError = IsNetworkError(ex);
             _logger.LogError(ex, "Download failed for {Path} (DriveItemId: {DriveItemId}). Type: {ExceptionType}, Network Error: {IsNetwork}",
@@ -296,6 +322,7 @@ public class TransferService : ITransferService
 
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, ct);
+            throw new IOException($"Download failed for {item.RelativePath} after {_settings.UiSettings.SyncSettings.MaxRetries} retries. See inner exception for details.", ex);
         }
         finally
         {

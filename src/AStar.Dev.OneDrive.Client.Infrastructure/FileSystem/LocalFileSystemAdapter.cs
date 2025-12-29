@@ -51,4 +51,12 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
 
         return Task.FromResult<IEnumerable<LocalFileInfo>>(list);
     }
+
+    public Task<Stream> OpenWriteAsync(string relativePath, CancellationToken ct)
+    {
+        var full = FullPath(relativePath);
+        _ = fileSystem.Directory.CreateDirectory(fileSystem.Path.GetDirectoryName(full)!);
+        Stream stream = fileSystem.File.Create(full);
+        return Task.FromResult(stream);
+    }
 }
