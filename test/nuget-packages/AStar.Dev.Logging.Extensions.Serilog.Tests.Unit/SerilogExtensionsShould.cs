@@ -41,7 +41,7 @@ public class SerilogExtensionsShould
     [Fact]
     public void ConfigureAStarDevelopmentLoggingDefaultsCanConfigureWithoutFileSink()
     {
-        Microsoft.Extensions.Configuration.IConfiguration cfg = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+        IConfiguration cfg = new ConfigurationBuilder()
             .AddInMemoryCollection([])
             .Build();
 

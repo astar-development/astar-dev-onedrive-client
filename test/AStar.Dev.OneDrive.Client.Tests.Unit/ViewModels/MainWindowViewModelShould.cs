@@ -178,7 +178,7 @@ public sealed class MainWindowViewModelShould
     {
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
-            .Returns<Task>(_ => throw new OperationCanceledException());
+            .Returns(_ => throw new OperationCanceledException());
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
         sut.SyncStatusMessage.ShouldBe("Local file sync cancelled");
         sut.RecentTransfers.ShouldContain(t => t.Contains("Local file sync was cancelled"));

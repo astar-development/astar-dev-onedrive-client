@@ -96,7 +96,7 @@ public class SyncCommandServiceShould
     public async Task CreateInitialSyncCommand_HandlesCancellation()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new OperationCanceledException());
+        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateInitialSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Initial sync");
@@ -106,7 +106,7 @@ public class SyncCommandServiceShould
     public async Task CreateInitialSyncCommand_HandlesException()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("fail"));
+        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateInitialSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Initial sync", Arg.Any<InvalidOperationException>());
@@ -117,7 +117,7 @@ public class SyncCommandServiceShould
     public async Task CreateIncrementalSyncCommand_HandlesCancellation()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new OperationCanceledException());
+        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Incremental sync");
@@ -127,7 +127,7 @@ public class SyncCommandServiceShould
     public async Task CreateIncrementalSyncCommand_HandlesDeltaTokenException()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("Delta token missing"));
+        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("Delta token missing"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Incremental sync failed");
@@ -140,7 +140,7 @@ public class SyncCommandServiceShould
     public async Task CreateIncrementalSyncCommand_HandlesOtherException()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("other error"));
+        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("other error"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Incremental sync", Arg.Any<InvalidOperationException>());
@@ -151,7 +151,7 @@ public class SyncCommandServiceShould
     public async Task CreateScanLocalFilesCommand_HandlesCancellation()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new OperationCanceledException());
+        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateScanLocalFilesCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Local file sync");
@@ -161,7 +161,7 @@ public class SyncCommandServiceShould
     public async Task CreateScanLocalFilesCommand_HandlesException()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("fail"));
+        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateScanLocalFilesCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Local file sync", Arg.Any<InvalidOperationException>());
@@ -172,7 +172,7 @@ public class SyncCommandServiceShould
     public async Task CreateSignInCommand_HandlesException()
     {
         (SyncCommandService? service, ISyncEngine _, IAuthService? auth, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        auth.SignInAsync(Arg.Any<CancellationToken>()).Returns<Task>(_ => throw new InvalidOperationException("fail"));
+        auth.SignInAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateSignInCommand(target);
         await command.Execute();
         target.Received().SetStatus("Sign-in failed");

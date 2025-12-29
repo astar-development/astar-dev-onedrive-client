@@ -66,7 +66,7 @@ public class SettingsAndPreferencesServiceShould
         fileSystem.AddFile(appSettings.FullUserPreferencesPath, new MockFileData("{ invalid json }"));
         var sut = new SettingsAndPreferencesService(fileSystem, appSettings);
 
-        JsonException exception = Should.Throw<System.Text.Json.JsonException>(sut.Load);
+        JsonException exception = Should.Throw<JsonException>(sut.Load);
 
         exception.ShouldNotBeNull();
     }

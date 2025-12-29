@@ -12,10 +12,10 @@ public static class ModelBuilderExtensions
     {
         Type[] targetEntities =
         [
-            typeof(AStar.Dev.OneDrive.Client.Core.Entities.DriveItemRecord),
-            typeof(AStar.Dev.OneDrive.Client.Core.Entities.LocalFileRecord),
-            typeof(AStar.Dev.OneDrive.Client.Core.Entities.DeltaToken),
-            typeof(AStar.Dev.OneDrive.Client.Core.Entities.TransferLog)
+            typeof(Core.Entities.DriveItemRecord),
+            typeof(Core.Entities.LocalFileRecord),
+            typeof(Core.Entities.DeltaToken),
+            typeof(Core.Entities.TransferLog)
         ];
 
         foreach(IMutableEntityType? et in mb.Model.GetEntityTypes().Where(e => targetEntities.Contains(e.ClrType)))

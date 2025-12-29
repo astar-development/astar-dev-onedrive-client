@@ -24,7 +24,7 @@ public class ResultExtensionBindShould
     {
         var result = new Result<int, string>.Ok(42);
 
-        Result<string, string> bound = result.Bind<int, string, string>(value => new Result<string, string>.Error("bound error"));
+        Result<string, string> bound = result.Bind(value => new Result<string, string>.Error("bound error"));
 
         _ = bound.ShouldBeOfType<Result<string, string>.Error>();
 
@@ -41,7 +41,7 @@ public class ResultExtensionBindShould
     {
         var result = new Result<int, string>.Error("original error");
 
-        Result<string, string> bound = result.Bind<int, string, string>(value => new Result<string, string>.Ok(value.ToString()));
+        Result<string, string> bound = result.Bind(value => new Result<string, string>.Ok(value.ToString()));
 
         _ = bound.ShouldBeOfType<Result<string, string>.Error>();
 

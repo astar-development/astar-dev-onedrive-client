@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Reactive.Subjects;
+using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
@@ -61,8 +62,6 @@ public class TransferService : ITransferService
         _operationStopwatch.Restart();
         _totalBytesTransferred = 0;
         _logger.LogInformation("Processing pending downloads");
-        var totalProcessed = 0;
-        var pageCount = 0;
         var batchSize = GetDownloadBatchSize();
         var total = await _repo.GetPendingDownloadCountAsync(cancellationToken);
 
@@ -74,77 +73,94 @@ public class TransferService : ITransferService
             return;
         }
 
-        long totalBytesForAllDownloads = 0;
-        var batchProcessed = true;
-        try
-        {
-            while(!cancellationToken.IsCancellationRequested && batchProcessed)
+        // Step 1: Add Channel<DriveItemRecord> for producer/consumer refactor
+        var channel = Channel.CreateBounded<DriveItemRecord>(
+            new BoundedChannelOptions(_settings.UiSettings.SyncSettings.MaxParallelDownloads * 2)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                (var BatchProcessed, var PageCount, var TotalProcessed, var TotalBytesForAllDownloads) = await ProcessDownloadBatchAsync(
-                    batchSize, total, pageCount, totalProcessed, totalBytesForAllDownloads, cancellationToken);
-                batchProcessed = BatchProcessed;
-                pageCount = PageCount;
-                totalProcessed = TotalProcessed;
-                totalBytesForAllDownloads = TotalBytesForAllDownloads;
+                FullMode = BoundedChannelFullMode.Wait
+            });
+
+        // Step 2: Producer method to fetch batches and write to the channel
+        async Task ProduceDownloadItemsAsync(ChannelWriter<DriveItemRecord> writer, CancellationToken ct)
+        {
+            var page = 0;
+            var batchSize = GetDownloadBatchSize();
+            while(!ct.IsCancellationRequested)
+            {
+                var items = (await _repo.GetPendingDownloadsAsync(batchSize, page, ct)).ToList();
+                if(items.Count == 0)
+                    break;
+                foreach(DriveItemRecord? item in items)
+                {
+                    await writer.WriteAsync(item, ct);
+                }
+
+                page++;
             }
 
-            if(cancellationToken.IsCancellationRequested)
+            writer.Complete();
+        }
+
+        // Step 3: Channel-based consumer logic with parallelism, error logging, and progress reporting
+        async Task ConsumeDownloadItemsAsync(ChannelReader<DriveItemRecord> reader, CancellationToken ct)
+        {
+            var processedCount = 0;
+            var totalBytesForAllDownloads = 0L;
+            var parallelism = Math.Max(1, _settings.UiSettings.SyncSettings.MaxParallelDownloads);
+            var consumers = new Task[parallelism];
+            for(var i = 0; i < parallelism; i++)
             {
-                _logger.LogWarning("Download process cancelled after {Processed}/{Total} files", totalProcessed, total);
-                ReportSyncCancelled("Download cancelled");
+                consumers[i] = Task.Run(async () =>
+                {
+                    await foreach(DriveItemRecord item in reader.ReadAllAsync(ct))
+                    {
+                        try
+                        {
+                            await DownloadItemWithRetryAsync(item, ct, () =>
+                            {
+                                var p = Interlocked.Increment(ref processedCount);
+                                _ = Interlocked.Add(ref _totalBytesTransferred, item.Size);
+                                ReportProgress(p, "Downloading files", total, 0, totalBytesForAllDownloads);
+                            });
+                        }
+                        catch(Exception ex)
+                        {
+                            _logger.LogError(ex, "Error processing download item {Path}", item.RelativePath);
+                        }
+                    }
+                }, ct);
             }
-            else
-            {
-                _operationStopwatch.Stop();
-                _logger.LogInformation("Completed downloads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
-                    totalProcessed, _totalBytesTransferred / (1024.0 * 1024.0), _operationStopwatch.Elapsed.TotalSeconds,
-                    _totalBytesTransferred / (1024.0 * 1024.0) / _operationStopwatch.Elapsed.TotalSeconds);
-            }
+
+            await Task.WhenAll(consumers);
+        }
+
+        // Start producer and consumer tasks
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        ChannelWriter<DriveItemRecord> writer = channel.Writer;
+        ChannelReader<DriveItemRecord> reader = channel.Reader;
+
+        Task producerTask = ProduceDownloadItemsAsync(writer, cts.Token);
+        Task consumerTask = ConsumeDownloadItemsAsync(reader, cts.Token);
+
+        // Wait for completion
+        try
+        {
+            await Task.WhenAll(producerTask, consumerTask);
         }
         catch(OperationCanceledException)
         {
+            // Handle cancellation
 #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            _logger.LogWarning("Download process cancelled by user");
+            _logger.LogWarning("Download processing was cancelled");
 #pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            ReportSyncCancelled("Download cancelled");
         }
-        catch(Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Download process failed: {Message}", ex.Message);
-            ReportSyncFailed($"Download failed: {ex.Message}");
-            throw new IOException("Download process failed. See inner exception for details.", ex);
-        }
-    }
-
-    private async Task<(bool BatchProcessed, int PageCount, int TotalProcessed, long TotalBytesForAllDownloads)> ProcessDownloadBatchAsync(
-        int batchSize,
-        int total,
-        int pageCount,
-        int totalProcessed,
-        long totalBytesForAllDownloads,
-        CancellationToken cancellationToken)
-    {
-        _logger.LogDebug("Fetching batch {PageNumber} (offset: {Offset})", pageCount + 1, pageCount * batchSize);
-        var items = (await _repo.GetPendingDownloadsAsync(batchSize, pageCount, cancellationToken)).ToList();
-        pageCount++;
-
-        if(NoMoreItemsInBatch(items))
-        {
-            _logger.LogInformation("No more items in batch - all downloads complete");
-            return (false, pageCount, totalProcessed, totalBytesForAllDownloads);
+            await cts.CancelAsync();
+            cts.Dispose();
         }
 
-        _logger.LogInformation("Processing batch {BatchNumber} with {ItemCount} files", pageCount, items.Count);
-
-        // First batch: calculate total bytes for progress tracking
-        totalBytesForAllDownloads = EstimateTotalDownloadBytesIfFirstBatch(items, total, totalBytesForAllDownloads, pageCount);
-
-        totalProcessed = await ExecuteDownloadTasksAsync(items, total, totalBytesForAllDownloads, totalProcessed, cancellationToken);
-
-        _logger.LogInformation("Batch {BatchNumber} complete: {Processed}/{Total} files downloaded so far",
-            pageCount, totalProcessed, total);
-        return (true, pageCount, totalProcessed, totalBytesForAllDownloads);
+        _logger.LogInformation("All pending downloads have been processed");
     }
 
     /// <summary>
@@ -166,75 +182,6 @@ public class TransferService : ITransferService
         _logger.LogInformation("Completed uploads: {Processed} files, {TotalMB:F2} MB in {ElapsedSec:F2}s ({SpeedMBps:F2} MB/s)",
             totalProcessed, _totalBytesTransferred / (1024.0 * 1024.0), _operationStopwatch.Elapsed.TotalSeconds,
             _totalBytesTransferred / (1024.0 * 1024.0) / _operationStopwatch.Elapsed.TotalSeconds);
-    }
-
-    private long EstimateTotalDownloadBytesIfFirstBatch(
-        ICollection<DriveItemRecord> items,
-        int total,
-        long totalBytesForAllDownloads,
-        int pageCount)
-    {
-        if(ShouldEstimateTotalBytes(totalBytesForAllDownloads, pageCount))
-        {
-            var avgSize = GetAverageFileSize(items);
-            totalBytesForAllDownloads = avgSize * total;
-            _logger.LogInformation("Estimated total download size: {TotalMB:F2} MB (avg file size: {AvgKB:F2} KB)",
-                totalBytesForAllDownloads / (1024.0 * 1024.0), avgSize / 1024.0);
-        }
-
-        return totalBytesForAllDownloads;
-    }
-
-    private async Task<int> ExecuteDownloadTasksAsync(
-    List<DriveItemRecord> items,
-    int total,
-    long totalBytesForAllDownloads,
-    int totalProcessed,
-    CancellationToken cancellationToken)
-    {
-        var processed = totalProcessed;
-        var maxParallel = Math.Max(1, _settings.UiSettings.SyncSettings.MaxParallelDownloads);
-        using var throttler = new SemaphoreSlim(maxParallel);
-
-        var tasks = items.Select(async item =>
-        {
-            await throttler.WaitAsync(cancellationToken);
-            try
-            {
-                await DownloadItemWithRetryAsync(item, cancellationToken, () =>
-                {
-                    var p = Interlocked.Increment(ref processed);
-                    _ = Interlocked.Add(ref _totalBytesTransferred, item.Size);
-                    ReportProgress(p, "Downloading files", total, 0, totalBytesForAllDownloads);
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                // Optionally log or handle per-task cancellation
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Download failed for {Path}", item.RelativePath);
-            }
-            finally
-            {
-                _ = throttler.Release();
-            }
-        }).ToList();
-
-        try
-        {
-            await Task.WhenAll(tasks);
-        }
-        catch(OperationCanceledException)
-        {
-#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            _logger.LogWarning("Download tasks cancelled by user");
-#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            throw;
-        }
-
-        return processed;
     }
 
     private async Task<int> ProcessUploadBatchAsync(
@@ -430,59 +377,11 @@ public class TransferService : ITransferService
         _progressSubject.OnNext(syncProgress);
     }
 
-    private void ReportSyncFailed(string message)
-    {
-        var syncProgress = new SyncProgress
-        {
-            OperationType = SyncOperationType.Failed,
-            CurrentOperationMessage = message,
-            ProcessedFiles = 0,
-            TotalFiles = 0,
-            PendingDownloads = 0,
-            PendingUploads = 0,
-            BytesTransferred = 0,
-            TotalBytes = 0,
-            BytesPerSecond = 0,
-            EstimatedTimeRemaining = null,
-            ElapsedTime = _operationStopwatch.Elapsed
-        };
-        _progressSubject.OnNext(syncProgress);
-    }
-
-    private void ReportSyncCancelled(string message)
-    {
-        var syncProgress = new SyncProgress
-        {
-            OperationType = SyncOperationType.Cancelled,
-            CurrentOperationMessage = message,
-            ProcessedFiles = 0,
-            TotalFiles = 0,
-            PendingDownloads = 0,
-            PendingUploads = 0,
-            BytesTransferred = 0,
-            TotalBytes = 0,
-            BytesPerSecond = 0,
-            EstimatedTimeRemaining = null,
-            ElapsedTime = _operationStopwatch.Elapsed
-        };
-        _progressSubject.OnNext(syncProgress);
-    }
-
-    // --- Extracted helper methods for readability and maintainability ---
-
     private int GetDownloadBatchSize() => _settings.UiSettings.SyncSettings.DownloadBatchSize > 0
         ? _settings.UiSettings.SyncSettings.DownloadBatchSize
         : 100;
 
     private static bool NoPendingDownloads(int total) => total == 0;
-
-    private static bool NoMoreItemsInBatch(List<DriveItemRecord> items) => items.Count == 0;
-
-    private static bool ShouldEstimateTotalBytes(long totalBytesForAllDownloads, int pageCount)
-        => totalBytesForAllDownloads == 0 && pageCount == 1;
-
-    private static long GetAverageFileSize(ICollection<DriveItemRecord> items)
-        => items.Count != 0 ? (long)items.Average(i => i.Size) : 0;
 
     private static bool IsNetworkError(Exception ex)
         => ex is IOException || (ex is HttpRequestException hre && hre.InnerException is IOException);

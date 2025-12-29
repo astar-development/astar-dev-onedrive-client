@@ -18,7 +18,7 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
     {
         var full = FullPath(relativePath);
         _ = fileSystem.Directory.CreateDirectory(fileSystem.Path.GetDirectoryName(full)!);
-        await using System.IO.Stream fs = fileSystem.File.Create(full);
+        await using Stream fs = fileSystem.File.Create(full);
         await content.CopyToAsync(fs, ct);
     }
 
@@ -41,10 +41,10 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
     {
         var list = new List<LocalFileInfo>();
         if(!fileSystem.Directory.Exists(root))
-            return Task.FromResult<IEnumerable<LocalFileInfo>>(list.AsEnumerable());
+            return Task.FromResult(list.AsEnumerable());
         foreach(var file in fileSystem.Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
-            System.IO.Abstractions.IFileInfo fi = fileSystem.FileInfo.New(file);
+            IFileInfo fi = fileSystem.FileInfo.New(file);
             var rel = fileSystem.Path.GetRelativePath(root, file);
             list.Add(new LocalFileInfo(rel, fi.Length, fi.LastWriteTimeUtc, null));
         }

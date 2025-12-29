@@ -93,7 +93,7 @@ public class TransferServiceShould
         ]);
         IGraphClient graph = Substitute.For<IGraphClient>();
         graph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromException<System.IO.Stream>(new IOException("fail")));
+            .Returns(Task.FromException<Stream>(new IOException("fail")));
         var sutWithFailingGraph = new TransferService(fs, graph, repo, logger, settings);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         Exception? ex = await Record.ExceptionAsync(() => sutWithFailingGraph.ProcessPendingDownloadsAsync(cts.Token));
