@@ -1,3 +1,4 @@
+using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
@@ -15,8 +16,9 @@ public class SyncEngineShould
         IDeltaPageProcessor deltaPageProcessor = Substitute.For<IDeltaPageProcessor>();
         ILocalFileScanner localFileScanner = Substitute.For<ILocalFileScanner>();
         ITransferService transfer = Substitute.For<ITransferService>();
+        ISyncRepository repo = Substitute.For<ISyncRepository>();
         ILogger<SyncEngine> logger = Substitute.For<ILogger<SyncEngine>>();
-        var sut = new SyncEngine(deltaPageProcessor, localFileScanner, transfer, logger);
+        var sut = new SyncEngine(deltaPageProcessor, localFileScanner, transfer, repo, logger);
         return (sut, deltaPageProcessor, localFileScanner, transfer, logger);
     }
 
@@ -26,7 +28,7 @@ public class SyncEngineShould
         (SyncEngine? sut, IDeltaPageProcessor? deltaPageProcessor, ILocalFileScanner _, ITransferService? transfer, ILogger<SyncEngine> _) = CreateSut();
         CancellationToken token = CancellationToken.None;
         deltaPageProcessor.ProcessAllDeltaPagesAsync(token)
-            .Returns(Task.FromResult<(string?, int, int)>( ("delta", 1, 1) ));
+            .Returns(Task.FromResult<(string?, int, int)>(("delta", 1, 1)));
         transfer.ProcessPendingDownloadsAsync(token).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
 
@@ -43,7 +45,7 @@ public class SyncEngineShould
         (SyncEngine? sut, IDeltaPageProcessor? deltaPageProcessor, ILocalFileScanner _, ITransferService? transfer, ILogger<SyncEngine> _) = CreateSut();
         CancellationToken token = CancellationToken.None;
         deltaPageProcessor.ProcessAllDeltaPagesAsync(token)
-            .Returns(Task.FromResult<(string?, int, int)>( ("delta", 1, 1) ));
+            .Returns(Task.FromResult<(string?, int, int)>(("delta", 1, 1)));
         transfer.ProcessPendingDownloadsAsync(token).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
 

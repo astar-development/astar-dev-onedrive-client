@@ -11,16 +11,25 @@ public sealed class EfSyncRepositoryShould : IDisposable
     private readonly AppDbContext _context;
     private readonly EfSyncRepository _repository;
 
+    private sealed class TestDbContextFactory : IDbContextFactory<AppDbContext>
+    {
+        private readonly AppDbContext _context;
+        public TestDbContextFactory(AppDbContext context) => _context = context;
+        public AppDbContext CreateDbContext() => _context;
+    }
+
     public EfSyncRepositoryShould()
     {
-        DbContextOptionsBuilder<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("DataSource=:memory:");
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite("DataSource=:memory:")
+            .Options;
 
-        _context = new AppDbContext(options.Options);
+        _context = new AppDbContext(options);
         _context.Database.OpenConnection();
         _ = _context.Database.EnsureCreated();
 
-        _repository = new EfSyncRepository(_context, NullLogger<EfSyncRepository>.Instance);
+        var factory = new TestDbContextFactory(_context);
+        _repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
     }
 
     public void Dispose()
