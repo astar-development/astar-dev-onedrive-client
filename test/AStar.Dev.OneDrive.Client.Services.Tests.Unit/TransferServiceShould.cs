@@ -1,4 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
+using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
@@ -74,7 +75,88 @@ public class TransferServiceShould
         await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
         progressReported.ShouldBeFalse();
     }
+    [Fact]
+    public async Task ReportProgressWithEtaAndTotalBytes()
+    {
+        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient? graph, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences? settings, SyncProgressReporter? progressReporter, ISyncErrorLogger? errorLogger, IChannelFactory? channelFactory, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
+        DriveItemRecord[] driveItems = new[]
+    {
+        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
+    };
+        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
+        repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
+        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
+        producer.ProduceAsync(Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        consumer.ConsumeAsync(Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(async callInfo =>
+        {
+            Func<DriveItemRecord, Task> process = callInfo.Arg<Func<DriveItemRecord, Task>>();
+            foreach(DriveItemRecord? item in driveItems)
+                await process(item);
+        });
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
 
+        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+
+        progressList.ShouldContain(p => p.EstimatedTimeRemaining != null);
+        progressList.ShouldAllBe(p => p.TotalBytes == 300);
+    }
+
+    [Fact]
+    public async Task UseGetAllPendingDownloadsAsyncForTotalBytes()
+    {
+        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient? graph, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences? settings, SyncProgressReporter? progressReporter, ISyncErrorLogger? errorLogger, IChannelFactory? channelFactory, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
+        DriveItemRecord[] driveItems = new[]
+    {
+        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("id3", "did3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow, false, false)
+    };
+        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(3);
+        repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
+        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
+        producer.ProduceAsync(Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        consumer.ConsumeAsync(Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(async callInfo =>
+        {
+            Func<DriveItemRecord, Task> process = callInfo.Arg<Func<DriveItemRecord, Task>>();
+            foreach(DriveItemRecord? item in driveItems)
+                await process(item);
+        });
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
+
+        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+
+        repo.Received(1).GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>());
+        progressList.ShouldAllBe(p => p.TotalBytes == 600);
+    }
+
+    [Fact]
+    public async Task EtaIsNullWhenTotalTransferredExceedsTotalBytes()
+    {
+        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient? graph, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences? settings, SyncProgressReporter? progressReporter, ISyncErrorLogger? errorLogger, IChannelFactory? channelFactory, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
+        DriveItemRecord[] driveItems = new[]
+    {
+        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
+    };
+        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
+        repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
+        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
+        producer.ProduceAsync(Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        consumer.ConsumeAsync(Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(async callInfo =>
+        {
+            Func<DriveItemRecord, Task> process = callInfo.Arg<Func<DriveItemRecord, Task>>();
+            // Simulate totalTransferred > totalBytes
+            await process(new DriveItemRecord("id1", "did1", "file1.txt", null, null, 200, DateTimeOffset.UtcNow, false, false));
+        });
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
+
+        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+
+        progressList.ShouldAllBe(p => p.EstimatedTimeRemaining == null || p.EstimatedTimeRemaining >= TimeSpan.Zero);
+    }
     [Fact]
     public async Task LogWarningWhenDownloadIsCancelled()
     {

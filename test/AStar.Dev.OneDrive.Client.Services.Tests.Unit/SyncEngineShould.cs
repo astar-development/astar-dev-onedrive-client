@@ -27,14 +27,13 @@ public class SyncEngineShould
     {
         (SyncEngine? sut, IDeltaPageProcessor? deltaPageProcessor, ILocalFileScanner _, ITransferService? transfer, ILogger<SyncEngine> _) = CreateSut();
         CancellationToken token = CancellationToken.None;
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(token)
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>())
             .Returns(Task.FromResult<(string?, int, int)>(("delta", 1, 1)));
         transfer.ProcessPendingDownloadsAsync(token).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
-
         await sut.InitialFullSyncAsync(token);
 
-        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(token);
+        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>());
         await transfer.Received(1).ProcessPendingDownloadsAsync(token);
         await transfer.Received(1).ProcessPendingUploadsAsync(token);
     }
@@ -44,14 +43,13 @@ public class SyncEngineShould
     {
         (SyncEngine? sut, IDeltaPageProcessor? deltaPageProcessor, ILocalFileScanner _, ITransferService? transfer, ILogger<SyncEngine> _) = CreateSut();
         CancellationToken token = CancellationToken.None;
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(token)
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>())
             .Returns(Task.FromResult<(string?, int, int)>(("delta", 1, 1)));
         transfer.ProcessPendingDownloadsAsync(token).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
-
         await sut.IncrementalSyncAsync(token);
 
-        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(token);
+        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>());
         await transfer.Received(1).ProcessPendingDownloadsAsync(token);
         await transfer.Received(1).ProcessPendingUploadsAsync(token);
     }
@@ -67,5 +65,44 @@ public class SyncEngineShould
         await sut.ScanLocalFilesAsync(token);
 
         await localFileScanner.Received(1).ScanAndSyncLocalFilesAsync(token);
+    }
+    [Fact]
+    public async Task EmitsProgressWithStatsOnInitialFullSync()
+    {
+        (SyncEngine sut, IDeltaPageProcessor deltaPageProcessor, ILocalFileScanner localFileScanner, ITransferService transfer, ILogger<SyncEngine> logger) = CreateSut();
+        ISyncRepository repo = Substitute.For<ISyncRepository>();
+        // Use a new instance to inject the repo mock
+        sut = new SyncEngine(deltaPageProcessor, localFileScanner, transfer, repo, logger);
+        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(5);
+        repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
+            .Returns(Task.FromResult(("delta", 1, 1)));
+        transfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        transfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = sut.Progress.Subscribe(progressList.Add);
+
+        await sut.InitialFullSyncAsync(CancellationToken.None);
+
+        progressList.ShouldContain(p => p.PendingDownloads == 5 && p.PendingUploads == 2);
+        progressList.ShouldContain(p => p.OperationType == SyncOperationType.Completed);
+    }
+
+    [Fact]
+    public async Task EmitsFailedProgressOnInitialFullSyncException()
+    {
+        (SyncEngine sut, IDeltaPageProcessor deltaPageProcessor, ILocalFileScanner localFileScanner, ITransferService transfer, ILogger<SyncEngine> logger) = CreateSut();
+        ISyncRepository repo = Substitute.For<ISyncRepository>();
+        sut = new SyncEngine(deltaPageProcessor, localFileScanner, transfer, repo, logger);
+        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
+        repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
+            .Returns<Task<(string?, int, int)>>(x => throw new InvalidOperationException("fail"));
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = sut.Progress.Subscribe(progressList.Add);
+
+        IOException ex = await Should.ThrowAsync<IOException>(() => sut.InitialFullSyncAsync(CancellationToken.None));
+        ex.Message.ShouldContain("Initial full sync failed");
+        progressList.ShouldContain(p => p.OperationType == SyncOperationType.Failed);
     }
 }

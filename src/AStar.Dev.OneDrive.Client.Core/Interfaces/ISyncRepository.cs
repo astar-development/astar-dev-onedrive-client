@@ -25,4 +25,8 @@ public interface ISyncRepository
     /// Gets a DriveItemRecord by its relative path, or null if not found.
     /// </summary>
     Task<DriveItemRecord?> GetDriveItemByPathAsync(string relativePath, CancellationToken cancellationToken);
+    /// <summary>
+    /// Gets all pending downloads (not just a page).
+    /// </summary>
+    Task<IEnumerable<DriveItemRecord>> GetAllPendingDownloadsAsync(CancellationToken cancellationToken);
 }

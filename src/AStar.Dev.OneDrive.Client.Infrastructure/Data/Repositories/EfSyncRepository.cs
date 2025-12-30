@@ -90,6 +90,17 @@ public sealed class EfSyncRepository : ISyncRepository
 
         return results;
     }
+    public async Task<IEnumerable<DriveItemRecord>> GetAllPendingDownloadsAsync(CancellationToken cancellationToken)
+    {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
+        cancellationToken.ThrowIfCancellationRequested();
+        List<DriveItemRecord> driveItems = await db.DriveItems
+            .Where(d => !d.IsFolder && !d.IsDeleted)
+            .Where(d => !db.LocalFiles.Any(l => l.Id == d.Id && (l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded)))
+            .OrderBy(d => d.LastModifiedUtc)
+            .ToListAsync(cancellationToken);
+        return driveItems;
+    }
 
     public async Task<int> GetPendingDownloadCountAsync(CancellationToken cancellationToken)
     {

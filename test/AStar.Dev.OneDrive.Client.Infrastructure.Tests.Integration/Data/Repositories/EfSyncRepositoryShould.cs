@@ -37,7 +37,63 @@ public sealed class EfSyncRepositoryShould : IDisposable
         _context.Database.CloseConnection();
         _context.Dispose();
     }
+    [Fact]
+    public async Task GetAllPendingDownloadsAsync_ReturnsAllPendingDownloads()
+    {
+        DriveItemRecord[] items = new[]
+    {
+        new DriveItemRecord("id1", "driveId1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow.AddHours(-3), false, false),
+        new DriveItemRecord("id2", "driveId2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-2), false, false),
+        new DriveItemRecord("id3", "driveId3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow.AddHours(-1), false, false)
+    };
+        await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        var resultList = result.ToList();
+        resultList.Count.ShouldBe(3);
+        resultList.ShouldContain(i => i.Id == "id1");
+        resultList.ShouldContain(i => i.Id == "id2");
+        resultList.ShouldContain(i => i.Id == "id3");
+    }
 
+    [Fact]
+    public async Task GetAllPendingDownloadsAsync_ExcludesFoldersAndDeleted()
+    {
+        DriveItemRecord[] items = new[]
+    {
+        new DriveItemRecord("id1", "driveId1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("id2", "driveId2", "folder", null, null, 0, DateTimeOffset.UtcNow, true, false),
+        new DriveItemRecord("id3", "driveId3", "deleted.txt", null, null, 50, DateTimeOffset.UtcNow, false, true)
+    };
+        await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        var resultList = result.ToList();
+        resultList.Count.ShouldBe(1);
+        resultList[0].Id.ShouldBe("id1");
+    }
+
+    [Fact]
+    public async Task GetAllPendingDownloadsAsync_ReturnsEmptyWhenNoPending()
+    {
+        IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAllPendingDownloadsAsync_OrdersByLastModified()
+    {
+        DriveItemRecord[] items = new[]
+    {
+        new DriveItemRecord("id1", "driveId1", "newest.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("id2", "driveId2", "oldest.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-5), false, false),
+        new DriveItemRecord("id3", "driveId3", "middle.txt", null, null, 150, DateTimeOffset.UtcNow.AddHours(-2), false, false)
+    };
+        await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        var resultList = result.ToList();
+        resultList[0].Id.ShouldBe("id2");
+        resultList[1].Id.ShouldBe("id3");
+        resultList[2].Id.ShouldBe("id1");
+    }
     #region DeltaToken Tests
 
     [Fact]

@@ -103,22 +103,30 @@ public class TransferService : ITransferService
         ChannelReader<DriveItemRecord> reader = channel.Reader;
 
         var processedCount = 0;
-        var totalBytesForAllDownloads = await _repo.GetPendingDownloadsAsync(batchSize, 0, cancellationToken).ContinueWith(t => t.Result.Sum(i => i.Size), cancellationToken);
+        IEnumerable<DriveItemRecord> allPendingDownloads = await _repo.GetAllPendingDownloadsAsync(cancellationToken);
+        var totalBytesForAllDownloads = allPendingDownloads.Sum(i => i.Size);
         var parallelism = Math.Max(1, _settings.UiSettings.SyncSettings.MaxParallelDownloads);
 
         async Task processItemAsync(DriveItemRecord item)
         {
             try
             {
-                var fileStopwatch = Stopwatch.StartNew();
                 await DownloadItemWithRetryAsync(item, cancellationToken, (b, e, eta) =>
                 {
                     // Optionally emit chunked progress here if desired
                 });
-                fileStopwatch.Stop();
                 var p = Interlocked.Increment(ref processedCount);
                 var totalTransferred = Interlocked.Add(ref _totalBytesTransferred, item.Size);
-                // Always emit a final progress update for the file
+                var elapsedSeconds = _operationStopwatch.Elapsed.TotalSeconds;
+                var bytesPerSecond = elapsedSeconds > 0 ? totalTransferred / elapsedSeconds : 0;
+                TimeSpan? eta = null;
+                if(bytesPerSecond > 0 && totalTransferred < totalBytesForAllDownloads)
+                {
+                    var remainingBytes = totalBytesForAllDownloads - totalTransferred;
+                    var remainingSeconds = remainingBytes / bytesPerSecond;
+                    eta = TimeSpan.FromSeconds(remainingSeconds);
+                }
+
                 _progressReporter.Report(new SyncProgress
                 {
                     OperationType = SyncOperationType.Syncing,
@@ -129,9 +137,9 @@ public class TransferService : ITransferService
                     PendingUploads = 0,
                     BytesTransferred = totalTransferred,
                     TotalBytes = totalBytesForAllDownloads,
-                    BytesPerSecond = fileStopwatch.Elapsed.TotalSeconds > 0 ? item.Size / fileStopwatch.Elapsed.TotalSeconds : 0,
-                    EstimatedTimeRemaining = null,
-                    ElapsedTime = fileStopwatch.Elapsed
+                    BytesPerSecond = bytesPerSecond,
+                    EstimatedTimeRemaining = eta,
+                    ElapsedTime = _operationStopwatch.Elapsed
                 });
             }
             catch(Exception ex)
