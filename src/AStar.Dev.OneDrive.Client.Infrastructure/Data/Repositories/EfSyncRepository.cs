@@ -6,13 +6,26 @@ using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 
-public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> logger) : ISyncRepository
+public sealed class EfSyncRepository : ISyncRepository
 {
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
+    private readonly ILogger<EfSyncRepository> _logger;
+
+    public EfSyncRepository(IDbContextFactory<AppDbContext> dbContextFactory, ILogger<EfSyncRepository> logger)
+    {
+        _dbContextFactory = dbContextFactory;
+        _logger = logger;
+    }
+
     public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken)
-        => await db.DeltaTokens.OrderByDescending(t => t.LastSyncedUtc).FirstOrDefaultAsync(cancellationToken);
+    {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
+        return await db.DeltaTokens.OrderByDescending(t => t.LastSyncedUtc).FirstOrDefaultAsync(cancellationToken);
+    }
 
     public async Task SaveOrUpdateDeltaTokenAsync(DeltaToken token, CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         cancellationToken.ThrowIfCancellationRequested();
         DeltaToken? existing = await db.DeltaTokens.FindAsync([token.Id], cancellationToken);
         if(existing is null)
@@ -24,6 +37,7 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
     public async Task ApplyDriveItemsAsync(IEnumerable<DriveItemRecord> items, CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         await using IDbContextTransaction tx = await db.Database.BeginTransactionAsync(cancellationToken);
         foreach(DriveItemRecord item in items)
         {
@@ -41,12 +55,13 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
     public async Task<IEnumerable<DriveItemRecord>> GetPendingDownloadsAsync(int pageSize, int offset, CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         cancellationToken.ThrowIfCancellationRequested();
         var totalDriveItems = await db.DriveItems.CountAsync(cancellationToken);
         var totalFiles = await db.DriveItems.Where(d => !d.IsFolder && !d.IsDeleted).CountAsync(cancellationToken);
         var downloadedFiles = await db.LocalFiles.Where(l => l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded).CountAsync(cancellationToken);
 
-        logger.LogDebug("Repository stats: {TotalItems} total items, {TotalFiles} files, {Downloaded} already downloaded",
+        _logger.LogDebug("Repository stats: {TotalItems} total items, {TotalFiles} files, {Downloaded} already downloaded",
             totalDriveItems, totalFiles, downloadedFiles);
         var stats = string.Format("Repository stats: {0} total items, {1} files, {2} already downloaded",
             totalDriveItems, totalFiles, downloadedFiles);
@@ -63,7 +78,7 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
         List<DriveItemRecord> results = await driveItems.ToListAsync(cancellationToken);
 
-        logger.LogDebug("GetPendingDownloadsAsync(pageSize={PageSize}, offset={Offset}): returning {Count} items",
+        _logger.LogDebug("GetPendingDownloadsAsync(pageSize={PageSize}, offset={Offset}): returning {Count} items",
             pageSize, offset, results.Count);
 
         var stats2 = string.Format("GetPendingDownloadsAsync(pageSize={0}, offset={1}): returning {2} items",
@@ -78,18 +93,20 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
     public async Task<int> GetPendingDownloadCountAsync(CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         var count = await db.DriveItems
                             .Where(d => !d.IsFolder && !d.IsDeleted)
                             .Where(d => !db.LocalFiles.Any(l => l.Id == d.Id && (l.SyncState == SyncState.Downloaded || l.SyncState == SyncState.Uploaded)))
                             .CountAsync(cancellationToken);
 
-        logger.LogDebug("GetPendingDownloadCountAsync: {Count} pending downloads", count);
+        _logger.LogDebug("GetPendingDownloadCountAsync: {Count} pending downloads", count);
 
         return count;
     }
 
     public async Task MarkLocalFileStateAsync(string driveItemId, SyncState state, CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         cancellationToken.ThrowIfCancellationRequested();
         DriveItemRecord? drive = await db.DriveItems.FindAsync([driveItemId], cancellationToken);
         if(drive is null)
@@ -110,6 +127,7 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
 
     public async Task AddOrUpdateLocalFileAsync(LocalFileRecord file, CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         cancellationToken.ThrowIfCancellationRequested();
         LocalFileRecord? existing = await db.LocalFiles.FindAsync([file.Id], cancellationToken);
         if(existing is null)
@@ -120,18 +138,32 @@ public sealed class EfSyncRepository(AppDbContext db, ILogger<EfSyncRepository> 
     }
 
     public async Task<IEnumerable<LocalFileRecord>> GetPendingUploadsAsync(int limit, CancellationToken cancellationToken)
-        => await db.LocalFiles.Where(l => l.SyncState == SyncState.PendingUpload).Take(limit).ToListAsync(cancellationToken);
+    {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
+        return await db.LocalFiles.Where(l => l.SyncState == SyncState.PendingUpload).Take(limit).ToListAsync(cancellationToken);
+    }
 
     public async Task<int> GetPendingUploadCountAsync(CancellationToken cancellationToken)
-        => await db.LocalFiles.Where(l => l.SyncState == SyncState.PendingUpload).CountAsync(cancellationToken);
+    {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
+        return await db.LocalFiles.Where(l => l.SyncState == SyncState.PendingUpload).CountAsync(cancellationToken);
+    }
 
     public async Task<DriveItemRecord?> GetDriveItemByPathAsync(string relativePath, CancellationToken cancellationToken)
-        => await db.DriveItems.FirstOrDefaultAsync(d => d.RelativePath == relativePath && !d.IsDeleted, cancellationToken);
+    {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
+        return await db.DriveItems.FirstOrDefaultAsync(d => d.RelativePath == relativePath && !d.IsDeleted, cancellationToken);
+    }
+
     public async Task<LocalFileRecord?> GetLocalFileByPathAsync(string relativePath, CancellationToken cancellationToken)
-        => await db.LocalFiles.FirstOrDefaultAsync(l => l.RelativePath == relativePath, cancellationToken);
+    {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
+        return await db.LocalFiles.FirstOrDefaultAsync(l => l.RelativePath == relativePath, cancellationToken);
+    }
 
     public async Task LogTransferAsync(TransferLog log, CancellationToken cancellationToken)
     {
+        await using AppDbContext db = _dbContextFactory.CreateDbContext();
         TransferLog? existing = await db.TransferLogs.FindAsync([log.Id], cancellationToken);
         if(existing is not null)
         {

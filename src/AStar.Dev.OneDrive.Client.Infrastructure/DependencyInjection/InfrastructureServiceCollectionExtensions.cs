@@ -9,6 +9,7 @@ using AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 using AStar.Dev.OneDrive.Client.Infrastructure.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Extensions.Http;
@@ -21,7 +22,13 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, string sqliteConnectionString, string localRoot, MsalConfigurationSettings msalConfigurationSettings)
     {
         _ = services.AddDbContext<AppDbContext>(opts => opts.UseSqlite(sqliteConnectionString));
-        _ = services.AddScoped<ISyncRepository, EfSyncRepository>();
+        _ = services.AddDbContextFactory<AppDbContext>(opts => opts.UseSqlite(sqliteConnectionString));
+        _ = services.AddScoped<ISyncRepository>(sp =>
+        {
+            IDbContextFactory<AppDbContext> factory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
+            ILogger<EfSyncRepository> logger = sp.GetRequiredService<ILogger<EfSyncRepository>>();
+            return new EfSyncRepository(factory, logger);
+        });
 
         _ = services.AddSingleton<IAuthService>(_ => new MsalAuthService(msalConfigurationSettings));
         _ = services.AddHttpClient<IGraphClient, GraphClientWrapper>()

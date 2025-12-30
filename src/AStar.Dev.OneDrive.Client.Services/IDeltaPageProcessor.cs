@@ -14,4 +14,12 @@ public interface IDeltaPageProcessor
     /// Processes all delta pages, applies them to the repository, and returns the final delta link, page count, and total items processed.
     /// </summary>
     Task<(string? finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Processes all delta pages and reports progress via callback.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <param name="progressCallback">Callback to report progress.</param>
+    /// <returns>Tuple with final delta, page count, and total items processed.</returns>
+    Task<(string? finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(CancellationToken cancellationToken, Action<SyncProgress>? progressCallback);
 }
