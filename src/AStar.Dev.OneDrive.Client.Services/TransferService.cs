@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
-using System.Reactive.Subjects;
 using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
@@ -104,31 +103,35 @@ public class TransferService : ITransferService
         ChannelReader<DriveItemRecord> reader = channel.Reader;
 
         var processedCount = 0;
-        var totalBytesForAllDownloads = 0L;
+        var totalBytesForAllDownloads = await _repo.GetPendingDownloadsAsync(batchSize, 0, cancellationToken).ContinueWith(t => t.Result.Sum(i => i.Size), cancellationToken);
         var parallelism = Math.Max(1, _settings.UiSettings.SyncSettings.MaxParallelDownloads);
 
         async Task processItemAsync(DriveItemRecord item)
         {
             try
             {
-                await DownloadItemWithRetryAsync(item, cancellationToken, () =>
+                var fileStopwatch = Stopwatch.StartNew();
+                await DownloadItemWithRetryAsync(item, cancellationToken, (b, e, eta) =>
                 {
-                    var p = Interlocked.Increment(ref processedCount);
-                    _ = Interlocked.Add(ref _totalBytesTransferred, item.Size);
-                    _progressReporter.Report(new SyncProgress
-                    {
-                        OperationType = SyncOperationType.Syncing,
-                        CurrentOperationMessage = "Downloading files",
-                        ProcessedFiles = p,
-                        TotalFiles = total,
-                        PendingDownloads = total - p,
-                        PendingUploads = 0,
-                        BytesTransferred = _totalBytesTransferred,
-                        TotalBytes = totalBytesForAllDownloads,
-                        BytesPerSecond = 0,
-                        EstimatedTimeRemaining = null,
-                        ElapsedTime = _operationStopwatch.Elapsed
-                    });
+                    // Optionally emit chunked progress here if desired
+                });
+                fileStopwatch.Stop();
+                var p = Interlocked.Increment(ref processedCount);
+                var totalTransferred = Interlocked.Add(ref _totalBytesTransferred, item.Size);
+                // Always emit a final progress update for the file
+                _progressReporter.Report(new SyncProgress
+                {
+                    OperationType = SyncOperationType.Syncing,
+                    CurrentOperationMessage = $"Downloading \"{item.RelativePath}\"",
+                    ProcessedFiles = p,
+                    TotalFiles = total,
+                    PendingDownloads = total - p,
+                    PendingUploads = 0,
+                    BytesTransferred = totalTransferred,
+                    TotalBytes = totalBytesForAllDownloads,
+                    BytesPerSecond = fileStopwatch.Elapsed.TotalSeconds > 0 ? item.Size / fileStopwatch.Elapsed.TotalSeconds : 0,
+                    EstimatedTimeRemaining = null,
+                    ElapsedTime = fileStopwatch.Elapsed
                 });
             }
             catch(Exception ex)
@@ -270,15 +273,11 @@ public class TransferService : ITransferService
         }
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken cancellationToken, Action? onComplete = null)
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken cancellationToken, Action<long, TimeSpan, TimeSpan?>? onProgress = null)
     {
         try
         {
-            await _retryPolicy.ExecuteAsync(async _ =>
-            {
-                await DownloadItemAsync(item, cancellationToken);
-                onComplete?.Invoke();
-            }, cancellationToken);
+            await _retryPolicy.ExecuteAsync(async _ => await DownloadItemAsync(item, cancellationToken, onProgress), cancellationToken);
         }
         catch(Exception ex)
         {
@@ -287,7 +286,7 @@ public class TransferService : ITransferService
         }
     }
 
-    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken cancellationToken)
+    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken cancellationToken, Action<long, TimeSpan, TimeSpan?>? onProgress = null)
     {
         _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
         _logger.LogDebug("Waiting to acquire semaphore for {Path}", item.RelativePath);
@@ -322,8 +321,8 @@ public class TransferService : ITransferService
                     _logger.LogInformation("Downloading {Path}: {MB:F2} MB of {TotalMB:F2} MB complete",
                         item.RelativePath, totalWritten / (1024.0 * 1024.0), item.Size / (1024.0 * 1024.0));
                     // Send progress update to UI
-                    var elapsedSeconds = _operationStopwatch.Elapsed.TotalSeconds;
-                    var bytesPerSecond = elapsedSeconds > 0 ? _totalBytesTransferred / elapsedSeconds : 0;
+                    TimeSpan elapsed = _operationStopwatch.Elapsed;
+                    var bytesPerSecond = elapsed.TotalSeconds > 0 ? totalWritten / elapsed.TotalSeconds : 0;
                     TimeSpan? eta = null;
                     if(SyncProgressReporter.ShouldCalculateEta(bytesPerSecond, item.Size, totalWritten))
                     {
@@ -332,20 +331,7 @@ public class TransferService : ITransferService
                         eta = TimeSpan.FromSeconds(remainingSeconds);
                     }
 
-                    _progressReporter.Report(new SyncProgress
-                    {
-                        OperationType = SyncOperationType.Syncing,
-                        CurrentOperationMessage = $"Downloading {item.RelativePath} ({totalWritten / (1024.0 * 1024.0):F2} MB / {item.Size / (1024.0 * 1024.0):F2} MB)",
-                        ProcessedFiles = 0, // Could be updated if needed
-                        TotalFiles = 0, // Could be updated if needed
-                        PendingDownloads = 0,
-                        PendingUploads = 0,
-                        BytesTransferred = totalWritten,
-                        TotalBytes = item.Size,
-                        BytesPerSecond = bytesPerSecond,
-                        EstimatedTimeRemaining = eta,
-                        ElapsedTime = _operationStopwatch.Elapsed
-                    });
+                    onProgress?.Invoke(totalWritten, elapsed, eta);
                     nextLogThreshold += logIntervalBytes;
                 }
             }
