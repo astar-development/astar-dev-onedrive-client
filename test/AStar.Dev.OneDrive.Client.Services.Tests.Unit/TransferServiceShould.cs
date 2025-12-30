@@ -324,4 +324,96 @@ public class TransferServiceShould
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
         await Should.NotThrowAsync(() => sut.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken));
     }
+
+    [Fact]
+    public async Task ReportProgressWithEtaAndTotalBytesForUploads()
+    {
+        ISyncRepository repo = Substitute.For<ISyncRepository>();
+        IFileSystemAdapter fs = Substitute.For<IFileSystemAdapter>();
+        IGraphClient graph = Substitute.For<IGraphClient>();
+        ILogger<TransferService> logger = Substitute.For<ILogger<TransferService>>();
+        UserPreferences settings = new UserPreferences
+        {
+            UiSettings = new UiSettings
+            {
+                SyncSettings = new SyncSettings
+                {
+                    MaxParallelDownloads = 2,
+                    DownloadBatchSize = 2,
+                    MaxRetries = 1,
+                    RetryBaseDelayMs = 1
+                }
+            }
+        };
+        SyncProgressReporter progressReporter = new SyncProgressReporter();
+        ISyncErrorLogger errorLogger = Substitute.For<ISyncErrorLogger>();
+        IChannelFactory channelFactory = Substitute.For<IChannelFactory>();
+        IDownloadQueueProducer downloadProducer = Substitute.For<IDownloadQueueProducer>();
+        IDownloadQueueConsumer downloadConsumer = Substitute.For<IDownloadQueueConsumer>();
+        IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
+        IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
+        var uploads = new[]
+        {
+            new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
+            new LocalFileRecord("id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
+        };
+        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(uploads);
+        uploadProducer.ProduceAsync(Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        uploadConsumer.ConsumeAsync(Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(async callInfo =>
+            {
+                var process = callInfo.Arg<Func<LocalFileRecord, Task>>();
+                foreach (var item in uploads) await process(item);
+            });
+        var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, downloadProducer, downloadConsumer, uploadProducer, uploadConsumer);
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
+        await sut.ProcessPendingUploadsAsync(CancellationToken.None);
+        progressList.ShouldContain(p => p.EstimatedTimeRemaining != null);
+        progressList.ShouldAllBe(p => p.TotalBytes == 300);
+    }
+
+    [Fact]
+    public async Task ReportChunkedProgressDuringUpload()
+    {
+        ISyncRepository repo = Substitute.For<ISyncRepository>();
+        IFileSystemAdapter fs = Substitute.For<IFileSystemAdapter>();
+        IGraphClient graph = Substitute.For<IGraphClient>();
+        ILogger<TransferService> logger = Substitute.For<ILogger<TransferService>>();
+        UserPreferences settings = new UserPreferences
+        {
+            UiSettings = new UiSettings
+            {
+                SyncSettings = new SyncSettings
+                {
+                    MaxParallelDownloads = 1,
+                    DownloadBatchSize = 1,
+                    MaxRetries = 1,
+                    RetryBaseDelayMs = 1
+                }
+            }
+        };
+        SyncProgressReporter progressReporter = new SyncProgressReporter();
+        ISyncErrorLogger errorLogger = Substitute.For<ISyncErrorLogger>();
+        IChannelFactory channelFactory = Substitute.For<IChannelFactory>();
+        IDownloadQueueProducer downloadProducer = Substitute.For<IDownloadQueueProducer>();
+        IDownloadQueueConsumer downloadConsumer = Substitute.For<IDownloadQueueConsumer>();
+        IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
+        IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
+        var upload = new LocalFileRecord("id1", "file1.txt", "hash1", 20 * 1024 * 1024, DateTimeOffset.UtcNow, SyncState.PendingUpload); // 20MB
+        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(new[] { upload });
+        uploadProducer.ProduceAsync(Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        uploadConsumer.ConsumeAsync(Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(async callInfo =>
+            {
+                var process = callInfo.Arg<Func<LocalFileRecord, Task>>();
+                await process(upload);
+            });
+        var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, downloadProducer, downloadConsumer, uploadProducer, uploadConsumer);
+        var progressList = new List<SyncProgress>();
+        using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
+        await sut.ProcessPendingUploadsAsync(CancellationToken.None);
+        progressList.Count.ShouldBeGreaterThan(0);
+        progressList.ShouldContain(p => p.CurrentOperationMessage.Contains("Uploading"));
+    }
 }

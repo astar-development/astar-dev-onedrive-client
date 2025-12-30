@@ -49,6 +49,28 @@ public static class ServiceCollectionExtensions
                     : 100));
         _ = services.AddSingleton<IDownloadQueueConsumer, DownloadQueueConsumer>();
 
+        // Upload queue DI
+        _ = services.AddSingleton<IUploadQueueProducer, UploadQueueProducer>();
+        _ = services.AddSingleton<IUploadQueueConsumer, UploadQueueConsumer>();
+
+        // Update TransferService registration to inject upload queue dependencies
+        _ = services.AddSingleton<TransferService>(sp =>
+            new TransferService(
+                sp.GetRequiredService<IFileSystemAdapter>(),
+                sp.GetRequiredService<IGraphClient>(),
+                sp.GetRequiredService<ISyncRepository>(),
+                sp.GetRequiredService<ILogger<TransferService>>(),
+                sp.GetRequiredService<UserPreferences>(),
+                sp.GetRequiredService<SyncProgressReporter>(),
+                sp.GetRequiredService<ISyncErrorLogger>(),
+                sp.GetRequiredService<IChannelFactory>(),
+                sp.GetRequiredService<IDownloadQueueProducer>(),
+                sp.GetRequiredService<IDownloadQueueConsumer>(),
+                sp.GetRequiredService<IUploadQueueProducer>(),
+                sp.GetRequiredService<IUploadQueueConsumer>()
+            ));
+        _ = services.AddSingleton<ITransferService>(sp => sp.GetRequiredService<TransferService>());
+
         return services;
     }
 }
