@@ -5,21 +5,13 @@ using Microsoft.Identity.Client.Extensions.Msal;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Auth;
 
-public sealed class MsalAuthService : IAuthService
+public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationSettings) : IAuthService
 {
-    private readonly MsalConfigurationSettings _msalConfigurationSettings;
-    private readonly IPublicClientApplication _pca;
-
-    public MsalAuthService(MsalConfigurationSettings msalConfigurationSettings)
-    {
-        _msalConfigurationSettings = msalConfigurationSettings;
-        _pca = PublicClientApplicationBuilder
+    private readonly IPublicClientApplication _pca = PublicClientApplicationBuilder
             .Create(msalConfigurationSettings.ClientId)
             .WithAuthority(AzureCloudInstance.AzurePublic, "Common")
             .WithRedirectUri(msalConfigurationSettings.RedirectUri)
             .Build();
-    }
-
     private IAccount? _account;
     private bool _initialized;
 
@@ -27,7 +19,7 @@ public sealed class MsalAuthService : IAuthService
     {
         MsalCacheHelper cacheHelper = await MsalCacheHelper.CreateAsync(
     new StorageCreationPropertiesBuilder(
-        $"{_msalConfigurationSettings.CachePrefix}1.bin",
+        $"{msalConfigurationSettings.CachePrefix}1.bin",
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData))
     .WithUnprotectedFile()
     .Build());
@@ -38,7 +30,7 @@ public sealed class MsalAuthService : IAuthService
         try
         {
             AuthenticationResult result = await _pca
-            .AcquireTokenSilent(_msalConfigurationSettings.Scopes, _account)
+            .AcquireTokenSilent(msalConfigurationSettings.Scopes, _account)
             .ExecuteAsync(ct);
 
             _account = result.Account;
@@ -46,7 +38,7 @@ public sealed class MsalAuthService : IAuthService
         catch(MsalUiRequiredException)
         {
             AuthenticationResult result = await _pca
-            .AcquireTokenInteractive(_msalConfigurationSettings.Scopes)
+            .AcquireTokenInteractive(msalConfigurationSettings.Scopes)
             .ExecuteAsync(ct);
 
             _account = result.Account;
@@ -69,7 +61,7 @@ public sealed class MsalAuthService : IAuthService
     {
         if(_account is null)
             throw new InvalidOperationException("Not signed in");
-        AuthenticationResult result = await _pca.AcquireTokenSilent(_msalConfigurationSettings.Scopes, _account).ExecuteAsync(ct);
+        AuthenticationResult result = await _pca.AcquireTokenSilent(msalConfigurationSettings.Scopes, _account).ExecuteAsync(ct);
         return result.AccessToken;
     }
 
@@ -88,7 +80,7 @@ public sealed class MsalAuthService : IAuthService
 
         MsalCacheHelper cacheHelper = await MsalCacheHelper.CreateAsync(
             new StorageCreationPropertiesBuilder(
-                $"{_msalConfigurationSettings.CachePrefix}1.bin",
+                $"{msalConfigurationSettings.CachePrefix}1.bin",
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData))
             .WithUnprotectedFile()
             .Build());

@@ -1,8 +1,11 @@
+
 using System.IO.Abstractions;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services.DependencyInjection;
 
@@ -27,9 +30,24 @@ public static class ServiceCollectionExtensions
 
         _ = services.AddSingleton<TransferService>();
         _ = services.AddSingleton<SyncEngine>();
-        _ = services.AddSingleton<ISyncEngine, SyncEngine>();
-        _ = services.AddSingleton<ITransferService, TransferService>();
+        _ = services.AddSingleton<ISyncEngine>(sp => sp.GetRequiredService<SyncEngine>());
+        _ = services.AddSingleton<ITransferService>(sp => sp.GetRequiredService<TransferService>());
         _ = services.AddSingleton<IHealthCheckService, ApplicationHealthCheckService>();
+
+        // Register supporting abstractions for DI
+        _ = services.AddSingleton<SyncProgressReporter>();
+        _ = services.AddSingleton<ISyncErrorLogger, SyncErrorLogger>(sp =>
+            new SyncErrorLogger(sp.GetRequiredService<ILogger<TransferService>>()));
+        _ = services.AddSingleton<IDeltaPageProcessor, DeltaPageProcessor>();
+        _ = services.AddSingleton<ILocalFileScanner, LocalFileScanner>();
+        _ = services.AddSingleton<IChannelFactory, ChannelFactory>();
+        _ = services.AddTransient<IDownloadQueueProducer, DownloadQueueProducer>(sp =>
+            new DownloadQueueProducer(
+                sp.GetRequiredService<ISyncRepository>(),
+                sp.GetRequiredService<UserPreferences>().UiSettings.SyncSettings.DownloadBatchSize > 0
+                    ? sp.GetRequiredService<UserPreferences>().UiSettings.SyncSettings.DownloadBatchSize
+                    : 100));
+        _ = services.AddSingleton<IDownloadQueueConsumer, DownloadQueueConsumer>();
 
         return services;
     }

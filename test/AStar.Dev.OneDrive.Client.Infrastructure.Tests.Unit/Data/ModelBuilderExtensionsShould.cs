@@ -7,14 +7,13 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.Data;
 
 public class ModelBuilderExtensionsShould
 {
-    private class TestContext : DbContext
+    private class TestContext(DbContextOptions options) : DbContext(options)
     {
         public DbSet<DriveItemRecord> DriveItems => Set<DriveItemRecord>();
         public DbSet<LocalFileRecord> LocalFiles => Set<LocalFileRecord>();
         public DbSet<DeltaToken> DeltaTokens => Set<DeltaToken>();
         public DbSet<TransferLog> TransferLogs => Set<TransferLog>();
-        private readonly DbContextOptions _options;
-        public TestContext(DbContextOptions options) : base(options) => _options = options;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.UseSqliteFriendlyConversions();

@@ -1,307 +1,58 @@
 using System.Diagnostics;
-using System.Reactive.Subjects;
-using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
-using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 
-public sealed class SyncEngine(ISyncRepository repo, IGraphClient graph, ITransferService transfer, IFileSystemAdapter fs, ILogger<SyncEngine> logger) : ISyncEngine
+/// <summary>
+/// Orchestrates synchronization between local storage and OneDrive by delegating to service abstractions.
+/// </summary>
+/// <remarks>
+/// Coordinates delta page processing, local file scanning, and file transfers. Contains no business logic.
+/// </remarks>
+/// <remarks>
+/// Initializes a new instance of the <see cref="SyncEngine"/> class.
+/// </remarks>
+/// <param name="deltaPageProcessor">The delta page processor abstraction.</param>
+/// <param name="localFileScanner">The local file scanner abstraction.</param>
+/// <param name="transfer">The transfer service abstraction.</param>
+/// <param name="logger">The logger instance.</param>
+public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFileScanner localFileScanner, ITransferService transfer, ILogger<SyncEngine> logger) : ISyncEngine
 {
-    private readonly Subject<SyncProgress> _progressSubject = new();
 
-    public IObservable<SyncProgress> Progress => _progressSubject;
+    /// <inheritdoc/>
+    public IObservable<SyncProgress> Progress => System.Reactive.Linq.Observable.Empty<SyncProgress>();
 
-    /// <summary>
-    /// Performs the initial full enumeration using Graph delta. Pages until exhausted,
-    /// persists DriveItemRecords and the final deltaLink for incremental syncs.
-    /// </summary>public async Task InitialFullSyncAsync(CancellationToken ct)
-
+    /// <inheritdoc/>
     public async Task InitialFullSyncAsync(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
         logger.LogInformation("Starting initial full sync");
-        ReportInitialSyncProgress(stopwatch);
-
-        (var finalDelta, var pageCount, var totalItemsProcessed) = await ProcessAllDeltaPagesAsync(stopwatch, cancellationToken);
-
-        if(!string.IsNullOrEmpty(finalDelta))
-            await SaveFinalDeltaTokenAsync(finalDelta, totalItemsProcessed, stopwatch, cancellationToken);
-
-        await ReportAndProcessTransfersAsync(pageCount, stopwatch, cancellationToken);
-
-        stopwatch.Stop();
-        logger.LogInformation("Initial full sync complete: {TotalItems} items, {Downloads} downloads, {Uploads} uploads in {ElapsedMs}ms",
-            totalItemsProcessed, await repo.GetPendingDownloadCountAsync(cancellationToken), await repo.GetPendingUploadCountAsync(cancellationToken), stopwatch.ElapsedMilliseconds);
-        ReportSyncCompleted(pageCount, stopwatch);
-    }
-
-    private void ReportInitialSyncProgress(Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = "Starting initial full sync...",
-            ProcessedFiles = 0,
-            TotalFiles = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private async Task<(string? finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(Stopwatch stopwatch, CancellationToken cancellationToken)
-    {
-        string? nextOrDelta = null, finalDelta = null;
-        int pageCount = 0, totalItemsProcessed = 0;
-        do
-        {
-            DeltaPage page = await graph.GetDriveDeltaPageAsync(nextOrDelta, cancellationToken);
-            await repo.ApplyDriveItemsAsync(page.Items, cancellationToken);
-            totalItemsProcessed += page.Items.Count();
-            nextOrDelta = page.NextLink;
-            finalDelta = page.DeltaLink ?? finalDelta;
-            pageCount++;
-            ReportDeltaPageProgress(pageCount, totalItemsProcessed, stopwatch);
-            logger.LogInformation("Applied page {PageNum}: items={Count} totalItems={Total} next={Next}",
-                pageCount, page.Items.Count(), totalItemsProcessed, page.NextLink is not null);
-        } while(!string.IsNullOrEmpty(nextOrDelta) && !cancellationToken.IsCancellationRequested);
-        return (finalDelta, pageCount, totalItemsProcessed);
-    }
-
-    private void ReportDeltaPageProgress(int pageCount, int totalItemsProcessed, Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = $"Processing delta pages (page {pageCount}, {totalItemsProcessed} items)",
-            ProcessedFiles = pageCount,
-            TotalFiles = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private async Task SaveFinalDeltaTokenAsync(string finalDelta, int totalItemsProcessed, Stopwatch stopwatch, CancellationToken cancellationToken)
-    {
-        var token = new DeltaToken(Guid.CreateVersion7().ToString(), finalDelta, DateTimeOffset.UtcNow);
-        await repo.SaveOrUpdateDeltaTokenAsync(token, cancellationToken);
-        logger.LogInformation("Saved delta token after processing {ItemCount} items in {ElapsedMs}ms",
-            totalItemsProcessed, stopwatch.ElapsedMilliseconds);
-    }
-
-    private async Task ReportAndProcessTransfersAsync(int pageCount, Stopwatch stopwatch, CancellationToken cancellationToken)
-    {
-        var pendingDownloads = await repo.GetPendingDownloadCountAsync(cancellationToken);
-        var pendingUploads = await repo.GetPendingUploadCountAsync(cancellationToken);
-        _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = "Processing transfers...",
-            ProcessedFiles = pageCount,
-            TotalFiles = pageCount,
-            PendingDownloads = pendingDownloads,
-            PendingUploads = pendingUploads,
-            ElapsedTime = stopwatch.Elapsed
-        });
+        _ = await deltaPageProcessor.ProcessAllDeltaPagesAsync(cancellationToken);
         await transfer.ProcessPendingDownloadsAsync(cancellationToken);
         await transfer.ProcessPendingUploadsAsync(cancellationToken);
+        stopwatch.Stop();
+        logger.LogInformation("Initial full sync complete in {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
     }
 
-    private void ReportSyncCompleted(int pageCount, Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Completed,
-            CurrentOperationMessage = "Initial sync completed",
-            ProcessedFiles = pageCount,
-            TotalFiles = pageCount,
-            PendingDownloads = 0,
-            PendingUploads = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
+    /// <inheritdoc/>
     public async Task IncrementalSyncAsync(CancellationToken cancellationToken)
     {
-        var stopwatch = Stopwatch.StartNew();
         logger.LogInformation("Starting incremental sync");
-        ReportIncrementalSyncStart(stopwatch);
-
-        DeltaToken token = await repo.GetDeltaTokenAsync(cancellationToken) ?? throw new InvalidOperationException("Delta token missing; run initial sync first.");
-        DeltaPage page = await graph.GetDriveDeltaPageAsync(token.Token, cancellationToken);
-        await repo.ApplyDriveItemsAsync(page.Items, cancellationToken);
-
-        if(!string.IsNullOrEmpty(page.DeltaLink))
-            await repo.SaveOrUpdateDeltaTokenAsync(token with { Token = page.DeltaLink, LastSyncedUtc = DateTimeOffset.UtcNow }, cancellationToken);
-
-        await ReportAndProcessTransfersAsync(1, stopwatch, cancellationToken);
-
-        stopwatch.Stop();
-        logger.LogInformation("Incremental sync complete: {ItemCount} items, {Downloads} downloads, {Uploads} uploads in {ElapsedMs}ms",
-            page.Items.Count(), await repo.GetPendingDownloadCountAsync(cancellationToken), await repo.GetPendingUploadCountAsync(cancellationToken), stopwatch.ElapsedMilliseconds);
-        ReportIncrementalSyncCompleted(stopwatch);
+        _ = await deltaPageProcessor.ProcessAllDeltaPagesAsync(cancellationToken);
+        await transfer.ProcessPendingDownloadsAsync(cancellationToken);
+        await transfer.ProcessPendingUploadsAsync(cancellationToken);
+        logger.LogInformation("Incremental sync complete");
     }
 
-    private void ReportIncrementalSyncStart(Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = "Starting incremental sync...",
-            ProcessedFiles = 0,
-            TotalFiles = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private void ReportIncrementalSyncCompleted(Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Completed,
-            CurrentOperationMessage = "Incremental sync completed",
-            ProcessedFiles = 1,
-            TotalFiles = 1,
-            PendingDownloads = 0,
-            PendingUploads = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
+    /// <inheritdoc/>
     public async Task ScanLocalFilesAsync(CancellationToken cancellationToken)
     {
-        var stopwatch = Stopwatch.StartNew();
         logger.LogInformation("Starting local file sync");
-        ReportLocalScanStart(stopwatch);
-
-        await Task.Run(async () =>
-        {
-            var localFilesList = (await fs.EnumerateFilesAsync(cancellationToken)).ToList();
-            logger.LogInformation("Found {FileCount} local files to process", localFilesList.Count);
-            ReportLocalScanProgress(0, localFilesList.Count, stopwatch);
-
-            (var processedCount, var newFilesCount, var modifiedFilesCount) = await ProcessLocalFilesAsync(localFilesList, stopwatch, cancellationToken);
-
-            var pendingUploads = await repo.GetPendingUploadCountAsync(cancellationToken);
-            stopwatch.Stop();
-            logger.LogInformation("Local file sync complete: {Total} files scanned, {New} new, {Modified} modified, {Pending} pending uploads in {ElapsedMs}ms",
-                processedCount, newFilesCount, modifiedFilesCount, pendingUploads, stopwatch.ElapsedMilliseconds);
-
-            ReportLocalScanCompleted(processedCount, pendingUploads, stopwatch);
-        }, cancellationToken);
+        _ = await localFileScanner.ScanAndSyncLocalFilesAsync(cancellationToken);
+        logger.LogInformation("Local file sync complete");
     }
 
-    private void ReportLocalScanStart(Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = "Scanning local files to sync...",
-            ProcessedFiles = 0,
-            TotalFiles = 0,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private void ReportLocalScanProgress(int processed, int total, Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = $"Scanning local files...",
-            ProcessedFiles = processed,
-            TotalFiles = total,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private void ReportLocalScanStep(int processed, int total, Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Syncing,
-            CurrentOperationMessage = $"Scanning local files ({processed}/{total})...",
-            ProcessedFiles = processed,
-            TotalFiles = total,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private void ReportLocalScanCompleted(int processed, int pendingUploads, Stopwatch stopwatch)
-        => _progressSubject.OnNext(new SyncProgress
-        {
-            OperationType = SyncOperationType.Completed,
-            CurrentOperationMessage = "Local file sync completed",
-            ProcessedFiles = processed,
-            TotalFiles = processed,
-            PendingUploads = pendingUploads,
-            ElapsedTime = stopwatch.Elapsed
-        });
-
-    private async Task<(int processedCount, int newFilesCount, int modifiedFilesCount)> ProcessLocalFilesAsync(
-        List<LocalFileInfo> localFilesList, Stopwatch stopwatch, CancellationToken cancellationToken)
-    {
-        int processedCount = 0, newFilesCount = 0, modifiedFilesCount = 0;
-        foreach(LocalFileInfo localFile in localFilesList)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            processedCount++;
-            if(processedCount % 50 == 0 || processedCount == localFilesList.Count)
-                ReportLocalScanStep(processedCount, localFilesList.Count, stopwatch);
-
-            FileProcessResult result = await ProcessLocalFileAsync(localFile, cancellationToken);
-            if(result == FileProcessResult.New)
-                newFilesCount++;
-            else if(result == FileProcessResult.Modified)
-                modifiedFilesCount++;
-        }
-
-        return (processedCount, newFilesCount, modifiedFilesCount);
-    }
-
-    private enum FileProcessResult { None, New, Modified }
-
-    private async Task<FileProcessResult> ProcessLocalFileAsync(LocalFileInfo localFile, CancellationToken cancellationToken)
-    {
-        LocalFileRecord? existingFile = await repo.GetLocalFileByPathAsync(localFile.RelativePath, cancellationToken);
-        DriveItemRecord? driveItem = await repo.GetDriveItemByPathAsync(localFile.RelativePath, cancellationToken);
-
-        if(driveItem is null)
-        {
-            if(existingFile is null)
-            {
-                await repo.AddOrUpdateLocalFileAsync(new LocalFileRecord(
-                    Guid.CreateVersion7().ToString(), localFile.RelativePath, localFile.Hash, localFile.Size, localFile.LastWriteUtc, SyncState.PendingUpload), cancellationToken);
-                logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
-                return FileProcessResult.New;
-            }
-            else if(existingFile.SyncState != SyncState.PendingUpload)
-            {
-                await repo.AddOrUpdateLocalFileAsync(existingFile with { SyncState = SyncState.PendingUpload }, cancellationToken);
-                logger.LogDebug("Marked existing local file (not in OneDrive) for upload: {Path}", localFile.RelativePath);
-                return FileProcessResult.New;
-            }
-        }
-        else if(ShouldMarkAsModified(localFile, driveItem, existingFile))
-        {
-            if(existingFile is null)
-            {
-                await repo.AddOrUpdateLocalFileAsync(new LocalFileRecord(
-                    driveItem.Id, localFile.RelativePath, localFile.Hash, localFile.Size, localFile.LastWriteUtc, SyncState.PendingUpload), cancellationToken);
-                logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
-                return FileProcessResult.Modified;
-            }
-            else if(ShouldUpdateExistingFileForUpload(existingFile, localFile))
-            {
-                await repo.AddOrUpdateLocalFileAsync(existingFile with
-                {
-                    Hash = localFile.Hash,
-                    Size = localFile.Size,
-                    LastWriteUtc = localFile.LastWriteUtc,
-                    SyncState = SyncState.PendingUpload
-                }, cancellationToken);
-                logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
-                return FileProcessResult.Modified;
-            }
-        }
-
-        return FileProcessResult.None;
-    }
-    /// <summary>
-    /// Determines if an existing local file record should be updated for upload based on sync state, timestamp, size, or hash.
-    /// </summary>
-    private static bool ShouldUpdateExistingFileForUpload(LocalFileRecord existingFile, LocalFileInfo localFile)
-        => existingFile.SyncState != SyncState.PendingUpload
-           || existingFile.LastWriteUtc != localFile.LastWriteUtc
-           || existingFile.Size != localFile.Size
-           || (localFile.Hash is not null && localFile.Hash != existingFile.Hash);
-
-    private static bool ShouldMarkAsModified(LocalFileInfo localFile, DriveItemRecord driveItem, LocalFileRecord? existingFile) => localFile.LastWriteUtc > driveItem.LastModifiedUtc ||
-            localFile.Size != driveItem.Size ||
-            (localFile.Hash is not null && driveItem.Size > 0 && existingFile != null && localFile.Hash != existingFile.Hash);
-
-    public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken) => await repo.GetDeltaTokenAsync(cancellationToken);
+    /// <inheritdoc/>
+    public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken) => null;
 }

@@ -3,6 +3,7 @@ using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
@@ -16,7 +17,12 @@ public class TransferServiceShould
         IGraphClient graph,
         ILogger<TransferService> logger,
         MockFileSystem mockFileSystem,
-        UserPreferences settings
+        UserPreferences settings,
+        SyncProgressReporter progressReporter,
+        ISyncErrorLogger errorLogger,
+        IChannelFactory channelFactory,
+        IDownloadQueueProducer producer,
+        IDownloadQueueConsumer consumer
     ) CreateSut(UserPreferences? settings = null)
     {
         ISyncRepository repo = Substitute.For<ISyncRepository>();
@@ -37,28 +43,31 @@ public class TransferServiceShould
                 }
             }
         };
-
         fs.GetFileInfo(Arg.Any<string>()).Returns(callInfo => mockFileSystem.FileInfo.New((string)callInfo[0]));
         fs.WriteFileAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         fs.OpenReadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Stream?>(new MemoryStream(new byte[10])));
-
         repo.MarkLocalFileStateAsync(Arg.Any<string>(), Arg.Any<SyncState>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         repo.LogTransferAsync(Arg.Any<TransferLog>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-
         graph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Stream>(new MemoryStream(new byte[10])));
         graph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new UploadSessionInfo("url", "id", DateTimeOffset.UtcNow.AddMinutes(5)));
         graph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-
-        var sut = new TransferService(fs, graph, repo, logger, settings);
-        return (sut, repo, fs, graph, logger, mockFileSystem, settings);
+        var progressReporter = new SyncProgressReporter();
+        ISyncErrorLogger errorLogger = Substitute.For<ISyncErrorLogger>();
+        IChannelFactory channelFactory = Substitute.For<IChannelFactory>();
+        IDownloadQueueProducer producer = Substitute.For<IDownloadQueueProducer>();
+        IDownloadQueueConsumer consumer = Substitute.For<IDownloadQueueConsumer>();
+        var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
+        return (sut, repo, fs, graph, logger, mockFileSystem, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
     }
 
     [Fact]
     public async Task NotReportProgressWhenNoPendingDownloads()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter _, IGraphClient _, ILogger<TransferService> _, MockFileSystem _, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        TransferService sut = tuple.sut;
+        ISyncRepository repo = tuple.repo;
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(0);
         var progressReported = false;
         using IDisposable subscription = sut.Progress.Subscribe(_ => progressReported = true);
@@ -69,7 +78,10 @@ public class TransferServiceShould
     [Fact]
     public async Task LogWarningWhenDownloadIsCancelled()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter _, IGraphClient _, ILogger<TransferService>? logger, MockFileSystem _, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        TransferService sut = tuple.sut;
+        ISyncRepository repo = tuple.repo;
+        ILogger<TransferService> logger = tuple.logger;
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
         using CancellationTokenSource cts = new();
@@ -86,15 +98,24 @@ public class TransferServiceShould
     [Fact]
     public async Task ThrowWhenDownloadItemFailsAfterRetries()
     {
-        (TransferService? _, ISyncRepository? repo, IFileSystemAdapter fs, IGraphClient _, ILogger<TransferService> logger, MockFileSystem _, UserPreferences? settings) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        ISyncRepository repo = tuple.repo;
+        IFileSystemAdapter fs = tuple.fs;
+        ILogger<TransferService> logger = tuple.logger;
+        UserPreferences settings = tuple.settings;
+        SyncProgressReporter progressReporter = tuple.progressReporter;
+        ISyncErrorLogger errorLogger = tuple.errorLogger;
+        IChannelFactory channelFactory = tuple.channelFactory;
+        IDownloadQueueProducer producer = tuple.producer;
+        IDownloadQueueConsumer consumer = tuple.consumer;
+        IGraphClient graph = Substitute.For<IGraphClient>();
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
             new DriveItemRecord("id", "did", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
         ]);
-        IGraphClient graph = Substitute.For<IGraphClient>();
         graph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<Stream>(new IOException("fail")));
-        var sutWithFailingGraph = new TransferService(fs, graph, repo, logger, settings);
+        var sutWithFailingGraph = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         Exception? ex = await Record.ExceptionAsync(() => sutWithFailingGraph.ProcessPendingDownloadsAsync(cts.Token));
         if(ex is AggregateException aggEx)
@@ -111,7 +132,11 @@ public class TransferServiceShould
     [Fact]
     public async Task ReportProgressDuringDownloads()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter _, IGraphClient _, ILogger<TransferService> _, MockFileSystem? mockFileSystem, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        TransferService sut = tuple.sut;
+        ISyncRepository repo = tuple.repo;
+        MockFileSystem mockFileSystem = tuple.mockFileSystem;
+        SyncProgressReporter progressReporter = tuple.progressReporter;
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
         var callCount = 0;
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
@@ -124,7 +149,7 @@ public class TransferServiceShould
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
         mockFileSystem.AddFile("file2.txt", new MockFileData("dummy"));
         var progressCount = 0;
-        using IDisposable subscription = sut.Progress.Subscribe(_ => progressCount++);
+        using IDisposable subscription = progressReporter.Progress.Subscribe(_ => progressCount++);
         await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
         progressCount.ShouldBeGreaterThan(0);
     }
@@ -132,7 +157,11 @@ public class TransferServiceShould
     [Fact]
     public async Task ReportProgressDuringUploads()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter _, IGraphClient _, ILogger<TransferService> _, MockFileSystem? mockFileSystem, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        TransferService sut = tuple.sut;
+        ISyncRepository repo = tuple.repo;
+        MockFileSystem mockFileSystem = tuple.mockFileSystem;
+        SyncProgressReporter progressReporter = tuple.progressReporter;
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
             new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
@@ -140,7 +169,7 @@ public class TransferServiceShould
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
         mockFileSystem.AddFile("file2.txt", new MockFileData("dummy"));
         var progressCount = 0;
-        using IDisposable subscription = sut.Progress.Subscribe(_ => progressCount++);
+        using IDisposable subscription = progressReporter.Progress.Subscribe(_ => progressCount++);
         await sut.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
         progressCount.ShouldBeGreaterThan(0);
     }
@@ -148,7 +177,11 @@ public class TransferServiceShould
     [Fact]
     public async Task MarkUploadAsFailedWhenExceptionThrown()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient _, ILogger<TransferService> _, MockFileSystem? mockFileSystem, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        TransferService sut = tuple.sut;
+        ISyncRepository repo = tuple.repo;
+        IFileSystemAdapter fs = tuple.fs;
+        MockFileSystem mockFileSystem = tuple.mockFileSystem;
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
             new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ]);
@@ -161,29 +194,27 @@ public class TransferServiceShould
     [Fact]
     public async Task CancelUploadsShouldLogWarning()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient _, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        ISyncRepository repo = tuple.repo;
+        IFileSystemAdapter fs = tuple.fs;
+        ILogger<TransferService> logger = tuple.logger;
+        MockFileSystem mockFileSystem = tuple.mockFileSystem;
+        UserPreferences settings = tuple.settings;
+        SyncProgressReporter progressReporter = tuple.progressReporter;
+        ISyncErrorLogger errorLogger = tuple.errorLogger;
+        IChannelFactory channelFactory = tuple.channelFactory;
+        IDownloadQueueProducer producer = tuple.producer;
+        IDownloadQueueConsumer consumer = tuple.consumer;
+        IGraphClient graph = Substitute.For<IGraphClient>();
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
             new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ]);
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
-        IGraphClient graph = Substitute.For<IGraphClient>();
         graph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new UploadSessionInfo("url", "id", DateTimeOffset.UtcNow.AddMinutes(5)));
         graph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new OperationCanceledException());
-        var sutWithCancel = new TransferService(fs, graph, repo, logger, new UserPreferences
-        {
-            UiSettings = new UiSettings
-            {
-                SyncSettings = new SyncSettings
-                {
-                    MaxParallelDownloads = 2,
-                    DownloadBatchSize = 1,
-                    MaxRetries = 1,
-                    RetryBaseDelayMs = 1
-                }
-            }
-        });
+        var sutWithCancel = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
         using var cts = new CancellationTokenSource();
         try
         {
@@ -205,7 +236,9 @@ public class TransferServiceShould
     [Fact]
     public async Task NotThrowWhenNoPendingUploads()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter _, IGraphClient _, ILogger<TransferService> _, MockFileSystem _, UserPreferences _) = CreateSut();
+        (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
+        TransferService sut = tuple.sut;
+        ISyncRepository repo = tuple.repo;
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
         await Should.NotThrowAsync(() => sut.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken));
     }
