@@ -19,6 +19,7 @@ public class UploadQueueProducer : IUploadQueueProducer
         {
             await writer.WriteAsync(item, cancellationToken);
         }
+
         writer.Complete();
     }
 }

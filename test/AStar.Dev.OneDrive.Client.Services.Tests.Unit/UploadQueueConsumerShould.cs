@@ -1,24 +1,20 @@
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using AStar.Dev.OneDrive.Client.Core.Entities;
-using AStar.Dev.OneDrive.Client.Services;
-using Shouldly;
-using Xunit;
+
+namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
 public class UploadQueueConsumerShould
 {
     [Fact]
     public async Task ConsumeAsync_ProcessesAllItemsWithGivenFunc()
     {
-        var items = new[]
-        {
+        LocalFileRecord[] items =
+        [
             new LocalFileRecord("id1", "file1.txt", "hash1", 100, System.DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("id2", "file2.txt", "hash2", 200, System.DateTimeOffset.UtcNow, SyncState.PendingUpload)
-        };
+        ];
         var channel = Channel.CreateUnbounded<LocalFileRecord>();
-        foreach (var item in items) await channel.Writer.WriteAsync(item);
+        foreach (LocalFileRecord? item in items) await channel.Writer.WriteAsync(item, TestContext.Current.CancellationToken);
         channel.Writer.Complete();
         var processed = new List<string>();
         var consumer = new UploadQueueConsumer();

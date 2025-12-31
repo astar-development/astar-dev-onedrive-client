@@ -1,11 +1,7 @@
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Channels;
-using System.Threading.Tasks;
 using AStar.Dev.OneDrive.Client.Core.Entities;
-using AStar.Dev.OneDrive.Client.Services;
-using Xunit;
-using Shouldly;
+
+namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
 public class DownloadQueueConsumerShould
 {
@@ -13,13 +9,13 @@ public class DownloadQueueConsumerShould
     public async Task ConsumeAsync_ProcessesAllItemsWithGivenFunc()
     {
         // Arrange
-        var items = new[]
-        {
+        DriveItemRecord[] items =
+        [
             new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, System.DateTimeOffset.UtcNow, false, false),
             new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, System.DateTimeOffset.UtcNow, false, false)
-        };
+        ];
         var channel = Channel.CreateUnbounded<DriveItemRecord>();
-        foreach (var item in items) await channel.Writer.WriteAsync(item);
+        foreach (DriveItemRecord? item in items) await channel.Writer.WriteAsync(item, TestContext.Current.CancellationToken);
         channel.Writer.Complete();
         var processed = new List<string>();
         var consumer = new DownloadQueueConsumer();

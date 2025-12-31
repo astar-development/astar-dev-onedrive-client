@@ -1,6 +1,6 @@
 using System;
 
-namespace AStar.Dev.Source.Generators.Tests.Unit.Data;
+namespace AStar.Dev.Source.Generators.Tests;
 
 public class StrongIdGeneratorShould
 {

@@ -23,6 +23,8 @@
     <Project Path="src/nuget-packages/AStar.Dev.Functional.Extensions/AStar.Dev.Functional.Extensions.csproj" />
     <Project Path="src/nuget-packages/AStar.Dev.Logging.Extensions.Serilog/AStar.Dev.Logging.Extensions.Serilog.csproj" />
     <Project Path="src/nuget-packages/AStar.Dev.Logging.Extensions/AStar.Dev.Logging.Extensions.csproj" />
+    <Project Path="src/nuget-packages/AStar.Dev.Source.Generators.Annotations/AStar.Dev.Source.Generators.Annotations.csproj" />
+    <Project Path="src/nuget-packages/AStar.Dev.Source.Generators/AStar.Dev.Source.Generators.csproj" />
     <Project Path="src/nuget-packages/AStar.Dev.Utilities/AStar.Dev.Utilities.csproj" />
   </Folder>
   <Folder Name="/test/">
@@ -36,6 +38,7 @@
     <Project Path="test/nuget-packages/AStar.Dev.Functional.Extensions.Tests.Unit/AStar.Dev.Functional.Extensions.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Tests.Unit/AStar.Dev.Logging.Extensions.Tests.Unit.csproj" />
+    <Project Path="test/nuget-packages/AStar.Dev.Source.Generators.Tests/AStar.Dev.Source.Generators.Tests.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Utilities.Tests.Unit/AStar.Dev.Utilities.Tests.Unit.csproj" />
   </Folder>
 </Solution>

@@ -7,8 +7,16 @@ namespace AStar.Dev.OneDrive.Client.Services;
 public class ChannelFactory : IChannelFactory
 {
     /// <inheritdoc/>
-    public Channel<DriveItemRecord> CreateBounded(int capacity)
+    public Channel<DriveItemRecord> CreateBoundedDriveItemRecord(int capacity)
         => Channel.CreateBounded<DriveItemRecord>(
+            new BoundedChannelOptions(capacity)
+            {
+                FullMode = BoundedChannelFullMode.Wait
+            });
+            
+    /// <inheritdoc/>
+    public Channel<LocalFileRecord> CreateBoundedLocalFileRecord(int capacity)
+        => Channel.CreateBounded<LocalFileRecord>(
             new BoundedChannelOptions(capacity)
             {
                 FullMode = BoundedChannelFullMode.Wait

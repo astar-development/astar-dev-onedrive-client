@@ -1,7 +1,8 @@
 using System.Threading.Channels;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Services;
-using Xunit;
-using Shouldly;
+
+namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
 public class ChannelFactoryShould
 {
@@ -9,17 +10,8 @@ public class ChannelFactoryShould
     public void CreateBounded_ReturnsChannelWithCorrectCapacity()
     {
         var factory = new ChannelFactory();
-        var channel = factory.CreateBounded<int>(5);
+        Channel<DriveItemRecord> channel = factory.CreateBoundedDriveItemRecord(5);
         channel.ShouldNotBeNull();
-        channel.Writer.TryWrite(1).ShouldBeTrue();
-    }
-
-    [Fact]
-    public void CreateUnbounded_ReturnsUnboundedChannel()
-    {
-        var factory = new ChannelFactory();
-        var channel = factory.CreateUnbounded<int>();
-        channel.ShouldNotBeNull();
-        channel.Writer.TryWrite(42).ShouldBeTrue();
+        channel.Writer.TryWrite(new DriveItemRecord("Id", "DriveItemId", "test.txt", "Etag", "Ctag", 1234, DateTimeOffset.UtcNow, false, true)).ShouldBeTrue();
     }
 }

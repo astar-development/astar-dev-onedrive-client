@@ -12,7 +12,7 @@ public class UploadQueueConsumer : IUploadQueueConsumer
     public async Task ConsumeAsync(ChannelReader<LocalFileRecord> reader, Func<LocalFileRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken)
     {
         var tasks = new List<Task>();
-        for (int i = 0; i < parallelism; i++)
+        for (var i = 0; i < parallelism; i++)
         {
             tasks.Add(Task.Run(async () =>
             {
@@ -22,6 +22,7 @@ public class UploadQueueConsumer : IUploadQueueConsumer
                 }
             }, cancellationToken));
         }
+
         await Task.WhenAll(tasks);
     }
 }

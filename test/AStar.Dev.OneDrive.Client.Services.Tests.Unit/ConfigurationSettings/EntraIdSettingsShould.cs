@@ -11,7 +11,7 @@ public class EntraIdSettingsShould
         var settings = new EntraIdSettings
         {
             ClientId = "TestClientId",
-            Scopes = new[] { "TestScope", "TestScope1" },
+            Scopes = ["TestScope", "TestScope1"],
             RedirectUri = "TestRedirectUri"
         };
 

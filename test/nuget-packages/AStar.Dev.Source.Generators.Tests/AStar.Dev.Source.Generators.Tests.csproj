@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -24,15 +24,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit" />
-        <Using Include="Shouldly" />
-        <Using Include="JetBrains.Annotations" />
+      <ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators.Annotations\AStar.Dev.Source.Generators.Annotations.csproj" />
+		<ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators\AStar.Dev.Source.Generators.csproj" />
+		<ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators\AStar.Dev.Source.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"  />
     </ItemGroup>
 
     <ItemGroup>
-      <!-- Reference as normal project for testing the generator classes -->
-      <!-- Also reference as analyzer so generated code works in test files -->
-      <ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators\AStar.Dev.Source.Generators\AStar.Dev.Source.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <Using Include="Xunit" />
+        <Using Include="Shouldly" />
+        <Using Include="JetBrains.Annotations" />
     </ItemGroup>
 
 </Project>

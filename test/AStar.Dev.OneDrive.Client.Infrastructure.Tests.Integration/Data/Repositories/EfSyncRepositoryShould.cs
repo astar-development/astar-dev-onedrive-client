@@ -11,11 +11,9 @@ public sealed class EfSyncRepositoryShould : IDisposable
     private readonly AppDbContext _context;
     private readonly EfSyncRepository _repository;
 
-    private sealed class TestDbContextFactory : IDbContextFactory<AppDbContext>
+    private sealed class TestDbContextFactory(AppDbContext context) : IDbContextFactory<AppDbContext>
     {
-        private readonly AppDbContext _context;
-        public TestDbContextFactory(AppDbContext context) => _context = context;
-        public AppDbContext CreateDbContext() => _context;
+        public AppDbContext CreateDbContext() => context;
     }
 
     public EfSyncRepositoryShould()
@@ -40,12 +38,12 @@ public sealed class EfSyncRepositoryShould : IDisposable
     [Fact]
     public async Task GetAllPendingDownloadsAsync_ReturnsAllPendingDownloads()
     {
-        DriveItemRecord[] items = new[]
-    {
+        DriveItemRecord[] items =
+    [
         new DriveItemRecord("id1", "driveId1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow.AddHours(-3), false, false),
         new DriveItemRecord("id2", "driveId2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-2), false, false),
         new DriveItemRecord("id3", "driveId3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow.AddHours(-1), false, false)
-    };
+    ];
         await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
         IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         var resultList = result.ToList();
@@ -58,12 +56,12 @@ public sealed class EfSyncRepositoryShould : IDisposable
     [Fact]
     public async Task GetAllPendingDownloadsAsync_ExcludesFoldersAndDeleted()
     {
-        DriveItemRecord[] items = new[]
-    {
+        DriveItemRecord[] items =
+    [
         new DriveItemRecord("id1", "driveId1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
         new DriveItemRecord("id2", "driveId2", "folder", null, null, 0, DateTimeOffset.UtcNow, true, false),
         new DriveItemRecord("id3", "driveId3", "deleted.txt", null, null, 50, DateTimeOffset.UtcNow, false, true)
-    };
+    ];
         await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
         IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         var resultList = result.ToList();
@@ -81,12 +79,12 @@ public sealed class EfSyncRepositoryShould : IDisposable
     [Fact]
     public async Task GetAllPendingDownloadsAsync_OrdersByLastModified()
     {
-        DriveItemRecord[] items = new[]
-    {
+        DriveItemRecord[] items =
+    [
         new DriveItemRecord("id1", "driveId1", "newest.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
         new DriveItemRecord("id2", "driveId2", "oldest.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-5), false, false),
         new DriveItemRecord("id3", "driveId3", "middle.txt", null, null, 150, DateTimeOffset.UtcNow.AddHours(-2), false, false)
-    };
+    ];
         await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
         IEnumerable<DriveItemRecord> result = await _repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         var resultList = result.ToList();
@@ -248,9 +246,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
     [Fact]
     public async Task GetPendingDownloadsSupportsPagination()
     {
-        DriveItemRecord[] items = Enumerable.Range(1, 10)
-            .Select(i => new DriveItemRecord($"id{i}", $"driveId{i}", $"file{i}.txt", null, null, i * 100, DateTimeOffset.UtcNow.AddHours(-i), false, false))
-            .ToArray();
+        DriveItemRecord[] items = [.. Enumerable.Range(1, 10).Select(i => new DriveItemRecord($"id{i}", $"driveId{i}", $"file{i}.txt", null, null, i * 100, DateTimeOffset.UtcNow.AddHours(-i), false, false))];
         await _repository.ApplyDriveItemsAsync(items, CancellationToken.None);
 
         IEnumerable<DriveItemRecord> page1 = await _repository.GetPendingDownloadsAsync(3, 0, CancellationToken.None);
@@ -390,9 +386,7 @@ public sealed class EfSyncRepositoryShould : IDisposable
     [Fact]
     public async Task GetPendingUploadsRespectsLimit()
     {
-        LocalFileRecord[] files = Enumerable.Range(1, 5)
-            .Select(i => new LocalFileRecord($"id{i}", $"file{i}.txt", null, i * 100, DateTimeOffset.UtcNow, SyncState.PendingUpload))
-            .ToArray();
+        LocalFileRecord[] files = [.. Enumerable.Range(1, 5).Select(i => new LocalFileRecord($"id{i}", $"file{i}.txt", null, i * 100, DateTimeOffset.UtcNow, SyncState.PendingUpload))];
 
         foreach(LocalFileRecord file in files)
         {

@@ -102,7 +102,7 @@ public class TransferService : ITransferService
             return;
         }
 
-        Channel<DriveItemRecord> channel = _channelFactory.CreateBounded(_settings.UiSettings.SyncSettings.MaxParallelDownloads * 2);
+        Channel<DriveItemRecord> channel = _channelFactory.CreateBoundedDriveItemRecord(_settings.UiSettings.SyncSettings.MaxParallelDownloads * 2);
         // Start producer and consumer tasks
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         ChannelWriter<DriveItemRecord> writer = channel.Writer;
@@ -195,7 +195,7 @@ public class TransferService : ITransferService
             return;
         }
 
-        Channel<LocalFileRecord> channel = _channelFactory.CreateBounded(_settings.UiSettings.SyncSettings.MaxParallelDownloads * 2);
+        Channel<LocalFileRecord> channel = _channelFactory.CreateBoundedLocalFileRecord(_settings.UiSettings.SyncSettings.MaxParallelDownloads * 2);
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         ChannelWriter<LocalFileRecord> writer = channel.Writer;
         ChannelReader<LocalFileRecord> reader = channel.Reader;
@@ -223,6 +223,7 @@ public class TransferService : ITransferService
                     var remainingSeconds = remainingBytes / bytesPerSecond;
                     eta = TimeSpan.FromSeconds(remainingSeconds);
                 }
+
                 _progressReporter.Report(new SyncProgress
                 {
                     OperationType = SyncOperationType.Syncing,
@@ -253,7 +254,9 @@ public class TransferService : ITransferService
         }
         catch(OperationCanceledException)
         {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
             _logger.LogWarning("Upload processing was cancelled");
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
         }
         finally
         {
@@ -264,7 +267,6 @@ public class TransferService : ITransferService
         _operationStopwatch.Stop();
         _logger.LogInformation("All pending uploads have been processed");
     }
-
 
     private async Task UploadLocalFileWithRetryAsync(LocalFileRecord local, CancellationToken cancellationToken, Action<long, TimeSpan, TimeSpan?>? onProgress = null)
     {
@@ -294,7 +296,7 @@ public class TransferService : ITransferService
             long uploaded = 0;
             var fileStopwatch = Stopwatch.StartNew();
             const long logIntervalBytes = 10 * 1024 * 1024; // 10 MB
-            long nextLogThreshold = logIntervalBytes;
+            var nextLogThreshold = logIntervalBytes;
             while(uploaded < stream.Length)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -320,6 +322,7 @@ public class TransferService : ITransferService
                         var remainingSeconds = bytesPerSecond > 0 ? remainingBytes / bytesPerSecond : 0;
                         eta = TimeSpan.FromSeconds(remainingSeconds);
                     }
+
                     onProgress?.Invoke(uploaded, elapsed, eta);
                     nextLogThreshold += logIntervalBytes;
                 }
@@ -342,50 +345,6 @@ public class TransferService : ITransferService
             log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
             await _repo.LogTransferAsync(log, cancellationToken);
             throw;
-        }
-    }
-
-    private async Task UploadLocalFileAsync(LocalFileRecord local, CancellationToken cancellationToken)
-    {
-        var log = new TransferLog(Guid.CreateVersion7().ToString(), TransferType.Upload, local.Id, DateTimeOffset.UtcNow, null, TransferStatus.InProgress, 0, null);
-        await _repo.LogTransferAsync(log, cancellationToken);
-        try
-        {
-            var parent = Path.GetDirectoryName(local.RelativePath) ?? "/";
-            var fileName = Path.GetFileName(local.RelativePath);
-            UploadSessionInfo session = await _graph.CreateUploadSessionAsync(parent, fileName, cancellationToken);
-
-            await using Stream stream = await _fs.OpenReadAsync(local.RelativePath, cancellationToken) ?? throw new FileNotFoundException(local.RelativePath);
-            const int chunkSize = 320 * 1024; // 320KB
-            long uploaded = 0;
-            while(uploaded < stream.Length)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var toRead = (int)Math.Min(chunkSize, stream.Length - uploaded);
-                var buffer = new byte[toRead];
-                _ = stream.Seek(uploaded, SeekOrigin.Begin);
-                var read = await stream.ReadAsync(buffer.AsMemory(0, toRead), cancellationToken);
-                await using var ms = new MemoryStream(buffer, 0, read, writable: false);
-                await _graph.UploadChunkAsync(session, ms, uploaded, uploaded + read - 1, cancellationToken);
-                uploaded += read;
-            }
-
-            await _repo.MarkLocalFileStateAsync(local.Id, SyncState.Uploaded, cancellationToken);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Success, BytesTransferred = stream.Length };
-            await _repo.LogTransferAsync(log, cancellationToken);
-            _logger.LogInformation("Uploaded {Path}", local.RelativePath);
-        }
-        catch(OperationCanceledException)
-        {
-#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            _logger.LogWarning("Upload cancelled for {Id}", local.Id);
-#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-        }
-        catch(Exception ex)
-        {
-            _errorLogger.LogError(ex, local.RelativePath);
-            log = log with { CompletedUtc = DateTimeOffset.UtcNow, Status = TransferStatus.Failed, Error = ex.Message, BytesTransferred = 0 };
-            await _repo.LogTransferAsync(log, cancellationToken);
         }
     }
 

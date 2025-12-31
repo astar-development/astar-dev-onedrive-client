@@ -59,7 +59,9 @@ public class TransferServiceShould
         IChannelFactory channelFactory = Substitute.For<IChannelFactory>();
         IDownloadQueueProducer producer = Substitute.For<IDownloadQueueProducer>();
         IDownloadQueueConsumer consumer = Substitute.For<IDownloadQueueConsumer>();
-        var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
+        IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
+        IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
+        var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer, uploadProducer, uploadConsumer);
         return (sut, repo, fs, graph, logger, mockFileSystem, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
     }
 
@@ -78,12 +80,12 @@ public class TransferServiceShould
     [Fact]
     public async Task ReportProgressWithEtaAndTotalBytes()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient? graph, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences? settings, SyncProgressReporter? progressReporter, ISyncErrorLogger? errorLogger, IChannelFactory? channelFactory, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
-        DriveItemRecord[] driveItems = new[]
-    {
+        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? _, IGraphClient? _, ILogger<TransferService>? _, MockFileSystem? _, UserPreferences? _, SyncProgressReporter? progressReporter, ISyncErrorLogger? _, IChannelFactory? _, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
+        DriveItemRecord[] driveItems =
+    [
         new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
         new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
-    };
+    ];
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
         repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
@@ -106,13 +108,13 @@ public class TransferServiceShould
     [Fact]
     public async Task UseGetAllPendingDownloadsAsyncForTotalBytes()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient? graph, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences? settings, SyncProgressReporter? progressReporter, ISyncErrorLogger? errorLogger, IChannelFactory? channelFactory, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
-        DriveItemRecord[] driveItems = new[]
-    {
+        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? _, IGraphClient? _, ILogger<TransferService>? _, MockFileSystem? _, UserPreferences? _, SyncProgressReporter? progressReporter, ISyncErrorLogger? _, IChannelFactory? _, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
+        DriveItemRecord[] driveItems =
+    [
         new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
         new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false),
         new DriveItemRecord("id3", "did3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow, false, false)
-    };
+    ];
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(3);
         repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
@@ -128,18 +130,18 @@ public class TransferServiceShould
 
         await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
 
-        repo.Received(1).GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>());
+        await repo.Received(1).GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>());
         progressList.ShouldAllBe(p => p.TotalBytes == 600);
     }
 
     [Fact]
     public async Task EtaIsNullWhenTotalTransferredExceedsTotalBytes()
     {
-        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? fs, IGraphClient? graph, ILogger<TransferService>? logger, MockFileSystem? mockFileSystem, UserPreferences? settings, SyncProgressReporter? progressReporter, ISyncErrorLogger? errorLogger, IChannelFactory? channelFactory, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
-        DriveItemRecord[] driveItems = new[]
-    {
+        (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? _, IGraphClient? _, ILogger<TransferService>? _, MockFileSystem? _, UserPreferences? _, SyncProgressReporter? progressReporter, ISyncErrorLogger? _, IChannelFactory? _, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
+        DriveItemRecord[] driveItems =
+    [
         new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
-    };
+    ];
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
@@ -191,13 +193,15 @@ public class TransferServiceShould
         IDownloadQueueProducer producer = tuple.producer;
         IDownloadQueueConsumer consumer = tuple.consumer;
         IGraphClient graph = Substitute.For<IGraphClient>();
+        IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
+        IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
             new DriveItemRecord("id", "did", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
         ]);
         graph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<Stream>(new IOException("fail")));
-        var sutWithFailingGraph = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
+        var sutWithFailingGraph = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer, uploadProducer, uploadConsumer);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         Exception? ex = await Record.ExceptionAsync(() => sutWithFailingGraph.ProcessPendingDownloadsAsync(cts.Token));
         if(ex is AggregateException aggEx)
@@ -288,6 +292,8 @@ public class TransferServiceShould
         IDownloadQueueProducer producer = tuple.producer;
         IDownloadQueueConsumer consumer = tuple.consumer;
         IGraphClient graph = Substitute.For<IGraphClient>();
+        IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
+        IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
             new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ]);
@@ -296,7 +302,7 @@ public class TransferServiceShould
             .Returns(new UploadSessionInfo("url", "id", DateTimeOffset.UtcNow.AddMinutes(5)));
         graph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new OperationCanceledException());
-        var sutWithCancel = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer);
+        var sutWithCancel = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer, uploadProducer, uploadConsumer);
         using var cts = new CancellationTokenSource();
         try
         {
@@ -332,7 +338,7 @@ public class TransferServiceShould
         IFileSystemAdapter fs = Substitute.For<IFileSystemAdapter>();
         IGraphClient graph = Substitute.For<IGraphClient>();
         ILogger<TransferService> logger = Substitute.For<ILogger<TransferService>>();
-        UserPreferences settings = new UserPreferences
+        var settings = new UserPreferences
         {
             UiSettings = new UiSettings
             {
@@ -345,25 +351,25 @@ public class TransferServiceShould
                 }
             }
         };
-        SyncProgressReporter progressReporter = new SyncProgressReporter();
+        var progressReporter = new SyncProgressReporter();
         ISyncErrorLogger errorLogger = Substitute.For<ISyncErrorLogger>();
         IChannelFactory channelFactory = Substitute.For<IChannelFactory>();
         IDownloadQueueProducer downloadProducer = Substitute.For<IDownloadQueueProducer>();
         IDownloadQueueConsumer downloadConsumer = Substitute.For<IDownloadQueueConsumer>();
         IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
         IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
-        var uploads = new[]
-        {
+        LocalFileRecord[] uploads =
+        [
             new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
-        };
+        ];
         repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(uploads);
         uploadProducer.ProduceAsync(Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         uploadConsumer.ConsumeAsync(Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
-                var process = callInfo.Arg<Func<LocalFileRecord, Task>>();
-                foreach (var item in uploads) await process(item);
+                Func<LocalFileRecord, Task> process = callInfo.Arg<Func<LocalFileRecord, Task>>();
+                foreach (LocalFileRecord? item in uploads) await process(item);
             });
         var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, downloadProducer, downloadConsumer, uploadProducer, uploadConsumer);
         var progressList = new List<SyncProgress>();
@@ -380,7 +386,7 @@ public class TransferServiceShould
         IFileSystemAdapter fs = Substitute.For<IFileSystemAdapter>();
         IGraphClient graph = Substitute.For<IGraphClient>();
         ILogger<TransferService> logger = Substitute.For<ILogger<TransferService>>();
-        UserPreferences settings = new UserPreferences
+        var settings = new UserPreferences
         {
             UiSettings = new UiSettings
             {
@@ -393,7 +399,7 @@ public class TransferServiceShould
                 }
             }
         };
-        SyncProgressReporter progressReporter = new SyncProgressReporter();
+        var progressReporter = new SyncProgressReporter();
         ISyncErrorLogger errorLogger = Substitute.For<ISyncErrorLogger>();
         IChannelFactory channelFactory = Substitute.For<IChannelFactory>();
         IDownloadQueueProducer downloadProducer = Substitute.For<IDownloadQueueProducer>();
@@ -401,12 +407,12 @@ public class TransferServiceShould
         IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
         IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
         var upload = new LocalFileRecord("id1", "file1.txt", "hash1", 20 * 1024 * 1024, DateTimeOffset.UtcNow, SyncState.PendingUpload); // 20MB
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(new[] { upload });
+        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([upload]);
         uploadProducer.ProduceAsync(Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         uploadConsumer.ConsumeAsync(Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
-                var process = callInfo.Arg<Func<LocalFileRecord, Task>>();
+                Func<LocalFileRecord, Task> process = callInfo.Arg<Func<LocalFileRecord, Task>>();
                 await process(upload);
             });
         var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, downloadProducer, downloadConsumer, uploadProducer, uploadConsumer);

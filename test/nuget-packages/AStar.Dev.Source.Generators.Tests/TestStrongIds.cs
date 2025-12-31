@@ -1,3 +1,5 @@
+using AStar.Dev.Source.Generators.Annotations;
+
 namespace AStar.Dev.Source.Generators.Tests;
 
 // Test StrongId types used by the unit tests
