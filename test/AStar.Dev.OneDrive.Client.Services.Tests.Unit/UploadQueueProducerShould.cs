@@ -19,9 +19,8 @@ public class UploadQueueProducerShould
         var producer = new UploadQueueProducer(repo);
         var channel = Channel.CreateUnbounded<LocalFileRecord>();
         await producer.ProduceAsync(channel.Writer, CancellationToken.None);
-        channel.Writer.Complete();
         var result = new List<LocalFileRecord>();
-        await foreach (LocalFileRecord item in channel.Reader.ReadAllAsync(TestContext.Current.CancellationToken))
+        await foreach(LocalFileRecord item in channel.Reader.ReadAllAsync(TestContext.Current.CancellationToken))
             result.Add(item);
 
         result.Count.ShouldBe(2);

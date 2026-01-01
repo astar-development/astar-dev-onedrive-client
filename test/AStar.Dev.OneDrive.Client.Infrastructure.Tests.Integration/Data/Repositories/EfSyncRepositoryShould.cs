@@ -1,40 +1,51 @@
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.Data.Repositories;
 
-public sealed class EfSyncRepositoryShould : IDisposable
+public sealed class EfSyncRepositoryShould : IAsyncLifetime
 {
-    private readonly AppDbContext _context;
-    private readonly EfSyncRepository _repository;
+    private AppDbContext _context = null!;
+    private EfSyncRepository _repository = null!;
+    private string _connectionString = null!;
+    private SqliteConnection _connection = null!;
 
     private sealed class TestDbContextFactory(AppDbContext context) : IDbContextFactory<AppDbContext>
     {
         public AppDbContext CreateDbContext() => context;
     }
 
-    public EfSyncRepositoryShould()
+    public async ValueTask InitializeAsync()
     {
+        // Replace the SQLite connection string with a unique in-memory database per test instance.
+        // This ensures each test gets its own isolated database and avoids cross-test disposal issues.
+
+        // Use a unique in-memory database for each test class instance
+        _connectionString = $"DataSource=file:memdb-{Guid.NewGuid()};Mode=Memory;Cache=Shared";
+        _connection = new SqliteConnection(_connectionString);
+        await _connection.OpenAsync();
+
         DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("DataSource=:memory:")
+            .UseSqlite(_connection)
             .Options;
 
         _context = new AppDbContext(options);
-        _context.Database.OpenConnection();
-        _ = _context.Database.EnsureCreated();
+        _ = await _context.Database.EnsureCreatedAsync();
 
         var factory = new TestDbContextFactory(_context);
         _repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _context.Database.CloseConnection();
-        _context.Dispose();
+        await _context.DisposeAsync();
+        await _connection.DisposeAsync();
     }
+
     [Fact]
     public async Task GetAllPendingDownloadsAsync_ReturnsAllPendingDownloads()
     {
@@ -484,6 +495,5 @@ public sealed class EfSyncRepositoryShould : IDisposable
         allLogs.ShouldContain(l => l.Type == TransferType.Upload);
         allLogs.ShouldContain(l => l.Type == TransferType.Delete);
     }
-
     #endregion
 }

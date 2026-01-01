@@ -73,6 +73,11 @@ public class SyncEngineShould
         ISyncRepository repo = Substitute.For<ISyncRepository>();
         // Use a new instance to inject the repo mock
         sut = new SyncEngine(deltaPageProcessor, localFileScanner, transfer, repo, logger);
+
+        // Stub Progress observable to avoid NullReferenceException
+        var progressSubject = new System.Reactive.Subjects.Subject<SyncProgress>();
+        transfer.Progress.Returns(progressSubject);
+
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(5);
         repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
         deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
@@ -94,6 +99,11 @@ public class SyncEngineShould
         (SyncEngine sut, IDeltaPageProcessor deltaPageProcessor, ILocalFileScanner localFileScanner, ITransferService transfer, ILogger<SyncEngine> logger) = CreateSut();
         ISyncRepository repo = Substitute.For<ISyncRepository>();
         sut = new SyncEngine(deltaPageProcessor, localFileScanner, transfer, repo, logger);
+
+        // Stub Progress observable to avoid NullReferenceException
+        var progressSubject = new System.Reactive.Subjects.Subject<SyncProgress>();
+        transfer.Progress.Returns(progressSubject);
+
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
