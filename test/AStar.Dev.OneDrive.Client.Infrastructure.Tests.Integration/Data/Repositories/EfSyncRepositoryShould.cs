@@ -13,12 +13,11 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
     {
         private readonly DbContextOptions<AppDbContext> _options;
         public TestDbContextFactory(DbContextOptions<AppDbContext> options) => _options = options;
-        public AppDbContext CreateDbContext() => new AppDbContext(_options);
+        public AppDbContext CreateDbContext() => new(_options);
     }
     // Remove shared context and repository fields
     private string _connectionString = null!;
     private SqliteConnection _connection = null!;
-
 
     public async ValueTask InitializeAsync()
     {
@@ -27,7 +26,7 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
         _connection = new SqliteConnection(_connectionString);
         await _connection.OpenAsync();
 
-        var options = new DbContextOptionsBuilder<AppDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite(_connection)
             .Options;
 
@@ -36,10 +35,7 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
         _ = await context.Database.EnsureCreatedAsync();
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        await _connection.DisposeAsync();
-    }
+    public async ValueTask DisposeAsync() => await _connection.DisposeAsync();
 
     [Fact]
     public async Task GetAllPendingDownloadsAsync_ReturnsAllPendingDownloads()
@@ -50,11 +46,11 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
         new DriveItemRecord("id2", "driveId2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-2), false, false),
         new DriveItemRecord("id3", "driveId3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow.AddHours(-1), false, false)
     ];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
-        var result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         var resultList = result.ToList();
         resultList.Count.ShouldBe(3);
         resultList.ShouldContain(i => i.Id == "id1");
@@ -71,11 +67,11 @@ TestDbContextFactory factory = new(options);
         new DriveItemRecord("id2", "driveId2", "folder", null, null, 0, DateTimeOffset.UtcNow, true, false),
         new DriveItemRecord("id3", "driveId3", "deleted.txt", null, null, 50, DateTimeOffset.UtcNow, false, true)
     ];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
-        var result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         var resultList = result.ToList();
         resultList.Count.ShouldBe(1);
         resultList[0].Id.ShouldBe("id1");
@@ -84,10 +80,10 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task GetAllPendingDownloadsAsync_ReturnsEmptyWhenNoPending()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
-        var result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         result.ShouldBeEmpty();
     }
 
@@ -100,11 +96,11 @@ TestDbContextFactory factory = new(options);
         new DriveItemRecord("id2", "driveId2", "oldest.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-5), false, false),
         new DriveItemRecord("id3", "driveId3", "middle.txt", null, null, 150, DateTimeOffset.UtcNow.AddHours(-2), false, false)
     ];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
-        var result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await repository.GetAllPendingDownloadsAsync(CancellationToken.None);
         var resultList = result.ToList();
         resultList[0].Id.ShouldBe("id2");
         resultList[1].Id.ShouldBe("id3");
@@ -115,22 +111,22 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task ReturnNullWhenNoDeltaTokenExists()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
-        var result = await repository.GetDeltaTokenAsync(CancellationToken.None);
+        DeltaToken? result = await repository.GetDeltaTokenAsync(CancellationToken.None);
         result.ShouldBeNull();
     }
 
     [Fact]
     public async Task SaveNewDeltaToken()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var token = new DeltaToken("token1", "deltaLink123", DateTimeOffset.UtcNow);
         await repository.SaveOrUpdateDeltaTokenAsync(token, CancellationToken.None);
-        var retrieved = await repository.GetDeltaTokenAsync(CancellationToken.None);
+        DeltaToken? retrieved = await repository.GetDeltaTokenAsync(CancellationToken.None);
         _ = retrieved.ShouldNotBeNull();
         retrieved.Id.ShouldBe("token1");
         retrieved.Token.ShouldBe("deltaLink123");
@@ -139,14 +135,14 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task UpdateExistingDeltaToken()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var original = new DeltaToken("token1", "deltaLink123", DateTimeOffset.UtcNow.AddHours(-1));
         await repository.SaveOrUpdateDeltaTokenAsync(original, CancellationToken.None);
         var updated = new DeltaToken("token1", "deltaLink456", DateTimeOffset.UtcNow);
         await repository.SaveOrUpdateDeltaTokenAsync(updated, CancellationToken.None);
-        var retrieved = await repository.GetDeltaTokenAsync(CancellationToken.None);
+        DeltaToken? retrieved = await repository.GetDeltaTokenAsync(CancellationToken.None);
         _ = retrieved.ShouldNotBeNull();
         retrieved.Token.ShouldBe("deltaLink456");
     }
@@ -154,14 +150,14 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task GetLatestDeltaTokenWhenMultipleExist()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var older = new DeltaToken("token1", "old", DateTimeOffset.UtcNow.AddHours(-2));
         var newer = new DeltaToken("token2", "new", DateTimeOffset.UtcNow);
         await repository.SaveOrUpdateDeltaTokenAsync(older, CancellationToken.None);
         await repository.SaveOrUpdateDeltaTokenAsync(newer, CancellationToken.None);
-        var result = await repository.GetDeltaTokenAsync(CancellationToken.None);
+        DeltaToken? result = await repository.GetDeltaTokenAsync(CancellationToken.None);
         _ = result.ShouldNotBeNull();
         result.Id.ShouldBe("token2");
         result.Token.ShouldBe("new");
@@ -180,12 +176,12 @@ TestDbContextFactory factory = new(options);
             new DriveItemRecord("id2", "driveId2", "file2.txt", "etag2", "ctag2", 200, DateTimeOffset.UtcNow, false, false)
         ];
 
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var allItems = await assertionContext.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
+        List<DriveItemRecord> allItems = await assertionContext.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
         allItems.Count.ShouldBe(2);
         allItems.ShouldContain(i => i.Id == "id1");
         allItems.ShouldContain(i => i.Id == "id2");
@@ -194,15 +190,15 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task UpdateExistingDriveItems()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var original = new DriveItemRecord("id1", "driveId1", "file1.txt", "etag1", "ctag1", 100, DateTimeOffset.UtcNow.AddHours(-1), false, false);
         await repository.ApplyDriveItemsAsync([original], CancellationToken.None);
         var updated = new DriveItemRecord("id1", "driveId1", "file1.txt", "etag2", "ctag2", 150, DateTimeOffset.UtcNow, false, false);
         await repository.ApplyDriveItemsAsync([updated], CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.DriveItems.FindAsync(["id1"], TestContext.Current.CancellationToken);
+        DriveItemRecord? result = await assertionContext.DriveItems.FindAsync(["id1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.ETag.ShouldBe("etag2");
         result.Size.ShouldBe(150);
@@ -213,19 +209,19 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task ApplyMixedNewAndExistingDriveItems()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var existing = new DriveItemRecord("id1", "driveId1", "file1.txt", "etag1", "ctag1", 100, DateTimeOffset.UtcNow.AddHours(-1), false, false);
         await repository.ApplyDriveItemsAsync([existing], CancellationToken.None);
-        var mixed = new[]
+        DriveItemRecord[] mixed = new[]
         {
             new DriveItemRecord("id1", "driveId1", "file1.txt", "etag2", "ctag2", 150, DateTimeOffset.UtcNow, false, false),
             new DriveItemRecord("id2", "driveId2", "file2.txt", "etag3", "ctag3", 200, DateTimeOffset.UtcNow, false, false)
         };
         await repository.ApplyDriveItemsAsync(mixed, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var allItems = await assertionContext.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
+        List<DriveItemRecord> allItems = await assertionContext.DriveItems.ToListAsync(TestContext.Current.CancellationToken);
         allItems.Count.ShouldBe(2);
         allItems.First(i => i.Id == "id1").ETag.ShouldBe("etag2");
     }
@@ -240,11 +236,11 @@ TestDbContextFactory factory = new(options);
             new DriveItemRecord("id3", "driveId3", "deleted.txt", null, null, 50, DateTimeOffset.UtcNow.AddHours(-1), false, true),
             new DriveItemRecord("id4", "driveId4", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
         ];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
-        var result = await repository.GetPendingDownloadsAsync(10, 0, CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await repository.GetPendingDownloadsAsync(10, 0, CancellationToken.None);
         var resultList = result.ToList();
         resultList.Count.ShouldBe(2);
         resultList.ShouldNotContain(i => i.IsFolder);
@@ -262,11 +258,11 @@ TestDbContextFactory factory = new(options);
             new DriveItemRecord("id2", "driveId2", "oldest.txt", null, null, 200, DateTimeOffset.UtcNow.AddHours(-5), false, false),
             new DriveItemRecord("id3", "driveId3", "middle.txt", null, null, 150, DateTimeOffset.UtcNow.AddHours(-2), false, false)
         ];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
-        var result = await repository.GetPendingDownloadsAsync(10, 0, CancellationToken.None);
+        IEnumerable<DriveItemRecord> result = await repository.GetPendingDownloadsAsync(10, 0, CancellationToken.None);
         var resultList = result.ToList();
         resultList[0].Id.ShouldBe("id2");
         resultList[1].Id.ShouldBe("id3");
@@ -277,12 +273,12 @@ TestDbContextFactory factory = new(options);
     public async Task GetPendingDownloadsSupportsPagination()
     {
         DriveItemRecord[] items = [.. Enumerable.Range(1, 10).Select(i => new DriveItemRecord($"id{i}", $"driveId{i}", $"file{i}.txt", null, null, i * 100, DateTimeOffset.UtcNow.AddHours(-i), false, false))];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
-        var page1 = await repository.GetPendingDownloadsAsync(3, 0, CancellationToken.None);
-        var page2 = await repository.GetPendingDownloadsAsync(3, 1, CancellationToken.None);
+        IEnumerable<DriveItemRecord> page1 = await repository.GetPendingDownloadsAsync(3, 0, CancellationToken.None);
+        IEnumerable<DriveItemRecord> page2 = await repository.GetPendingDownloadsAsync(3, 1, CancellationToken.None);
         page1.Count().ShouldBe(3);
         page2.Count().ShouldBe(3);
         page1.First().Id.ShouldBe("id10"); // oldest
@@ -298,8 +294,8 @@ TestDbContextFactory factory = new(options);
             new DriveItemRecord("id2", "driveId2", "folder", null, null, 0, DateTimeOffset.UtcNow, true, false),
             new DriveItemRecord("id3", "driveId3", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
         ];
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.ApplyDriveItemsAsync(items, CancellationToken.None);
         var count = await repository.GetPendingDownloadCountAsync(CancellationToken.None);
@@ -309,8 +305,8 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task GetPendingDownloadCountReturnsZeroWhenNoPendingDownloads()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var count = await repository.GetPendingDownloadCountAsync(CancellationToken.None);
         count.ShouldBe(0);
@@ -323,13 +319,13 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task AddNewLocalFileRecord()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var file = new LocalFileRecord("id1", "file1.txt", "hash123", 100, DateTimeOffset.UtcNow, SyncState.Downloaded);
         await repository.AddOrUpdateLocalFileAsync(file, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
+        LocalFileRecord? result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.RelativePath.ShouldBe("file1.txt");
         result.Hash.ShouldBe("hash123");
@@ -339,15 +335,15 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task UpdateExistingLocalFileRecord()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var original = new LocalFileRecord("id1", "file1.txt", "hash123", 100, DateTimeOffset.UtcNow.AddHours(-1), SyncState.PendingDownload);
         await repository.AddOrUpdateLocalFileAsync(original, CancellationToken.None);
         var updated = new LocalFileRecord("id1", "file1.txt", "hash456", 150, DateTimeOffset.UtcNow, SyncState.Downloaded);
         await repository.AddOrUpdateLocalFileAsync(updated, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
+        LocalFileRecord? result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.Hash.ShouldBe("hash456");
         result.Size.ShouldBe(150);
@@ -359,14 +355,14 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task MarkLocalFileStateCreatesNewRecordWhenDriveItemExists()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var driveItem = new DriveItemRecord("id1", "driveId1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         await repository.ApplyDriveItemsAsync([driveItem], CancellationToken.None);
         await repository.MarkLocalFileStateAsync("id1", SyncState.Downloaded, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
+        LocalFileRecord? result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.RelativePath.ShouldBe("file1.txt");
         result.SyncState.ShouldBe(SyncState.Downloaded);
@@ -376,8 +372,8 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task MarkLocalFileStateUpdatesExistingRecord()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var driveItem = new DriveItemRecord("id1", "driveId1", "file1.txt", null, null, 150, DateTimeOffset.UtcNow, false, false);
         await repository.ApplyDriveItemsAsync([driveItem], CancellationToken.None);
@@ -385,7 +381,7 @@ TestDbContextFactory factory = new(options);
         await repository.AddOrUpdateLocalFileAsync(localFile, CancellationToken.None);
         await repository.MarkLocalFileStateAsync("id1", SyncState.Downloaded, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
+        LocalFileRecord? result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.SyncState.ShouldBe(SyncState.Downloaded);
         result.Size.ShouldBe(150);
@@ -394,8 +390,8 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task MarkLocalFileStateDoesNothingWhenDriveItemNotFound()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         await repository.MarkLocalFileStateAsync("nonexistent", SyncState.Downloaded, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
@@ -406,21 +402,22 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task GetPendingUploadsReturnsOnlyPendingUploadFiles()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
-        var files = new[]
+        LocalFileRecord[] files = new[]
         {
             new LocalFileRecord("id1", "file1.txt", null, 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("id2", "file2.txt", null, 200, DateTimeOffset.UtcNow, SyncState.Downloaded),
             new LocalFileRecord("id3", "file3.txt", null, 150, DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("id4", "file4.txt", null, 250, DateTimeOffset.UtcNow, SyncState.Uploaded)
         };
-        foreach (var file in files)
+        foreach(LocalFileRecord? file in files)
         {
             await repository.AddOrUpdateLocalFileAsync(file, CancellationToken.None);
         }
-        var result = await repository.GetPendingUploadsAsync(10, CancellationToken.None);
+
+        IEnumerable<LocalFileRecord> result = await repository.GetPendingUploadsAsync(10, CancellationToken.None);
         var resultList = result.ToList();
         resultList.Count.ShouldBe(2);
         resultList.ShouldAllBe(f => f.SyncState == SyncState.PendingUpload);
@@ -429,15 +426,16 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task GetPendingUploadsRespectsLimit()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
-        var files = Enumerable.Range(1, 5).Select(i => new LocalFileRecord($"id{i}", $"file{i}.txt", null, i * 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)).ToArray();
-        foreach (var file in files)
+        LocalFileRecord[] files = Enumerable.Range(1, 5).Select(i => new LocalFileRecord($"id{i}", $"file{i}.txt", null, i * 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)).ToArray();
+        foreach(LocalFileRecord? file in files)
         {
             await repository.AddOrUpdateLocalFileAsync(file, CancellationToken.None);
         }
-        var result = await repository.GetPendingUploadsAsync(3, CancellationToken.None);
+
+        IEnumerable<LocalFileRecord> result = await repository.GetPendingUploadsAsync(3, CancellationToken.None);
         result.Count().ShouldBe(3);
     }
 
@@ -448,13 +446,13 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task LogNewTransfer()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var log = new TransferLog("log1", TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);
         await repository.LogTransferAsync(log, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
+        TransferLog? result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.Type.ShouldBe(TransferType.Download);
         result.Status.ShouldBe(TransferStatus.Pending);
@@ -463,15 +461,15 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task UpdateExistingTransferLog()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var original = new TransferLog("log1", TransferType.Download, "item1", DateTimeOffset.UtcNow.AddMinutes(-5), null, TransferStatus.InProgress, 1024, null);
         await repository.LogTransferAsync(original, CancellationToken.None);
         var updated = new TransferLog("log1", TransferType.Download, "item1", DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow, TransferStatus.Success, 2048, null);
         await repository.LogTransferAsync(updated, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
+        TransferLog? result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.Status.ShouldBe(TransferStatus.Success);
         _ = result.CompletedUtc.ShouldNotBeNull();
@@ -483,13 +481,13 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task LogTransferWithNullOptionalFields()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var log = new TransferLog("log1", TransferType.Upload, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);
         await repository.LogTransferAsync(log, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
+        TransferLog? result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         result.CompletedUtc.ShouldBeNull();
         result.BytesTransferred.ShouldBeNull();
@@ -499,14 +497,14 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task LogTransferWithAllFieldsPopulated()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
-        var now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
         var log = new TransferLog("log1", TransferType.Download, "item1", now.AddMinutes(-10), now, TransferStatus.Failed, 512, "Network timeout");
         await repository.LogTransferAsync(log, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
-        var result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
+        TransferLog? result = await assertionContext.TransferLogs.FindAsync(["log1"], TestContext.Current.CancellationToken);
         _ = result.ShouldNotBeNull();
         _ = result.CompletedUtc.ShouldNotBeNull();
         result.BytesTransferred.ShouldBe(512);
@@ -516,21 +514,22 @@ TestDbContextFactory factory = new(options);
     [Fact]
     public async Task LogMultipleTransferTypes()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
-TestDbContextFactory factory = new(options);
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options;
+        TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
-        var logs = new[]
+        TransferLog[] logs = new[]
         {
             new TransferLog("log1", TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null),
             new TransferLog("log2", TransferType.Upload, "item2", DateTimeOffset.UtcNow, null, TransferStatus.InProgress, null, null),
             new TransferLog("log3", TransferType.Delete, "item3", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, TransferStatus.Success, null, null)
         };
-        foreach (var log in logs)
+        foreach(TransferLog? log in logs)
         {
             await repository.LogTransferAsync(log, CancellationToken.None);
         }
+
         using var assertionContext = new AppDbContext(options);
-        var allLogs = await assertionContext.TransferLogs.ToListAsync(TestContext.Current.CancellationToken);
+        List<TransferLog> allLogs = await assertionContext.TransferLogs.ToListAsync(TestContext.Current.CancellationToken);
         allLogs.Count.ShouldBe(3);
         allLogs.ShouldContain(l => l.Type == TransferType.Download);
         allLogs.ShouldContain(l => l.Type == TransferType.Upload);

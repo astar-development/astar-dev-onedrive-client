@@ -16,7 +16,7 @@ public class UploadQueueConsumer : IUploadQueueConsumer
         {
             tasks.Add(Task.Run(async () =>
             {
-                await foreach (var item in reader.ReadAllAsync(cancellationToken))
+                await foreach (LocalFileRecord item in reader.ReadAllAsync(cancellationToken))
                 {
                     await processItemAsync(item);
                 }
