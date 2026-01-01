@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -10,16 +8,14 @@ namespace AStar.Dev.Source.Generators;
 [Generator]
 public sealed class ServiceRegistrationGenerator : IIncrementalGenerator
 {
-    private const string AttrFqn = "AStar.Dev.Source.Generators.Annotations.ServiceAttribute";
-
-    public void Initialize(IncrementalGeneratorInitializationContext ctx)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValuesProvider<INamedTypeSymbol?> classSyntax = CreateClassSyntaxProvider(ctx);
+        IncrementalValuesProvider<INamedTypeSymbol?> classSyntax = CreateClassSyntaxProvider(context);
         IncrementalValuesProvider<(INamedTypeSymbol sym, AttributeData? attr)> services = CreateServicesProvider(classSyntax);
         IncrementalValuesProvider<ServiceModel?> serviceModels = CreateServiceModelsProvider(services);
-        IncrementalValueProvider<(Compilation Left, ImmutableArray<ServiceModel?> Right)> combined = ctx.CompilationProvider.Combine(serviceModels.Collect());
+        IncrementalValueProvider<(Compilation Left, ImmutableArray<ServiceModel?> Right)> combined = context.CompilationProvider.Combine(serviceModels.Collect());
 
-        ctx.RegisterSourceOutput(combined, GenerateSource);
+        context.RegisterSourceOutput(combined, GenerateSource);
     }
 
     private static IncrementalValuesProvider<INamedTypeSymbol?> CreateClassSyntaxProvider(
@@ -44,7 +40,9 @@ public sealed class ServiceRegistrationGenerator : IIncrementalGenerator
             .Where(static t => t.attr is not null)!;
 
     private static AttributeData? FindServiceAttribute(INamedTypeSymbol symbol) => symbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == AttrFqn);
+        .FirstOrDefault(a =>
+            a.AttributeClass?.Name == "ServiceAttribute" ||
+            a.AttributeClass?.ToDisplayString().EndsWith(".ServiceAttribute") == true);
 
     private static IncrementalValuesProvider<ServiceModel?> CreateServiceModelsProvider(
         IncrementalValuesProvider<(INamedTypeSymbol sym, AttributeData? attr)> services) => services
@@ -78,7 +76,10 @@ public sealed class ServiceRegistrationGenerator : IIncrementalGenerator
             var asSelf = ExtractAsSelf(attr);
             INamedTypeSymbol? service = asType ?? InferServiceType(impl);
 
-            return new ServiceModel(
+            // Only skip if no service and not alsoAsSelf
+            return service is null && !asSelf
+                ? null
+                : new ServiceModel(
                 lifetime: lifetime,
                 implFqn: impl.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 serviceFqn: service?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
@@ -119,9 +120,7 @@ public sealed class ServiceRegistrationGenerator : IIncrementalGenerator
 
         private static INamedTypeSymbol? InferServiceType(INamedTypeSymbol impl)
         {
-            INamedTypeSymbol[] candidates = impl.AllInterfaces
-                .Where(IsEligibleServiceInterface)
-                .ToArray();
+            INamedTypeSymbol[] candidates = [.. impl.AllInterfaces.Where(IsEligibleServiceInterface)];
 
             return candidates.Length == 1 ? candidates[0] : null;
         }

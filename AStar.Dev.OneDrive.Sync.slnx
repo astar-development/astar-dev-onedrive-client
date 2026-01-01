@@ -13,12 +13,7 @@
   <Folder Name="/docs/Post-everything-recommendations/">
     <File Path="post-testing-recommendations.md" />
   </Folder>
-  <Folder Name="/src/">
-    <Project Path="src\AStar.Dev.OneDrive.Client.Core\AStar.Dev.OneDrive.Client.Core.csproj" />
-    <Project Path="src\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
-    <Project Path="src\AStar.Dev.OneDrive.Client.Services\AStar.Dev.OneDrive.Client.Services.csproj" />
-    <Project Path="src\AStar.Dev.OneDrive.Client\AStar.Dev.OneDrive.Client.csproj" />
-  </Folder>
+  <Folder Name="/src/" />
   <Folder Name="/src/nuget-packages/">
     <Project Path="src/nuget-packages/AStar.Dev.Functional.Extensions/AStar.Dev.Functional.Extensions.csproj" />
     <Project Path="src/nuget-packages/AStar.Dev.Logging.Extensions.Serilog/AStar.Dev.Logging.Extensions.Serilog.csproj" />
@@ -27,18 +22,25 @@
     <Project Path="src/nuget-packages/AStar.Dev.Source.Generators/AStar.Dev.Source.Generators.csproj" />
     <Project Path="src/nuget-packages/AStar.Dev.Utilities/AStar.Dev.Utilities.csproj" />
   </Folder>
-  <Folder Name="/test/">
-    <Project Path="test/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.csproj" />
-    <Project Path="test/AStar.Dev.OneDrive.Client.Tests.Unit/AStar.Dev.OneDrive.Client.Tests.Unit.csproj" />
-    <Project Path="test\AStar.Dev.OneDrive.Client.Core.Tests.Unit\AStar.Dev.OneDrive.Client.Core.Tests.Unit.csproj" />
-    <Project Path="test\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.csproj" />
-    <Project Path="test\AStar.Dev.OneDrive.Client.Services.Tests.Unit\AStar.Dev.OneDrive.Client.Services.Tests.Unit.csproj" />
+  <Folder Name="/src/onedrive-client/">
+    <Project Path="src\AStar.Dev.OneDrive.Client.Core\AStar.Dev.OneDrive.Client.Core.csproj" />
+    <Project Path="src\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
+    <Project Path="src\AStar.Dev.OneDrive.Client.Services\AStar.Dev.OneDrive.Client.Services.csproj" />
+    <Project Path="src\AStar.Dev.OneDrive.Client\AStar.Dev.OneDrive.Client.csproj" />
   </Folder>
+  <Folder Name="/test/" />
   <Folder Name="/test/nuget-packages/">
     <Project Path="test/nuget-packages/AStar.Dev.Functional.Extensions.Tests.Unit/AStar.Dev.Functional.Extensions.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Tests.Unit/AStar.Dev.Logging.Extensions.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Source.Generators.Tests/AStar.Dev.Source.Generators.Tests.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Utilities.Tests.Unit/AStar.Dev.Utilities.Tests.Unit.csproj" />
+  </Folder>
+  <Folder Name="/test/onedrive-client/">
+    <Project Path="test/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration/AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.csproj" />
+    <Project Path="test/AStar.Dev.OneDrive.Client.Tests.Unit/AStar.Dev.OneDrive.Client.Tests.Unit.csproj" />
+    <Project Path="test\AStar.Dev.OneDrive.Client.Core.Tests.Unit\AStar.Dev.OneDrive.Client.Core.Tests.Unit.csproj" />
+    <Project Path="test\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit\AStar.Dev.OneDrive.Client.Infrastructure.Tests.Unit.csproj" />
+    <Project Path="test\AStar.Dev.OneDrive.Client.Services.Tests.Unit\AStar.Dev.OneDrive.Client.Services.Tests.Unit.csproj" />
   </Folder>
 </Solution>

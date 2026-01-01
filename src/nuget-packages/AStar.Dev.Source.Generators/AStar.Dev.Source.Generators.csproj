@@ -1,25 +1,42 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <LangVersion>preview</LangVersion>
+        <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
-        <ImplicitUsings>false</ImplicitUsings>
-        <!-- Ensures the generator is using the recommended rules created by the .NET team -->
+		<LangVersion>latest</LangVersion>
+
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-        <!-- Generators shouldn't produce a DLL for runtime consumption -->
-        <IncludeBuildOutput>false</IncludeBuildOutput>
-        <!-- Enables debugging -->
         <IsRoslynComponent>true</IsRoslynComponent>
-        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+        <RootNamespace>AStar.Dev.Source.Generators</RootNamespace>
+        <PackageId>AStar.Dev.Source.Generators</PackageId>
+        <!-- When packing this project, include outputs of referenced projects (attributes) into the same nupkg -->
+        <IncludeReferencedProjects>true</IncludeReferencedProjects>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+        <!-- Package metadata -->
+        <Version>0.1.0</Version>
+        <Authors>AStar Development, Jason Barden</Authors>
+        <Company>AStar Development</Company>
+        <Description>Source generators and supporting attribute types for AStar.Dev projects.</Description>
+        <PackageTags>source-generator;strongid;attributes;astartools</PackageTags>
+        <PackageProjectUrl>https://example.com/AStar.Dev.Source.Generators</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/your-org/SourceGenerators1111</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageReleaseNotes>Initial 0.1.0 release.</PackageReleaseNotes>
+        <RepositoryBranch>main</RepositoryBranch>
     </PropertyGroup>
 
     <ItemGroup>
-        <!-- Pin these to versions matching your VS/Roslyn. 4.10.x works well with VS 2022 17.10+. -->
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\AStar.Dev.Source.Generators.Annotations\AStar.Dev.Source.Generators.Annotations.csproj" />
-    </ItemGroup>
+
 </Project>

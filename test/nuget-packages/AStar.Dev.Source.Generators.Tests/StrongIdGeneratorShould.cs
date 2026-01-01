@@ -1,69 +1,121 @@
-using System;
+using AStar.Dev.Source.Generators.Tests.Utilitites;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace AStar.Dev.Source.Generators.Tests;
 
 public class StrongIdGeneratorShould
 {
     [Fact]
-    public void CreateStringBasedIdWithValidValue()
+    public void GeneratePartialStructWithIdPropertyWithTypeOfIntWhenSpecifiedForValidReadonlyRecordStruct()
     {
-        var id = new UserId("user123");
+        const string input = @"using AStar.Dev.Source.Generators.Attributes;
+namespace TestNamespace
+{
+    [StrongId(typeof(int))]
+    public readonly partial record struct MyId { }
+}";
 
-        id.Value.ShouldBe("user123");
-        string implicitValue = id;
-        implicitValue.ShouldBe("user123");
-        id.ToString().ShouldBe("user123");
+        CSharpCompilation compilation = CompilationHelpers.CreateCompilation(input);
+
+        var generator = new StrongIdGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
+        GeneratorDriverRunResult result = driver.GetRunResult();
+        var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
+        GeneratedSourceResult generated = allGenerated.FirstOrDefault(x => x.HintName.Contains("MyId"));
+        generated.Equals(default(GeneratedSourceResult)).ShouldBeFalse();
+        var generatedText = generated.SourceText.ToString();
+        generatedText.ShouldContain("public readonly partial record struct MyId(System.Int32 Id)");
     }
 
     [Fact]
-    public void RejectNullOrWhitespaceStringId()
+    public void GeneratePartialStructWithIdPropertyWithTypeOfStringWhenSpecifiedForValidReadonlyRecordStruct()
     {
-        _ = Should.Throw<ArgumentException>(() => new UserId(null!));
-        _ = Should.Throw<ArgumentException>(() => new UserId(""));
-        _ = Should.Throw<ArgumentException>(() => new UserId("   "));
+        const string input = @"using AStar.Dev.Source.Generators.Attributes;
+namespace TestNamespace
+{
+    [StrongId(typeof(string))]
+    public readonly partial record struct MyId { }
+}";
+
+        CSharpCompilation compilation = CompilationHelpers.CreateCompilation(input);
+
+        var generator = new StrongIdGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
+        GeneratorDriverRunResult result = driver.GetRunResult();
+        var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
+        GeneratedSourceResult generated = allGenerated.FirstOrDefault(x => x.HintName.Contains("MyId"));
+        generated.Equals(default(GeneratedSourceResult)).ShouldBeFalse();
+        var generatedText = generated.SourceText.ToString();
+        generatedText.ShouldContain("public readonly partial record struct MyId(System.String Id)");
     }
 
     [Fact]
-    public void CreateIntBasedIdWithValidValue()
+    public void GeneratePartialStructWithIdPropertyWithTypeOfGuidWhenSpecifiedForValidReadonlyRecordStruct()
     {
-        var id = new OrderId(42);
+        const string input = @"using AStar.Dev.Source.Generators.Attributes;
+namespace TestNamespace
+{
+    [StrongId(typeof(Guid))]
+    public readonly partial record struct MyId { }
+}";
 
-        id.Value.ShouldBe(42);
-        int implicitValue = id;
-        implicitValue.ShouldBe(42);
-        id.ToString().ShouldBe("42");
+        CSharpCompilation compilation = CompilationHelpers.CreateCompilation(input);
+
+        var generator = new StrongIdGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
+        GeneratorDriverRunResult result = driver.GetRunResult();
+        var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
+        GeneratedSourceResult generated = allGenerated.FirstOrDefault(x => x.HintName.Contains("MyId"));
+        generated.Equals(default(GeneratedSourceResult)).ShouldBeFalse();
+        var generatedText = generated.SourceText.ToString();
+        generatedText.ShouldContain("public readonly partial record struct MyId(System.Guid Id)");
     }
 
     [Fact]
-    public void RejectZeroOrNegativeIntId()
+    public void GeneratePartialStructWithIdPropertyWithDefaultTypeOfGuidWhenNotSpecifiedForValidReadonlyRecordStruct()
     {
-        _ = Should.Throw<ArgumentException>(() => new OrderId(0));
-        _ = Should.Throw<ArgumentException>(() => new OrderId(-1));
-        _ = Should.Throw<ArgumentException>(() => new OrderId(-100));
+        const string input = @"using AStar.Dev.Source.Generators.Attributes;
+namespace TestNamespace
+{
+    [StrongId]
+    public readonly partial record struct MyId { }
+}";
+
+        CSharpCompilation compilation = CompilationHelpers.CreateCompilation(input);
+
+        var generator = new StrongIdGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
+        GeneratorDriverRunResult result = driver.GetRunResult();
+        var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
+        GeneratedSourceResult generated = allGenerated.FirstOrDefault(x => x.HintName.Contains("MyId"));
+        generated.Equals(default(GeneratedSourceResult)).ShouldBeFalse();
+        var generatedText = generated.SourceText.ToString();
+        generatedText.ShouldContain("public readonly partial record struct MyId(System.Guid Id);");
     }
 
     [Fact]
-    public void CreateGuidBasedIdWithValidValue()
+    public void DoesNotGenerate_ForNonReadonlyOrNonRecordStruct()
     {
-        var guid = Guid.NewGuid();
-        var id = new EntityId(guid);
+        const string input = @"using AStar.Dev.Source.Generators.Attributes;
+namespace TestNamespace
+{
+    [StrongId(typeof(int))]
+    public partial struct MyId { }
+}";
 
-        id.Value.ShouldBe(guid);
-        Guid implicitValue = id;
-        implicitValue.ShouldBe(guid);
-        id.ToString().ShouldBe(guid.ToString());
-    }
+        CSharpCompilation compilation = CompilationHelpers.CreateCompilation(input);
 
-    [Fact]
-    public void RejectEmptyGuidId() => Should.Throw<ArgumentException>(() => new EntityId(Guid.Empty));
-
-    [Fact]
-    public void CreateDriveIdWithValidString()
-    {
-        var id = new UserId("drive123");
-
-        id.Value.ShouldBe("drive123");
-        string implicitValue = id;
-        implicitValue.ShouldBe("drive123");
+        var generator = new StrongIdGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
+        GeneratorDriverRunResult result = driver.GetRunResult();
+        var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
+        GeneratedSourceResult generated = allGenerated.FirstOrDefault(x => x.HintName.Contains("MyId"));
+        generated.Equals(default(GeneratedSourceResult)).ShouldBeTrue();
     }
 }

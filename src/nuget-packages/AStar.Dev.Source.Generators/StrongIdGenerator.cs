@@ -1,82 +1,57 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace AStar.Dev.Source.Generators;
 
 [Generator]
-public sealed class StrongIdGenerator : IIncrementalGenerator
+public class StrongIdGenerator : IIncrementalGenerator
 {
-    private const string AttrFqn = "StrongIdAttribute";
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValuesProvider<StrongIdModel> candidates = CreateStrongIdModelProvider(context);
-        IncrementalValueProvider<ImmutableArray<StrongIdModel>> models = candidates
-            .WithComparer(StrongIdModelEqualityComparer.Instance)
+        // Find all readonly partial record structs with attributes
+        IncrementalValueProvider<ImmutableArray<RecordDeclarationSyntax>> recordStructs = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (s, _) => s is RecordDeclarationSyntax rec && rec.ClassOrStructKeyword.IsKind(SyntaxKind.StructKeyword),
+                transform: static (ctx, _) => (RecordDeclarationSyntax)ctx.Node)
+            .Where(static rds => rds.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword)) &&
+                                 rds.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)) &&
+                                 rds.AttributeLists.Count > 0)
             .Collect();
 
-        context.RegisterSourceOutput(models, GenerateStrongIdSources);
-    }
-
-    private static IncrementalValuesProvider<StrongIdModel> CreateStrongIdModelProvider(
-        IncrementalGeneratorInitializationContext ctx) => ctx.SyntaxProvider.ForAttributeWithMetadataName(
-            fullyQualifiedMetadataName: AttrFqn,
-            predicate: static (node, _) => IsPartialStructCandidate(node),
-            transform: static (syntaxCtx, _) => StrongIdModel.Create(syntaxCtx));
-
-    private static bool IsPartialStructCandidate(SyntaxNode node) => node is StructDeclarationSyntax s &&
-               s.Modifiers.Any(m => m.Text == "partial");
-
-    private static void GenerateStrongIdSources(SourceProductionContext spc, ImmutableArray<StrongIdModel> batch)
-    {
-        foreach(StrongIdModel? model in batch)
+        context.RegisterSourceOutput(context.CompilationProvider.Combine(recordStructs), static (spc, source) =>
         {
-            var code = StrongIdCodeGenerator.Generate(model);
-            spc.AddSource($"{model.Name}.StrongId.g.cs", code);
-        }
-    }
+            (Compilation? compilation, ImmutableArray<RecordDeclarationSyntax> structs) = source;
+            // Cache attribute symbol lookup
+            INamedTypeSymbol? strongIdAttrSymbol = compilation.GetTypeByMetadataName("AStar.Dev.Source.Generators.Attributes.StrongIdAttribute");
+            if(strongIdAttrSymbol == null)
+                return;
 
-    internal sealed class StrongIdModel(string? ns, string name, Accessibility accessibility, string underlyingTypeDisplay)
-    {
-        public string? Namespace { get; } = ns;
-        public string Name { get; } = name;
-        public Accessibility Accessibility { get; } = accessibility;
-        public string UnderlyingTypeDisplay { get; } = underlyingTypeDisplay;
+            foreach(RecordDeclarationSyntax? recordStruct in structs)
+            {
+                SemanticModel model = compilation.GetSemanticModel(recordStruct.SyntaxTree);
+                if(model.GetDeclaredSymbol(recordStruct) is not INamedTypeSymbol symbol)
+                    continue;
 
-        public static StrongIdModel Create(GeneratorAttributeSyntaxContext syntaxCtx)
-        {
-            var symbol = (INamedTypeSymbol)syntaxCtx.TargetSymbol;
-            AttributeData attr = syntaxCtx.Attributes[0];
+                AttributeData? attr = symbol.GetAttributes().FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, strongIdAttrSymbol));
+                if(attr == null)
+                    continue;
 
-            var underlyingType = ExtractUnderlyingType(attr);
-            var ns = GetNamespace(symbol);
+                // Only allow 0 or 1 constructor argument
+                if(attr.ConstructorArguments.Length > 1)
+                    continue;
 
-            return new StrongIdModel(ns, symbol.Name, symbol.DeclaredAccessibility, underlyingType);
-        }
-
-        private static string ExtractUnderlyingType(AttributeData attr) => attr.ConstructorArguments.Length == 1
-                ? (attr.ConstructorArguments[0].Value?.ToString() ?? "System.Guid")
-                : "System.Guid";
-
-        private static string? GetNamespace(INamedTypeSymbol symbol) => symbol.ContainingNamespace.IsGlobalNamespace
-                ? null
-                : symbol.ContainingNamespace.ToDisplayString();
-    }
-
-    internal sealed class StrongIdModelEqualityComparer : IEqualityComparer<StrongIdModel>
-    {
-        public static readonly StrongIdModelEqualityComparer Instance = new();
-
-        public bool Equals(StrongIdModel? x, StrongIdModel? y)
-            => ReferenceEquals(x, y) || (x is not null && y is not null && string.Equals(x.Namespace, y.Namespace, StringComparison.Ordinal) &&
-                   string.Equals(x.Name, y.Name, StringComparison.Ordinal) &&
-                   string.Equals(x.UnderlyingTypeDisplay, y.UnderlyingTypeDisplay, StringComparison.Ordinal) &&
-                   x.Accessibility == y.Accessibility);
-
-        public int GetHashCode(StrongIdModel obj) => (obj.Namespace, obj.Name, obj.UnderlyingTypeDisplay, obj.Accessibility).GetHashCode();
+                // Use StrongIdModel logic for underlying type
+                var underlyingType = StrongIdModelExtensions.CreateUnderlyingTypeFromAttribute(attr);
+                var ns = symbol.ContainingNamespace.IsGlobalNamespace ? null : symbol.ContainingNamespace.ToDisplayString();
+                var modelObj = new StrongIdModel(ns, symbol.Name, symbol.DeclaredAccessibility, underlyingType);
+                var code = StrongIdCodeGenerator.Generate(modelObj);
+                spc.AddSource($"{modelObj.Name}_StrongId.g.cs", SourceText.From(code, Encoding.UTF8));
+            }
+        });
     }
 }

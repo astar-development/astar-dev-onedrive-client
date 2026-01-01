@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,7 +59,7 @@ internal static class ServiceCollectionCodeGenerator
         _ = sb.AppendLine();
         _ = sb.AppendLine("public static class GeneratedServiceCollectionExtensions");
         _ = sb.AppendLine("{");
-        _ = sb.AppendLine("    public static IServiceCollection AddGeneratedServices(this IServiceCollection s)");
+        _ = sb.AppendLine("    public static IServiceCollection AddAnnotatedServices(this IServiceCollection s)");
         _ = sb.AppendLine("    {");
 
         foreach(var registration in registrations)

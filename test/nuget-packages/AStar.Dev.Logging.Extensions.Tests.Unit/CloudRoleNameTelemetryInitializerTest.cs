@@ -31,7 +31,7 @@ public class CloudRoleNameTelemetryInitializerTest
         var instrumentationKey   = "TestKey";
         var telemetryInitializer = new CloudRoleNameTelemetryInitializer(roleName, instrumentationKey);
 
-        Exception exception = Record.Exception(() => telemetryInitializer.Initialize(null!));
+        Exception exception = Record.Exception(() => telemetryInitializer.Initialize(null!))!;
         exception.ShouldBeNull();
     }
 
