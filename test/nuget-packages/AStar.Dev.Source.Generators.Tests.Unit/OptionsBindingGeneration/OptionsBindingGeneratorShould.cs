@@ -2,11 +2,10 @@
 using AStar.Dev.Source.Generators.Tests.Unit.Utilitites;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace AStar.Dev.Source.Generators.Tests.Unit.OptionsBindingGeneration;
 
-public class OptionsBindingGeneratorShould(ITestOutputHelper output)
+public class OptionsBindingGeneratorShould
 {
     [Fact]
     public void GenerateRegistrationForClassWithAttributeSectionName()
@@ -25,26 +24,6 @@ namespace TestNamespace
         driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
         GeneratorDriverRunResult result = driver.GetRunResult();
         var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
-        foreach(SyntaxTree tree in compilation.SyntaxTrees)
-        {
-            SemanticModel model = compilation.GetSemanticModel(tree);
-            foreach(TypeDeclarationSyntax node in tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes().OfType<TypeDeclarationSyntax>())
-            {
-                INamedTypeSymbol? symbol = model.GetDeclaredSymbol(node,TestContext.Current.CancellationToken);
-                if(symbol != null)
-                {
-                    output.WriteLine($"Type: {symbol.ToDisplayString()}");
-                    foreach(AttributeData attr in symbol.GetAttributes())
-                    {
-                        output.WriteLine($"Attribute: {attr.AttributeClass?.ToDisplayString()}");
-                        if(attr.ConstructorArguments.Length > 0)
-                        {
-                            output.WriteLine($"  Arg0: {attr.ConstructorArguments[0].Value}");
-                        }
-                    }
-                }
-            }
-        }
 
         GeneratedSourceResult generated = allGenerated.FirstOrDefault(x => x.HintName.Contains("AutoOptionsRegistrationExtensions"));
         generated.Equals(default(GeneratedSourceResult)).ShouldBeFalse();
