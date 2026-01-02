@@ -1,8 +1,9 @@
-using AStar.Dev.Source.Generators.Tests.Utilitites;
+using AStar.Dev.Source.Generators.StrongIdCodeGeneration;
+using AStar.Dev.Source.Generators.Tests.Unit.Utilitites;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace AStar.Dev.Source.Generators.Tests;
+namespace AStar.Dev.Source.Generators.Tests.Unit.StrongIdCodeGeneration;
 
 public class StrongIdGeneratorShould
 {

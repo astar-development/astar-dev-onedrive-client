@@ -2,7 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace AStar.Dev.Source.Generators.Tests.Utilitites;
+namespace AStar.Dev.Source.Generators.Tests.Unit.Utilitites;
 
 internal static class CompilationHelpers
 {

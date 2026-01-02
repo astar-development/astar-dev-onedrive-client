@@ -1,19 +1,15 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace AStar.Dev.Source.Generators;
 
 internal static class OptionsBindingCodeGenerator
 {
-    public static string Generate(
-        OptionsBindingGenerator.OptionsModel model,
-        Dictionary<string, Dictionary<string, OptionsBindingGenerator.SchemaEntry>> schema)
+    public static string Generate(OptionsModel model, Dictionary<string, Dictionary<string, OptionsBindingGenerator.SchemaEntry>> schema)
     {
         var sb = new StringBuilder();
         AppendFileHeader(sb);
-        AppendNamespace(sb, model.Namespace);
         AppendUsings(sb);
+        AppendNamespace(sb, model.Namespace);
 
         Dictionary<string, OptionsBindingGenerator.SchemaEntry> sectionMap = GetSectionMap(schema, model.SectionName);
 
@@ -51,7 +47,7 @@ internal static class OptionsBindingCodeGenerator
 
     private static void AppendRegistrationClass(
         StringBuilder sb,
-        OptionsBindingGenerator.OptionsModel model,
+        OptionsModel model,
         Dictionary<string, OptionsBindingGenerator.SchemaEntry> sectionMap)
     {
         _ = sb.AppendLine($"public static class {model.TypeName}OptionsRegistration");
@@ -62,7 +58,7 @@ internal static class OptionsBindingCodeGenerator
 
     private static void AppendRegistrationMethod(
         StringBuilder sb,
-        OptionsBindingGenerator.OptionsModel model,
+        OptionsModel model,
         Dictionary<string, OptionsBindingGenerator.SchemaEntry> sectionMap)
     {
         _ = sb.AppendLine($"    public static IServiceCollection Add{model.TypeName}(this IServiceCollection s, IConfiguration cfg)");
@@ -77,7 +73,7 @@ internal static class OptionsBindingCodeGenerator
         _ = sb.AppendLine("    }");
     }
 
-    private static void AppendConfigurationBinding(StringBuilder sb, OptionsBindingGenerator.OptionsModel model)
+    private static void AppendConfigurationBinding(StringBuilder sb, OptionsModel model)
     {
         var escapedSection = StringEscaper.Escape(model.SectionName);
         _ = sb.AppendLine($"        var section = cfg.GetSection(\"{escapedSection}\");");
@@ -86,7 +82,7 @@ internal static class OptionsBindingCodeGenerator
 
     private static void AppendDefaultAssignments(
         StringBuilder sb,
-        OptionsBindingGenerator.OptionsModel model,
+        OptionsModel model,
         Dictionary<string, OptionsBindingGenerator.SchemaEntry> sectionMap)
     {
         foreach(OptionsBindingGenerator.PropModel prop in model.Properties)
@@ -103,7 +99,7 @@ internal static class OptionsBindingCodeGenerator
 
     private static void AppendValidation(
         StringBuilder sb,
-        OptionsBindingGenerator.OptionsModel model,
+        OptionsModel model,
         Dictionary<string, OptionsBindingGenerator.SchemaEntry> sectionMap)
     {
         _ = sb.AppendLine("        var results = new List<ValidationResult>();");
@@ -117,7 +113,7 @@ internal static class OptionsBindingCodeGenerator
 
     private static void AppendSchemaRequiredChecks(
         StringBuilder sb,
-        OptionsBindingGenerator.OptionsModel model,
+        OptionsModel model,
         Dictionary<string, OptionsBindingGenerator.SchemaEntry> sectionMap)
     {
         foreach(OptionsBindingGenerator.PropModel prop in model.Properties)
@@ -131,5 +127,5 @@ internal static class OptionsBindingCodeGenerator
         }
     }
 
-    private static void AppendServiceRegistration(StringBuilder sb, OptionsBindingGenerator.OptionsModel model) => _ = sb.AppendLine($"        s.Configure<{model.TypeName}>(section);");
+    private static void AppendServiceRegistration(StringBuilder sb, OptionsModel model) => _ = sb.AppendLine($"        s.Configure<{model.TypeName}>(section);");
 }

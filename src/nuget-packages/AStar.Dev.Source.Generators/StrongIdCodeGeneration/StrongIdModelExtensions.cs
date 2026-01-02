@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace AStar.Dev.Source.Generators;
+namespace AStar.Dev.Source.Generators.StrongIdCodeGeneration;
 
 public static partial class StrongIdModelExtensions
 {

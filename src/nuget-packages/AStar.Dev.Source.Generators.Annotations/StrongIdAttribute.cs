@@ -4,8 +4,8 @@ namespace AStar.Dev.Source.Generators.Annotations;
 public sealed class StrongIdAttribute(Type underlying) : Attribute
 {
     /// <summary>
-    /// Underlying CLR type. Defaults to System.Guid.
-    /// Examples: "System.Guid", "int", "long", "string".
+    /// Underlying CLR type. Defaults to Guid.
+    /// Examples: "Guid", "int", "long", "string".
     /// </summary>
     public Type Underlying { get; } = underlying;
 

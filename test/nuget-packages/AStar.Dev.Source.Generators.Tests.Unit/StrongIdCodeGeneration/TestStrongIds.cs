@@ -1,6 +1,6 @@
 using AStar.Dev.Source.Generators.Annotations;
 
-namespace AStar.Dev.Source.Generators.Tests;
+namespace AStar.Dev.Source.Generators.Tests.Unit.StrongIdCodeGeneration;
 
 // Test StrongId types used by the unit tests
 [StrongId(typeof(string))]

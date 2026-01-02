@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace AStar.Dev.Source.Generators;
+namespace AStar.Dev.Source.Generators.ServiceRegistrationGeneration;
 
 internal static class ServiceCollectionCodeGenerator
 {

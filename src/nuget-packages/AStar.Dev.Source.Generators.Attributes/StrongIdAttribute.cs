@@ -1,5 +1,3 @@
-using System;
-
 namespace AStar.Dev.Source.Generators.Attributes;
 
 /// <summary>
@@ -14,7 +12,7 @@ namespace AStar.Dev.Source.Generators.Attributes;
 public sealed class StrongIdAttribute(Type? idType = null) : Attribute
 {
     /// <summary>
-    /// The type of the ID property (e.g., typeof(Guid), typeof(int)).
+    /// The type of the ID property (e.g., typeof(Guid), typeof(int), typeof(string)). Other types are not supported at the moment.
     /// </summary>
     public Type IdType { get; } = idType ?? typeof(Guid);
 }

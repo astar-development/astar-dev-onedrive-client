@@ -1,14 +1,14 @@
 ﻿using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace AStar.Dev.Source.Generators;
+namespace AStar.Dev.Source.Generators.StrongIdCodeGeneration;
 
 [Generator]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1038:Compiler extensions should be implemented in assemblies with compiler-provided references", Justification = "<Pending>")]
 public class StrongIdGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -50,7 +50,7 @@ public class StrongIdGenerator : IIncrementalGenerator
                 var ns = symbol.ContainingNamespace.IsGlobalNamespace ? null : symbol.ContainingNamespace.ToDisplayString();
                 var modelObj = new StrongIdModel(ns, symbol.Name, symbol.DeclaredAccessibility, underlyingType);
                 var code = StrongIdCodeGenerator.Generate(modelObj);
-                spc.AddSource($"{modelObj.Name}_StrongId.g.cs", SourceText.From(code, Encoding.UTF8));
+                spc.AddSource($"{modelObj.ModelName}_StrongId.g.cs", SourceText.From(code, Encoding.UTF8));
             }
         });
     }

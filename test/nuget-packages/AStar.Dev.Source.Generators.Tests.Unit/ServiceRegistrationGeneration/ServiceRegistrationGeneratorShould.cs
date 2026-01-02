@@ -1,7 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using AStar.Dev.Source.Generators.ServiceRegistrationGeneration;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace AStar.Dev.Source.Generators.Tests;
+namespace AStar.Dev.Source.Generators.Tests.Unit.ServiceRegistrationGeneration;
 
 public class ServiceRegistrationGeneratorShould
 {

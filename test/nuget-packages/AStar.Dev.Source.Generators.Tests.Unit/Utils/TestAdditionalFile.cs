@@ -2,7 +2,7 @@ using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
-namespace AStar.Dev.Source.Generators.Tests.Utils;
+namespace AStar.Dev.Source.Generators.Tests.Unit.Utils;
 
 public class TestAdditionalFile : AdditionalText
 {
