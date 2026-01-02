@@ -5,6 +5,7 @@ Yes, you can automate `IOptions<T>` registrations using a Source Generator. The 
 1. **Define a Custom Attribute**
    - Create an attribute (e.g., `[AutoRegisterOptions]`) to mark settings classes for automatic registration.
    - Allow specifying the configuration section name if needed.
+   - When the Section name is not provided, use the convention of a static string property called SectionName in the Options class.
 
 2. **Implement the Source Generator**
    - Scan the compilation for types decorated with your custom attribute.

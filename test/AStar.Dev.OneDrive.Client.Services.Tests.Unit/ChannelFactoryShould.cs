@@ -1,6 +1,5 @@
 using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Entities;
-using AStar.Dev.OneDrive.Client.Services;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 

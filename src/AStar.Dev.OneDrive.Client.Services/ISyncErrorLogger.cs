@@ -1,5 +1,3 @@
-using System;
-
 namespace AStar.Dev.OneDrive.Client.Services;
 
 /// <summary>

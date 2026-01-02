@@ -1,6 +1,3 @@
-using System;
-using AStar.Dev.OneDrive.Client.Core.Entities;
-
 namespace AStar.Dev.OneDrive.Client.Services;
 
 /// <summary>

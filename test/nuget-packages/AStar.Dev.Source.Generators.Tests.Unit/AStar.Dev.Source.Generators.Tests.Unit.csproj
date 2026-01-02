@@ -24,7 +24,7 @@
 	</ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators.Annotations\AStar.Dev.Source.Generators.Annotations.csproj" />
+      <ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators.Attributes\AStar.Dev.Source.Generators.Attributes.csproj" />
       <ProjectReference Include="..\..\..\src\nuget-packages\AStar.Dev.Source.Generators\AStar.Dev.Source.Generators.csproj" />
     </ItemGroup>
 

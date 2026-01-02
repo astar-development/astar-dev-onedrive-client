@@ -9,9 +9,11 @@
     <File Path=".vscode\tasks.json" />
   </Folder>
   <Folder Name="/docs/">
-    <File Path="option-binding-plan.md" />
+    <File Path="docs/option-binding-plan.md" />
   </Folder>
-  <Folder Name="/docs/architecture/" />
+  <Folder Name="/docs/architecture/">
+    <File Path="docs/architecture/Dependency-Flow-Diagram.md" />
+  </Folder>
   <Folder Name="/docs/Post-everything-recommendations/">
     <File Path="post-testing-recommendations.md" />
   </Folder>
