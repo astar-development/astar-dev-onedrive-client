@@ -2,6 +2,7 @@ using System.Reactive.Subjects;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.Services.Syncronisation;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.Theme;
 using AStar.Dev.OneDrive.Client.ViewModels;
@@ -37,7 +38,8 @@ public class MainWindowCoordinatorShould
         mockSettings.Load().Returns(new UserPreferences());
         mockSync.Progress.Returns(new Subject<SyncProgress>());
         mockTransfer.Progress.Returns(new Subject<SyncProgress>());
-        return new MainWindowViewModel(syncCommandService, mockSync, mockRepo, mockTransfer, mockSettings, authService);
+        ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(mockSync, mockRepo, mockTransfer);
+        return new MainWindowViewModel(syncCommandService, syncCoordinator, mockSettings, authService);
     }
 
     [Fact]

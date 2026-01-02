@@ -3,6 +3,7 @@ using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.Services.Syncronisation;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.ViewModels;
 
@@ -153,7 +154,8 @@ public class AutoSaveServiceShould
         settings.Load().Returns(new UserPreferences());
         sync.Progress.Returns(new Subject<SyncProgress>());
         transfer.Progress.Returns(new Subject<SyncProgress>());
+        ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(sync, repo, transfer);
 
-        return new MainWindowViewModel(syncCommandService, sync, repo, transfer, settings, authService);
+        return new MainWindowViewModel(syncCommandService, syncCoordinator, settings, authService);
     }
 }

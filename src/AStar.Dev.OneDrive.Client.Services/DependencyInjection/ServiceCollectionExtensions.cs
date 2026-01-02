@@ -2,6 +2,7 @@
 using System.IO.Abstractions;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.Services.Syncronisation;
 using AStar.Dev.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,7 @@ public static class ServiceCollectionExtensions
         _ = services.AddSingleton<ISyncEngine>(sp => sp.GetRequiredService<SyncEngine>());
         _ = services.AddSingleton<ITransferService>(sp => sp.GetRequiredService<TransferService>());
         _ = services.AddSingleton<IHealthCheckService, ApplicationHealthCheckService>();
+        _ = services.AddSingleton<ISyncronisationCoordinator, SyncronisationCoordinator>();
 
         // Register supporting abstractions for DI
         _ = services.AddSingleton<SyncProgressReporter>();

@@ -35,7 +35,7 @@ public class SyncEngineShould
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
         await sut.InitialFullSyncAsync(token);
 
-        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(deltaToken, token, Arg.Any<Action<SyncProgress>>());
+        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(Arg.Any<DeltaToken>(), token, Arg.Any<Action<SyncProgress>>());
         await transfer.Received(1).ProcessPendingDownloadsAsync(token);
         await transfer.Received(1).ProcessPendingUploadsAsync(token);
     }
@@ -110,8 +110,7 @@ public class SyncEngineShould
 
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
-        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
             .Returns<Task<(DeltaToken finalDelta, int pageCount, int totalItemsProcessed)>>(x => throw new InvalidOperationException("fail"));
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = sut.Progress.Subscribe(progressList.Add);

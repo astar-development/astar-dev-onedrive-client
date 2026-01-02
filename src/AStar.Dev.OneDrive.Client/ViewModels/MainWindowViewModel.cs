@@ -6,6 +6,7 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.Services.Syncronisation;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using ReactiveUI;
 
@@ -13,8 +14,7 @@ namespace AStar.Dev.OneDrive.Client.ViewModels;
 
 public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatusTarget
 {
-    private readonly ISyncEngine _sync;
-    private readonly ISyncRepository _repo;
+    private readonly ISyncronisationCoordinator _syncCoordinator;
     private readonly CompositeDisposable _disposables = [];
 
     public ReactiveCommand<Unit, Unit> SignInCommand { get; }
@@ -39,11 +39,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 
     private const int MaxRecentTransfers = 15;
 
-    public MainWindowViewModel(ISyncCommandService syncCommandService, ISyncEngine sync, ISyncRepository repo, ITransferService transfer,
+    public MainWindowViewModel(ISyncCommandService syncCommandService, ISyncronisationCoordinator syncCoordinator,
       ISettingsAndPreferencesService settingsAndPreferencesService, IAuthService authService)
     {
-        _sync = sync;
-        _repo = repo;
+        _syncCoordinator = syncCoordinator;
         UserPreferences = settingsAndPreferencesService.Load();
         SignedIn = authService.IsUserSignedInAsync(CancellationToken.None).GetAwaiter().GetResult();
         IObservable<bool> isSyncing = this.WhenAnyValue(x => x.OperationType)
@@ -51,7 +50,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 
         SignInCommand = syncCommandService.CreateSignInCommand(this);
         InitialSyncCommand = syncCommandService.CreateInitialSyncCommand(this, isSyncing);
-        DeltaToken? fullSync = _sync.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
+        DeltaToken? fullSync = _syncCoordinator.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
         IncrementalSyncCommand = syncCommandService.CreateIncrementalSyncCommand(fullSync ?? new DeltaToken(string.Empty, string.Empty, DateTimeOffset.MinValue), this, isSyncing);
         CancelSyncCommand = syncCommandService.CreateCancelSyncCommand(this, isSyncing);
         ScanLocalFilesCommand = syncCommandService.CreateScanLocalFilesCommand(this, isSyncing);
@@ -59,10 +58,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         SetFullSync(fullSync == null);
         SetIncrementalSync(fullSync != null);
         SubscribeToSyncProgress();
-        SubscribeToTransferProgress(transfer);
+        SubscribeToTransferProgress(_syncCoordinator);
     }
 
-    private void SubscribeToTransferProgress(ITransferService transfer) => _ = transfer.Progress
+    private void SubscribeToTransferProgress(ISyncronisationCoordinator syncCoordinator) => _ = syncCoordinator.TransferProgress
                 .Throttle(TimeSpan.FromMilliseconds(500))
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(progress =>
@@ -80,7 +79,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
                 })
                 .DisposeWith(_disposables);
 
-    private void SubscribeToSyncProgress() => _ = _sync.Progress
+    private void SubscribeToSyncProgress() => _ = _syncCoordinator.SyncProgress
                 .Throttle(TimeSpan.FromMilliseconds(500))
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(progress =>
@@ -97,7 +96,6 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
                 })
                 .DisposeWith(_disposables);
 
-    // ISyncStatusTarget implementation
     public void SetStatus(string status) => SyncStatusMessage = status;
     public void SetProgress(double percent) => ProgressPercent = percent;
     public void AddRecentTransfer(string message) => AddRecentTransferInternal(message);
@@ -163,8 +161,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     {
         try
         {
-            var downloads = await _repo.GetPendingDownloadCountAsync(CancellationToken.None);
-            var uploads = await _repo.GetPendingUploadCountAsync(CancellationToken.None);
+            var downloads = await _syncCoordinator.GetPendingDownloadCountAsync(CancellationToken.None);
+            var uploads = await _syncCoordinator.GetPendingUploadCountAsync(CancellationToken.None);
             return (downloads, uploads, 100d);
         }
         catch

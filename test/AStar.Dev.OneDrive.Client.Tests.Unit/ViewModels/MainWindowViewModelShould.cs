@@ -4,6 +4,7 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
+using AStar.Dev.OneDrive.Client.Services.Syncronisation;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using NSubstitute.ExceptionExtensions;
@@ -82,8 +83,9 @@ public sealed class MainWindowViewModelShould
                     }
                 }, Observable.Return(true));
             });
+        ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(_mockSync, _mockRepo, _mockTransfer);
 
-        return new MainWindowViewModel(mockSyncCommandService, _mockSync, _mockRepo, _mockTransfer, _mockSettings, authService
+        return new MainWindowViewModel(mockSyncCommandService, syncCoordinator, _mockSettings, authService
         );
     }
 
