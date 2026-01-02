@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
     {
         _ = services.AddSingleton<IFileSystem, FileSystem>();
         _ = services.AddSingleton<FileServices>();
+
         EntraIdSettings entraId = configuration.GetSection(EntraIdSettings.SectionName).Get<EntraIdSettings>()!;
         ApplicationSettings appSettings = configuration.GetSection(ApplicationSettings.SectionName).Get<ApplicationSettings>()!;
         _ = services.AddSingleton(entraId);

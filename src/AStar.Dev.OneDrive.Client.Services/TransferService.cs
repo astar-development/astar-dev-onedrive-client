@@ -117,10 +117,7 @@ public class TransferService : ITransferService
         {
             try
             {
-                await DownloadItemWithRetryAsync(item, cancellationToken, (b, e, eta) =>
-                {
-                    // Optionally emit chunked progress here if desired
-                });
+                await DownloadItemWithRetryAsync(item, cancellationToken);
                 var p = Interlocked.Increment(ref processedCount);
                 var totalTransferred = Interlocked.Add(ref _totalBytesTransferred, item.Size);
                 var elapsedSeconds = _operationStopwatch.Elapsed.TotalSeconds;
@@ -348,11 +345,11 @@ public class TransferService : ITransferService
         }
     }
 
-    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken cancellationToken, Action<long, TimeSpan, TimeSpan?>? onProgress = null)
+    private async Task DownloadItemWithRetryAsync(DriveItemRecord item, CancellationToken cancellationToken)
     {
         try
         {
-            await _retryPolicy.ExecuteAsync(async _ => await DownloadItemAsync(item, cancellationToken, onProgress), cancellationToken);
+            await _retryPolicy.ExecuteAsync(async _ => await DownloadItemAsync(item, cancellationToken), cancellationToken);
         }
         catch(Exception ex)
         {
@@ -361,7 +358,7 @@ public class TransferService : ITransferService
         }
     }
 
-    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken cancellationToken, Action<long, TimeSpan, TimeSpan?>? onProgress = null)
+    private async Task DownloadItemAsync(DriveItemRecord item, CancellationToken cancellationToken)
     {
         _logger.LogDebug("Starting download: {Path} ({SizeKB:F2} KB)", item.RelativePath, item.Size / 1024.0);
         _logger.LogDebug("Waiting to acquire semaphore for {Path}", item.RelativePath);

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using AStar.Dev.Source.Generators.Attributes;
 
 namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 
@@ -8,6 +9,7 @@ namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 ///     Provides properties to define various configuration parameters such as client identifiers,
 ///     download preferences, caching, paths, and scope definitions.
 /// </summary>
+[AutoRegisterOptions]
 public class ApplicationSettings
 {
     /// <summary>

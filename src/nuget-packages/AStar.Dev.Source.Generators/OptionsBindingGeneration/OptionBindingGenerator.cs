@@ -12,7 +12,7 @@ public sealed partial class OptionsBindingGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValueProvider<ImmutableArray<OptionsTypeInfo?>> optionsTypes = context.SyntaxProvider.ForAttributeWithMetadataName(
+        IncrementalValueProvider<ImmutableArray<(OptionsTypeInfo? Info, Diagnostic? Diagnostic)>> optionsTypes = context.SyntaxProvider.ForAttributeWithMetadataName(
             AttrFqn,
             static (node, _) => node is ClassDeclarationSyntax or StructDeclarationSyntax,
             static (ctx, _) => GetOptionsTypeInfo(ctx)
@@ -21,8 +21,15 @@ public sealed partial class OptionsBindingGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(optionsTypes, static (spc, types) =>
         {
             var validTypes = new List<OptionsTypeInfo>();
-            foreach(OptionsTypeInfo? info in types)
+            foreach((OptionsTypeInfo? Info, Diagnostic? Diagnostic) result in types)
             {
+                if(result.Diagnostic != null)
+                {
+                    spc.ReportDiagnostic(result.Diagnostic);
+                    continue;
+                }
+
+                OptionsTypeInfo? info = result.Info;
                 if(info == null)
                     continue;
                 if(string.IsNullOrWhiteSpace(info.SectionName))
@@ -50,10 +57,10 @@ public sealed partial class OptionsBindingGenerator : IIncrementalGenerator
         });
     }
 
-    private static OptionsTypeInfo? GetOptionsTypeInfo(GeneratorAttributeSyntaxContext ctx)
+    private static (OptionsTypeInfo? Info, Diagnostic? Diagnostic) GetOptionsTypeInfo(GeneratorAttributeSyntaxContext ctx)
     {
         if(ctx.TargetSymbol is not INamedTypeSymbol typeSymbol)
-            return null;
+            return (null, null);
         var typeName = typeSymbol.Name;
         var ns = typeSymbol.ContainingNamespace?.ToDisplayString();
         var fullTypeName = ns != null ? string.Concat(ns, ".", typeName) : typeName;
@@ -89,6 +96,28 @@ public sealed partial class OptionsBindingGenerator : IIncrementalGenerator
             }
         }
 
-        return new OptionsTypeInfo(typeName, fullTypeName, sectionName ?? string.Empty, ctx.TargetNode.GetLocation());
+        // Check for partial
+        var isPartial = false;
+        if(ctx.TargetNode is TypeDeclarationSyntax tds)
+        {
+            isPartial = tds.Modifiers.Any(m => m.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.PartialKeyword));
+        }
+
+        if(!isPartial)
+        {
+            // Emit diagnostic for missing partial
+            var diag = Diagnostic.Create(
+                new DiagnosticDescriptor(
+                    id: "ASTAROPT002",
+                    title: "Options class must be partial",
+                    messageFormat: $"Options class '{typeName}' must be declared partial to support source generation.",
+                    category: "AStar.Dev.Source.Generators",
+                    DiagnosticSeverity.Error,
+                    isEnabledByDefault: true),
+                ctx.TargetNode.GetLocation());
+            return (null, diag);
+        }
+
+        return (new OptionsTypeInfo(typeName, fullTypeName, sectionName ?? string.Empty, ctx.TargetNode.GetLocation()), null);
     }
 }

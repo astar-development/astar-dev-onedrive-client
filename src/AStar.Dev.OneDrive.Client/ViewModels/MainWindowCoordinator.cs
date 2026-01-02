@@ -25,10 +25,10 @@ public class MainWindowCoordinator(ISettingsAndPreferencesService settingsAndPre
     }
 
     /// <inheritdoc />
-    public void PersistUserPreferences(IWindowPositionable window, MainWindowViewModel vm)
+    public void PersistUserPreferences(IWindowPositionable window, MainWindowViewModel mainWindowViewModel)
     {
-        _ = vm.UserPreferences.WindowSettings.Update(window.Position, window.Width, window.Height);
-        settingsAndPreferencesService.Save(vm.UserPreferences);
+        _ = mainWindowViewModel.UserPreferences.WindowSettings.Update(window.Position, window.Width, window.Height);
+        settingsAndPreferencesService.Save(mainWindowViewModel.UserPreferences);
     }
 
     private void ApplyWindowSettings(IWindowPositionable window, WindowSettings settings)

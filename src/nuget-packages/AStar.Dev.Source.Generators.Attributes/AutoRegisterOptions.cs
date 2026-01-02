@@ -1,7 +1,7 @@
 ﻿namespace AStar.Dev.Source.Generators.Attributes;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false, AllowMultiple = false)]
-public class AutoRegisterOptionsAttribute(string? sectionName) : Attribute
+public class AutoRegisterOptionsAttribute(string? sectionName = null) : Attribute
 {
     /// <summary>
     /// Gets the name of the configuration section associated with this instance.
