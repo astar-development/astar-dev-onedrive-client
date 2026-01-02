@@ -189,7 +189,7 @@ public class TransferService : ITransferService
         var allPendingUploads = (await _repo.GetPendingUploadsAsync(int.MaxValue, cancellationToken)).ToList();
         var total = allPendingUploads.Count;
         var totalBytesForAllUploads = allPendingUploads.Sum(u => u.Size);
-        if (total == 0)
+        if(total == 0)
         {
             _logger.LogInformation("No pending uploads found - sync complete");
             return;
@@ -217,7 +217,7 @@ public class TransferService : ITransferService
                 var elapsedSeconds = _operationStopwatch.Elapsed.TotalSeconds;
                 var bytesPerSecond = elapsedSeconds > 0 ? totalTransferred / elapsedSeconds : 0;
                 TimeSpan? eta = null;
-                if (bytesPerSecond > 0 && totalTransferred < totalBytesForAllUploads)
+                if(bytesPerSecond > 0 && totalTransferred < totalBytesForAllUploads)
                 {
                     var remainingBytes = totalBytesForAllUploads - totalTransferred;
                     var remainingSeconds = remainingBytes / bytesPerSecond;
@@ -373,43 +373,6 @@ public class TransferService : ITransferService
         try
         {
             _logger.LogDebug("Downloading content for: {Path}", item.RelativePath);
-            await using Stream stream = await _graph.DownloadDriveItemContentAsync(item.DriveItemId, cancellationToken);
-
-            _logger.LogDebug("Writing file to disk: {Path}", item.RelativePath);
-
-            // Enhanced: Write file in chunks and log progress for semi-large files
-            const long logIntervalBytes = 10 * 1024 * 1024; // 10 MB
-            long totalWritten = 0;
-            var nextLogThreshold = logIntervalBytes;
-            await using Stream output = await _fs.OpenWriteAsync(item.RelativePath, cancellationToken);
-            var buffer = new byte[1024 * 1024]; // 1 MB buffer
-            int read;
-            while((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                _logger.LogDebug("Read {Bytes} bytes from stream for {Path}", read, item.RelativePath);
-                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-                totalWritten += read;
-
-                if(item.Size > logIntervalBytes && totalWritten >= nextLogThreshold)
-                {
-                    _logger.LogInformation("Downloading {Path}: {MB:F2} MB of {TotalMB:F2} MB complete",
-                        item.RelativePath, totalWritten / (1024.0 * 1024.0), item.Size / (1024.0 * 1024.0));
-                    // Send progress update to UI
-                    TimeSpan elapsed = _operationStopwatch.Elapsed;
-                    var bytesPerSecond = elapsed.TotalSeconds > 0 ? totalWritten / elapsed.TotalSeconds : 0;
-                    TimeSpan? eta = null;
-                    if(SyncProgressReporter.ShouldCalculateEta(bytesPerSecond, item.Size, totalWritten))
-                    {
-                        var remainingBytes = item.Size - totalWritten;
-                        var remainingSeconds = bytesPerSecond > 0 ? remainingBytes / bytesPerSecond : 0;
-                        eta = TimeSpan.FromSeconds(remainingSeconds);
-                    }
-
-                    onProgress?.Invoke(totalWritten, elapsed, eta);
-                    nextLogThreshold += logIntervalBytes;
-                }
-            }
 
             _logger.LogDebug("Completed reading stream for {Path}", item.RelativePath);
 

@@ -49,7 +49,7 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
             }
         }, isSyncing.Select(syncing => !syncing));
 
-    public ReactiveCommand<Unit, Unit> CreateIncrementalSyncCommand(ISyncStatusTarget target, IObservable<bool> isSyncing)
+    public ReactiveCommand<Unit, Unit> CreateIncrementalSyncCommand(DeltaToken deltaToken, ISyncStatusTarget target, IObservable<bool> isSyncing)
         => ReactiveCommand.CreateFromTask(async ct =>
         {
             _currentSyncCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -57,7 +57,7 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
             {
                 target.SetStatus("Running incremental sync");
                 target.SetProgress(0);
-                await sync.IncrementalSyncAsync(_currentSyncCancellation.Token);
+                await sync.IncrementalSyncAsync(deltaToken, _currentSyncCancellation.Token);
                 target.SetStatus("Incremental sync complete");
                 target.SetProgress(100);
                 target.AddRecentTransfer("Incremental sync completed successfully");

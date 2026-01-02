@@ -22,14 +22,13 @@ internal class Program
 
     public static async Task Main(string[] args)
     {
-        var applicationName = new ApplicationName("AStar.Dev.OneDrive.Client"); // Default name in case of failure before assembly load
+        ApplicationName applicationName = SetDefaultApplicationName();
         Log.Logger = CreateMinimalLogger();
 
         try
         {
             applicationName = new ApplicationName(Assembly.GetExecutingAssembly().GetName().Name!);
             using IHost host = CreateHostBuilder(args).Build();
-            Log.Information("Starting: {ApplicationName}", applicationName);
             await host.StartAsync();
             App.Services = host.Services;
             LocalLogger = host.Services.GetRequiredService<ILogger<Program>>();
@@ -48,6 +47,8 @@ internal class Program
             await Log.CloseAndFlushAsync();
         }
     }
+
+    private static ApplicationName SetDefaultApplicationName() => new("AStar.Dev.OneDrive.Client");
 
     private static IHostBuilder CreateHostBuilder(string[] args)
         => Host.CreateDefaultBuilder(args)

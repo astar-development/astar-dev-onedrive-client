@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reactive.Subjects;
+using AStar.Dev.Logging.Extensions.Messages;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -44,13 +45,16 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     /// <inheritdoc/>
     public async Task InitialFullSyncAsync(CancellationToken cancellationToken)
     {
+        AStarLog.OneDriveSync.FullSyncStarted(logger, DateTimeOffset.UtcNow);
         var stopwatch = Stopwatch.StartNew();
         logger.LogInformation("[SyncEngine] Starting initial full sync");
         try
         {
             _transferProgressSubscription = transfer.Progress.Subscribe(_progress.OnNext);
             await EmitProgressWithStatsAsync("Starting delta sync...", cancellationToken);
-            _ = await deltaPageProcessor.ProcessAllDeltaPagesAsync(cancellationToken, progress => _progress.OnNext(progress));
+            var dummyToken = new DeltaToken(string.Empty, string.Empty,DateTimeOffset.MinValue);
+            (DeltaToken finalDelta, var _, var _) = await deltaPageProcessor.ProcessAllDeltaPagesAsync(dummyToken, cancellationToken, _progress.OnNext);
+            await repo.SaveOrUpdateDeltaTokenAsync(finalDelta, cancellationToken);
             logger.LogInformation("[SyncEngine] Delta processing complete, starting downloads");
             await EmitProgressWithStatsAsync("Downloading files...", cancellationToken);
             await transfer.ProcessPendingDownloadsAsync(cancellationToken);
@@ -85,14 +89,15 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     }
 
     /// <inheritdoc/>
-    public async Task IncrementalSyncAsync(CancellationToken cancellationToken)
+    public async Task IncrementalSyncAsync(DeltaToken deltaToken, CancellationToken cancellationToken)
     {
         logger.LogInformation("[SyncEngine] Starting incremental sync");
         try
         {
             _transferProgressSubscription = transfer.Progress.Subscribe(_progress.OnNext);
             await EmitProgressWithStatsAsync("Starting incremental delta sync...", cancellationToken);
-            _ = await deltaPageProcessor.ProcessAllDeltaPagesAsync(cancellationToken, progress => _progress.OnNext(progress));
+            (DeltaToken finalDelta, var _, var _) = await deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, cancellationToken, _progress.OnNext);
+            await repo.SaveOrUpdateDeltaTokenAsync(finalDelta, cancellationToken);
             logger.LogInformation("[SyncEngine] Delta processing complete, starting downloads");
             await EmitProgressWithStatsAsync("Downloading files...", cancellationToken);
             await transfer.ProcessPendingDownloadsAsync(cancellationToken);

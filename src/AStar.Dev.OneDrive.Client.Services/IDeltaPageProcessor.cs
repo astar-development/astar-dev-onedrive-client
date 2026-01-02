@@ -1,6 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
-using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 
 namespace AStar.Dev.OneDrive.Client.Services;
@@ -18,8 +15,9 @@ public interface IDeltaPageProcessor
     /// <summary>
     /// Processes all delta pages and reports progress via callback.
     /// </summary>
+    /// <param name="deltaToken">The delta token to start from.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <param name="progressCallback">Callback to report progress.</param>
     /// <returns>Tuple with final delta, page count, and total items processed.</returns>
-    Task<(string? finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(CancellationToken cancellationToken, Action<SyncProgress>? progressCallback);
+    Task<(DeltaToken finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(DeltaToken deltaToken, CancellationToken cancellationToken, Action<SyncProgress>? progressCallback);
 }

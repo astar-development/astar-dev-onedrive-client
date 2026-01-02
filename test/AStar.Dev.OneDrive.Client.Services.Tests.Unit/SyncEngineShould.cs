@@ -1,3 +1,4 @@
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -27,13 +28,14 @@ public class SyncEngineShould
     {
         (SyncEngine? sut, IDeltaPageProcessor? deltaPageProcessor, ILocalFileScanner _, ITransferService? transfer, ILogger<SyncEngine> _) = CreateSut();
         CancellationToken token = CancellationToken.None;
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>())
-            .Returns(Task.FromResult<(string?, int, int)>(("delta", 1, 1)));
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, token, Arg.Any<Action<SyncProgress>>())
+            .Returns(Task.FromResult<(DeltaToken, int, int)>((deltaToken, 1, 1)));
         transfer.ProcessPendingDownloadsAsync(token).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
         await sut.InitialFullSyncAsync(token);
 
-        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>());
+        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(deltaToken, token, Arg.Any<Action<SyncProgress>>());
         await transfer.Received(1).ProcessPendingDownloadsAsync(token);
         await transfer.Received(1).ProcessPendingUploadsAsync(token);
     }
@@ -43,13 +45,14 @@ public class SyncEngineShould
     {
         (SyncEngine? sut, IDeltaPageProcessor? deltaPageProcessor, ILocalFileScanner _, ITransferService? transfer, ILogger<SyncEngine> _) = CreateSut();
         CancellationToken token = CancellationToken.None;
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>())
-            .Returns(Task.FromResult<(string?, int, int)>(("delta", 1, 1)));
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, token, Arg.Any<Action<SyncProgress>>())
+            .Returns(Task.FromResult<(DeltaToken, int, int)>((deltaToken, 1, 1)));
         transfer.ProcessPendingDownloadsAsync(token).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(token).Returns(Task.CompletedTask);
-        await sut.IncrementalSyncAsync(token);
+        await sut.IncrementalSyncAsync(deltaToken, token);
 
-        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(token, Arg.Any<Action<SyncProgress>>());
+        await deltaPageProcessor.Received(1).ProcessAllDeltaPagesAsync(deltaToken, token, Arg.Any<Action<SyncProgress>>());
         await transfer.Received(1).ProcessPendingDownloadsAsync(token);
         await transfer.Received(1).ProcessPendingUploadsAsync(token);
     }
@@ -80,8 +83,9 @@ public class SyncEngineShould
 
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(5);
         repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
-            .Returns(Task.FromResult<(string? finalDelta, int pageCount, int totalItemsProcessed)>(("delta", 1, 1)));
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
+            .Returns(Task.FromResult<(DeltaToken finalDelta, int pageCount, int totalItemsProcessed)>((deltaToken, 1, 1)));
         transfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         transfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         var progressList = new List<SyncProgress>();
@@ -106,8 +110,9 @@ public class SyncEngineShould
 
         repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
         repo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
-        deltaPageProcessor.ProcessAllDeltaPagesAsync(Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
-            .Returns<Task<(string? finalDelta, int pageCount, int totalItemsProcessed)>>(x => throw new InvalidOperationException("fail"));
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, Arg.Any<CancellationToken>(), Arg.Any<Action<SyncProgress>>())
+            .Returns<Task<(DeltaToken finalDelta, int pageCount, int totalItemsProcessed)>>(x => throw new InvalidOperationException("fail"));
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = sut.Progress.Subscribe(progressList.Add);
 

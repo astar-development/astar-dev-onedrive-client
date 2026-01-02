@@ -23,9 +23,10 @@ public interface ISyncEngine
     /// <summary>
     ///     Performs an incremental sync using the stored delta token.
     /// </summary>
+    /// <param name="deltaToken">The delta token to use for the sync.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task IncrementalSyncAsync(CancellationToken cancellationToken);
+    Task IncrementalSyncAsync(DeltaToken deltaToken, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Scans the local file system and marks new or modified files for upload.

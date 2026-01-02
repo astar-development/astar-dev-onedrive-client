@@ -1,3 +1,5 @@
+using AStar.Dev.Functional.Extensions;
+using AStar.Dev.Logging.Extensions.Messages;
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
@@ -10,67 +12,47 @@ using AStar.Dev.Utilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AStar.Dev.OneDrive.Client;
 
 internal static class HostExtensions
 {
-    internal static void ConfigureApplicationServices(HostBuilderContext ctx, IServiceCollection services)
+    internal static void ConfigureApplicationServices(HostBuilderContext context, IServiceCollection services)
     {
         _ = services.AddLogging();
-        IConfiguration config = ctx.Configuration;
+        IConfiguration config = context.Configuration;
 
-        // Validate required configuration before proceeding
-        ValidateConfiguration(config);
+        RegisterConfiguration(context, services);
 
         var connectionString = string.Empty;
         var localRoot = string.Empty;
         var msalClientId = string.Empty;
-        var currentDirectory = AppContext.BaseDirectory;
-        ApplicationSettings appSettings = File.ReadAllText(Path.Combine(currentDirectory, "appsettings.json")).FromJson<ApplicationSettings>();
-
         using(IServiceScope scope = services.BuildServiceProvider().CreateScope())
         {
+            ILogger<Program> log = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            ApplicationSettings appSettings = scope.ServiceProvider.GetRequiredService<IOptions<ApplicationSettings>>().Value;
+            CreateDirectoriesAndUserPreferencesIfRequired(appSettings, log);
 
-            try
-            {
-                // Ensure directories exist
-                _ = Directory.CreateDirectory(appSettings.FullUserSyncPath);
-                _ = Directory.CreateDirectory(ApplicationSettings.FullDatabaseDirectory);
-                _ = Directory.CreateDirectory(ApplicationSettings.FullUserPreferencesDirectory);
-                if(!File.Exists(appSettings.FullUserPreferencesPath))
-                {
-                    File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());
-                }
-            }
-            catch(Exception ex)
-            {
-                throw new InvalidOperationException("Failed to create necessary application directories.", ex);
-            }
-
-            // App services
             _ = services.AddSyncServices(config);
-        }
+            EntraIdSettings entraId = scope.ServiceProvider.GetRequiredService<IOptions<EntraIdSettings>>().Value;
 
-        using(IServiceScope scope = services.BuildServiceProvider().CreateScope())
-        {
-            EntraIdSettings entraId = scope.ServiceProvider.GetRequiredService<EntraIdSettings>();
             connectionString = $"Data Source={appSettings.FullDatabasePath}";
             localRoot = appSettings.FullUserSyncPath;
             msalClientId = entraId.ClientId;
-        }
 
-        var msalConfigurationSettings = new MsalConfigurationSettings(
+            var msalConfigurationSettings = new MsalConfigurationSettings(
             msalClientId,
             appSettings.RedirectUri,
             appSettings.GraphUri,
-            ctx.Configuration.GetSection("EntraId:Scopes").Get<string[]>() ?? [],
+            context.Configuration.GetSection("EntraId:Scopes").Get<string[]>() ?? [],
             appSettings.CachePrefix);
 
-        _ = services.AddSingleton(msalConfigurationSettings);
-        _ = services.AddInfrastructure(connectionString, localRoot, msalConfigurationSettings);
+            _ = services.AddSingleton(msalConfigurationSettings);
+            _ = services.AddInfrastructure(connectionString, localRoot, msalConfigurationSettings);
+        }
 
-        // UI services and viewmodels
         _ = services.AddSingleton<MainWindow>();
         _ = services.AddSingleton<MainWindowViewModel>();
         _ = services.AddSingleton<DashboardViewModel>();
@@ -84,48 +66,35 @@ internal static class HostExtensions
         _ = services.AddSingleton<IMainWindowCoordinator, MainWindowCoordinator>();
         _ = services.AddSingleton<ThemeService>();
 
-        // Sync settings
         ServiceProvider servicesProvider = services.BuildServiceProvider();
         Action<IServiceProvider> initializer = servicesProvider.GetRequiredService<Action<IServiceProvider>>();
         initializer(servicesProvider);
     }
 
-    /// <summary>
-    /// Validates that all required configuration values are present.
-    /// Fails fast with clear error messages if configuration is missing.
-    /// </summary>
-    /// <param name="configuration">The application configuration.</param>
-    /// <exception cref="InvalidOperationException">Thrown when required configuration is missing.</exception>
-    private static void ValidateConfiguration(IConfiguration configuration)
+    private static void RegisterConfiguration(HostBuilderContext context, IServiceCollection services)
     {
-        var errors = new List<string>();
-
-        // Validate Entra ID Client ID
-        var clientId = configuration["EntraId:ClientId"];
-        if(string.IsNullOrWhiteSpace(clientId))
-        {
-            errors.Add("EntraId:ClientId is not configured. " +
-                      "Run: dotnet user-secrets set \"EntraId:ClientId\" \"YOUR-CLIENT-ID\"");
-        }
-
-        // Validate Entra ID Scopes
-        var scopes = configuration.GetSection("EntraId:Scopes").Get<string[]>();
-        if(scopes == null || scopes.Length == 0)
-        {
-            errors.Add("EntraId:Scopes are not configured. Required scopes: User.Read, Files.ReadWrite.All, offline_access");
-        }
-
-        // Validate Application Settings
-        var appVersion = configuration["AStarDevOneDriveClient:ApplicationVersion"];
-        if(string.IsNullOrWhiteSpace(appVersion))
-        {
-            errors.Add("AStarDevOneDriveClient:ApplicationVersion is not configured.");
-        }
-
-        if(errors.Count > 0)
-        {
-            var errorMessage = "Configuration validation failed:\n" + string.Join("\n", errors);
-            throw new InvalidOperationException(errorMessage);
-        }
+        _ = services
+                .AddOptions<ApplicationSettings>()
+                .Bind(context.Configuration.GetSection(ApplicationSettings.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+        _ = services
+                .AddOptions<EntraIdSettings>()
+                .Bind(context.Configuration.GetSection(EntraIdSettings.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
     }
+
+    private static void CreateDirectoriesAndUserPreferencesIfRequired(ApplicationSettings appSettings, ILogger<Program> log)
+        => _ = Try.Run(() =>
+            {
+                _ = Directory.CreateDirectory(appSettings.FullUserSyncPath);
+                _ = Directory.CreateDirectory(ApplicationSettings.FullDatabaseDirectory);
+                _ = Directory.CreateDirectory(ApplicationSettings.FullUserPreferencesDirectory);
+                if(!File.Exists(appSettings.FullUserPreferencesPath))
+                {
+                    File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());
+                }
+            })
+            .TapError(ex => AStarLog.Application.ApplicationFailedToStart(log, "AStar.Dev.OneDrive.Client", ex.Message));
 }

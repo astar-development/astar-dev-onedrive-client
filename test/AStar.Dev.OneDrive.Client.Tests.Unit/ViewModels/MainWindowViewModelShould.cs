@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
@@ -44,7 +45,7 @@ public sealed class MainWindowViewModelShould
             .Returns(ReactiveCommand.Create(() => System.Reactive.Unit.Default, Observable.Return(true)));
         mockSyncCommandService.CreateInitialSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
             .Returns(ReactiveCommand.CreateFromTask(async _ => System.Reactive.Unit.Default, Observable.Return(true)));
-        mockSyncCommandService.CreateIncrementalSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
+        mockSyncCommandService.CreateIncrementalSyncCommand(Arg.Any<DeltaToken>(), Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
             .Returns(ReactiveCommand.CreateFromTask(async _ => System.Reactive.Unit.Default, Observable.Return(true)));
         mockSyncCommandService.CreateCancelSyncCommand(Arg.Any<ISyncStatusTarget>(), Arg.Any<IObservable<bool>>())
             .Returns(ReactiveCommand.Create(() => System.Reactive.Unit.Default, Observable.Return(true)));

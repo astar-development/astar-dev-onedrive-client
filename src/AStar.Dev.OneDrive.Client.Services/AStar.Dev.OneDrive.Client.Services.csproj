@@ -22,5 +22,6 @@
     <ProjectReference Include="../nuget-packages/AStar.Dev.Utilities/AStar.Dev.Utilities.csproj" />
     <ProjectReference Include="..\AStar.Dev.OneDrive.Client.Core\AStar.Dev.OneDrive.Client.Core.csproj" />
     <ProjectReference Include="..\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
+    <ProjectReference Include="..\nuget-packages\AStar.Dev.Logging.Extensions\AStar.Dev.Logging.Extensions.csproj" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 
 /// <summary>
@@ -50,6 +52,8 @@ public class UiSettings
     ///     to dynamically adapt based on the system's theme settings.
     ///     The selected theme is applied throughout the application and can be modified via user preferences.
     /// </remarks>
+    [Required]
+    [RegularExpression("Light|Dark|Auto", ErrorMessage = "Theme must be 'Light', 'Dark', or 'Auto'.")]
     public string Theme { get; set; } = "Auto";
 
     /// <summary>
@@ -62,11 +66,13 @@ public class UiSettings
     ///     displays within the UI.
     ///     Defaults to "No action yet" when no actions have been recorded.
     /// </remarks>
+    [Required]
     public string LastAction { get; set; } = "No action yet";
 
     /// <summary>
     ///     Gets or sets the synchronization settings related to file transfers and sync behavior.
     /// </summary>
+    [Required]
     public SyncSettings SyncSettings { get; set; } = new();
 
     /// <summary>

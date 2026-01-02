@@ -1,5 +1,6 @@
 
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.ViewModels;
@@ -39,9 +40,10 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HappyPath()
     {
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService service, ISyncEngine sync, IAuthService _, ISyncStatusTarget target, ILogger<SyncCommandService> logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
+        sync.IncrementalSyncAsync(deltaToken, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Running incremental sync");
         target.Received().SetProgress(0);
@@ -116,9 +118,10 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HandlesCancellation()
     {
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
-        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
+        sync.IncrementalSyncAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
+        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Incremental sync");
     }
@@ -126,9 +129,10 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HandlesDeltaTokenException()
     {
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("Delta token missing"));
-        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
+        sync.IncrementalSyncAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("Delta token missing"));
+        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Incremental sync failed");
         target.Received().SetProgress(0);
@@ -139,9 +143,10 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HandlesOtherException()
     {
+        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("other error"));
-        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(target, Observable.Return(false));
+        sync.IncrementalSyncAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("other error"));
+        ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Incremental sync", Arg.Any<InvalidOperationException>());
         logger.Received().LogError(Arg.Any<InvalidOperationException>(), "Incremental sync failed");

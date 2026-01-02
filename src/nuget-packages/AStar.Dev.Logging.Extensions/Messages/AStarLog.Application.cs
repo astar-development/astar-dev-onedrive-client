@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using static AStar.Dev.Logging.Extensions.EventIds.AStarEventIds.Application;
+
 namespace AStar.Dev.Logging.Extensions.Messages;
 
 public static partial class AStarLog

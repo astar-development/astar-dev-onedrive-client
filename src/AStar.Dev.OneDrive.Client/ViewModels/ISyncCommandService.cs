@@ -1,4 +1,5 @@
 using System.Reactive;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
@@ -16,7 +17,7 @@ public interface ISyncCommandService
     /// <summary>
     /// Creates a command for the incremental sync operation.
     /// </summary>
-    ReactiveCommand<Unit, Unit> CreateIncrementalSyncCommand(ISyncStatusTarget target, IObservable<bool> isSyncing);
+    ReactiveCommand<Unit, Unit> CreateIncrementalSyncCommand(DeltaToken deltaToken, ISyncStatusTarget target, IObservable<bool> isSyncing);
 
     /// <summary>
     /// Creates a command for scanning local files.

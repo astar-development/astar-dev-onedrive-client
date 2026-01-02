@@ -51,11 +51,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 
         SignInCommand = syncCommandService.CreateSignInCommand(this);
         InitialSyncCommand = syncCommandService.CreateInitialSyncCommand(this, isSyncing);
-        IncrementalSyncCommand = syncCommandService.CreateIncrementalSyncCommand(this, isSyncing);
+        DeltaToken? fullSync = _sync.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
+        IncrementalSyncCommand = syncCommandService.CreateIncrementalSyncCommand(fullSync ?? new DeltaToken(string.Empty, string.Empty, DateTimeOffset.MinValue), this, isSyncing);
         CancelSyncCommand = syncCommandService.CreateCancelSyncCommand(this, isSyncing);
         ScanLocalFilesCommand = syncCommandService.CreateScanLocalFilesCommand(this, isSyncing);
 
-        DeltaToken? fullSync = _sync.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
         SetFullSync(fullSync == null);
         SetIncrementalSync(fullSync != null);
         SubscribeToSyncProgress();

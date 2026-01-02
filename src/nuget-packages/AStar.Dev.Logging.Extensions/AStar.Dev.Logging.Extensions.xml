@@ -55,6 +55,10 @@
                 The <see cref="T:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds" /> class contains the defined <see cref="T:Microsoft.Extensions.Logging.EventId" /> events available for logging
                 Stand-alone <see cref="T:Microsoft.Extensions.Logging.EventId" /> events can be defined but care should be taken to avoid reusing the values used here
             </summary>
+            <summary>
+                The <see cref="T:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds" /> class contains the defined <see cref="T:Microsoft.Extensions.Logging.EventId" /> events available for logging
+                Stand-alone <see cref="T:Microsoft.Extensions.Logging.EventId" /> events can be defined but care should be taken to avoid reusing the values used here
+            </summary>
         </member>
         <member name="T:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds.Application">
             <summary>
@@ -77,6 +81,19 @@
         <member name="F:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds.Application.FailedToStart">
             <summary>
                 Gets the <see cref="T:Microsoft.Extensions.Logging.EventId" /> preconfigured for logging application failure to start
+            </summary>
+        </member>
+        <member name="T:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds.OneDriveSync">
+            <summary>
+            Provides the event identifier used for logging the start of a OneDrive synchronization operation.
+            </summary>
+            <remarks>Use this constant when emitting log entries to indicate that a OneDriveSync process has
+            begun. This value is intended for integration with structured logging systems that support event IDs, such as
+            Microsoft.Extensions.Logging.</remarks>
+        </member>
+        <member name="F:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds.OneDriveSync.Started">
+            <summary>
+                Gets the <see cref="T:Microsoft.Extensions.Logging.EventId" /> preconfigured for logging OneDriveSync start
             </summary>
         </member>
         <member name="T:AStar.Dev.Logging.Extensions.EventIds.AStarEventIds.Website">
@@ -167,6 +184,9 @@
             <summary>
             Provides strongly-typed logging methods for common HTTP status codes and errors in AStar applications.
             </summary>
+            <summary>
+            Provides strongly-typed logging methods for common HTTP status codes and errors in AStar applications.
+            </summary>
         </member>
         <member name="T:AStar.Dev.Logging.Extensions.Messages.AStarLog.Application">
             <summary>
@@ -199,6 +219,20 @@
             </summary>
             <param name="logger">The logger instance to use.</param>
             <param name="appName">The name of the application that stopped.</param>
+        </member>
+        <member name="T:AStar.Dev.Logging.Extensions.Messages.AStarLog.OneDriveSync">
+            <summary>
+            Provides static methods for logging synchronizing files and folders with Microsoft OneDrive.
+            </summary>
+            <remarks>This class serves as the entry point for logging OneDrive synchronization operations.</remarks>
+        </member>
+        <member name="M:AStar.Dev.Logging.Extensions.Messages.AStarLog.OneDriveSync.FullSyncStarted(Microsoft.Extensions.Logging.ILogger,System.DateTimeOffset)">
+            <summary>
+            Logs an informational message indicating that a OneDrive synchronization has started for the specified
+            application.
+            </summary>
+            <param name="logger">The logger instance used to write the log message.</param>
+            <param name="startTimeUtc">The UTC timestamp representing when the synchronization started.</param>
         </member>
         <member name="T:AStar.Dev.Logging.Extensions.Messages.AStarLog.Web">
             <summary>

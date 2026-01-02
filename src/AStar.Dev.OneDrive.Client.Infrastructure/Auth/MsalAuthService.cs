@@ -15,7 +15,7 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
     private IAccount? _account;
     private bool _initialized;
 
-    public async Task SignInAsync(CancellationToken ct)
+    public async Task SignInAsync(CancellationToken cancellationToken)
     {
         MsalCacheHelper cacheHelper = await MsalCacheHelper.CreateAsync(
     new StorageCreationPropertiesBuilder(
@@ -31,7 +31,7 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
         {
             AuthenticationResult result = await _pca
             .AcquireTokenSilent(msalConfigurationSettings.Scopes, _account)
-            .ExecuteAsync(ct);
+            .ExecuteAsync(cancellationToken);
 
             _account = result.Account;
         }
@@ -39,13 +39,13 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
         {
             AuthenticationResult result = await _pca
             .AcquireTokenInteractive(msalConfigurationSettings.Scopes)
-            .ExecuteAsync(ct);
+            .ExecuteAsync(cancellationToken);
 
             _account = result.Account;
         }
     }
 
-    public async Task SignOutAsync(CancellationToken ct)
+    public async Task SignOutAsync(CancellationToken cancellationToken)
     {
         IEnumerable<IAccount> accounts = await _pca.GetAccountsAsync();
 
@@ -57,15 +57,15 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
         _account = null;
     }
 
-    public async Task<string> GetAccessTokenAsync(CancellationToken ct)
+    public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
         if(_account is null)
             throw new InvalidOperationException("Not signed in");
-        AuthenticationResult result = await _pca.AcquireTokenSilent(msalConfigurationSettings.Scopes, _account).ExecuteAsync(ct);
+        AuthenticationResult result = await _pca.AcquireTokenSilent(msalConfigurationSettings.Scopes, _account).ExecuteAsync(cancellationToken);
         return result.AccessToken;
     }
 
-    public async Task<bool> IsUserSignedInAsync(CancellationToken ct)
+    public async Task<bool> IsUserSignedInAsync(CancellationToken cancellationToken)
     {
         await InitializeAsync(); // 🔑 CRITICAL
 
