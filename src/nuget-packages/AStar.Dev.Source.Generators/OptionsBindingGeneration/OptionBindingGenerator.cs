@@ -62,12 +62,21 @@ public sealed partial class OptionsBindingGenerator : IIncrementalGenerator
         var fullTypeName = ns != null ? string.Concat(ns, ".", typeName) : typeName;
         string? sectionName = null;
         AttributeData? attr = typeSymbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == AttrFqn);
-        if(attr != null && attr.ConstructorArguments.Length > 0)
+        if(attr != null && attr.ConstructorArguments.Length > 0 && attr.ConstructorArguments[0].Value is string s && !string.IsNullOrWhiteSpace(s))
         {
-            TypedConstant arg = attr.ConstructorArguments[0];
-            if(arg.Kind == TypedConstantKind.Primitive && arg.Value is string s && !string.IsNullOrWhiteSpace(s))
+            sectionName = s;
+        }
+        else if(ctx.Attributes.Length > 0)
+        {
+            // Fallback: parse from syntax
+            var attrSyntax = ctx.Attributes[0].ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+            if(attrSyntax?.ArgumentList?.Arguments.Count > 0)
             {
-                sectionName = s;
+                ExpressionSyntax expr = attrSyntax.ArgumentList.Arguments[0].Expression;
+                if(expr is LiteralExpressionSyntax literal && literal.Token.Value is string literalValue)
+                {
+                    sectionName = literalValue;
+                }
             }
         }
 
