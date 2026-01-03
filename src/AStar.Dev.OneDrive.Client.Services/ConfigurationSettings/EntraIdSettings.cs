@@ -9,7 +9,7 @@ namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 ///     download preferences, caching, paths, and scope definitions.
 /// </summary>
 [AutoRegisterOptions]
-public class EntraIdSettings
+public partial class EntraIdSettings
 {
     /// <summary>
     ///    The configuration section name for Entra ID settings.

@@ -14,7 +14,7 @@ public interface IChannelFactory
     /// <param name="capacity">The channel capacity.</param>
     /// <returns>A configured bounded channel.</returns>
     Channel<DriveItemRecord> CreateBoundedDriveItemRecord(int capacity);
-    
+
     /// <summary>
     /// Creates a new bounded channel for LocalFileRecord transfer.
     /// </summary>

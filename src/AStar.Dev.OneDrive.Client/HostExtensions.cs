@@ -25,7 +25,7 @@ internal static class HostExtensions
         IConfiguration config = context.Configuration;
 
         RegisterConfiguration(context, services);
-        _ = services.AddAutoRegisteredOptions(config);
+        //_ = services.AddAutoRegisteredOptions(config);
 
         var connectionString = string.Empty;
         var localRoot = string.Empty;

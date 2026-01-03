@@ -2,11 +2,11 @@
 using System.Reflection;
 using AStar.Dev.OneDrive.Client.Data;
 using Avalonia;
-using Avalonia.ReactiveUI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using ReactiveUI.Avalonia;
 using Serilog;
 using static AStar.Dev.Logging.Extensions.Messages.AStarLog.Application;
 using static AStar.Dev.Logging.Extensions.Serilog.SerilogExtensions;

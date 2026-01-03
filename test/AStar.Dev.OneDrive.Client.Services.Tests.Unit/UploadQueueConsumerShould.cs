@@ -14,7 +14,8 @@ public class UploadQueueConsumerShould
             new LocalFileRecord("id2", "file2.txt", "hash2", 200, System.DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ];
         var channel = Channel.CreateUnbounded<LocalFileRecord>();
-        foreach (LocalFileRecord? item in items) await channel.Writer.WriteAsync(item, TestContext.Current.CancellationToken);
+        foreach(LocalFileRecord? item in items)
+            await channel.Writer.WriteAsync(item, TestContext.Current.CancellationToken);
         channel.Writer.Complete();
         var processed = new List<string>();
         var consumer = new UploadQueueConsumer();

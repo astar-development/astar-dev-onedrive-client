@@ -13,7 +13,7 @@ public class ChannelFactory : IChannelFactory
             {
                 FullMode = BoundedChannelFullMode.Wait
             });
-            
+
     /// <inheritdoc/>
     public Channel<LocalFileRecord> CreateBoundedLocalFileRecord(int capacity)
         => Channel.CreateBounded<LocalFileRecord>(

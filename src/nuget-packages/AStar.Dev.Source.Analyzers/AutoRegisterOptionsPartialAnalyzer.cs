@@ -44,7 +44,7 @@ public sealed class AutoRegisterOptionsPartialAnalyzer : DiagnosticAnalyzer
     {
         if(context.Node is not TypeDeclarationSyntax typeDecl)
             return;
-        INamedTypeSymbol symbol = context.SemanticModel.GetDeclaredSymbol(typeDecl, context.CancellationToken);
+        INamedTypeSymbol? symbol = context.SemanticModel.GetDeclaredSymbol(typeDecl, context.CancellationToken);
         if(symbol == null)
             return;
         foreach(AttributeData attr in symbol.GetAttributes())

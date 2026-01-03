@@ -10,7 +10,7 @@ namespace AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 ///     download preferences, caching, paths, and scope definitions.
 /// </summary>
 [AutoRegisterOptions]
-public class ApplicationSettings
+public partial class ApplicationSettings
 {
     /// <summary>
     ///   The configuration section name for application settings.

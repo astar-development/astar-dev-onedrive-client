@@ -15,7 +15,8 @@ public class DownloadQueueConsumerShould
             new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, System.DateTimeOffset.UtcNow, false, false)
         ];
         var channel = Channel.CreateUnbounded<DriveItemRecord>();
-        foreach (DriveItemRecord? item in items) await channel.Writer.WriteAsync(item, TestContext.Current.CancellationToken);
+        foreach(DriveItemRecord? item in items)
+            await channel.Writer.WriteAsync(item, TestContext.Current.CancellationToken);
         channel.Writer.Complete();
         var processed = new List<string>();
         var consumer = new DownloadQueueConsumer();

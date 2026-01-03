@@ -20,7 +20,7 @@ public sealed class EfSyncRepository : ISyncRepository
     public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken)
     {
         await using AppDbContext db = _dbContextFactory.CreateDbContext();
-        
+
         return await db.DeltaTokens.OrderByDescending(t => t.LastSyncedUtc).FirstOrDefaultAsync(cancellationToken);
     }
 
