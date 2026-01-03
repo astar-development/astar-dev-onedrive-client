@@ -41,12 +41,9 @@
     <ProjectReference Include="..\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
     <ProjectReference Include="..\AStar.Dev.OneDrive.Client.Services\AStar.Dev.OneDrive.Client.Services.csproj" />
     <ProjectReference Include="..\nuget-packages\AStar.Dev.Functional.Extensions\AStar.Dev.Functional.Extensions.csproj" />
-    <ProjectReference Include="..\nuget-packages\AStar.Dev.Source.Generators.Attributes\AStar.Dev.Source.Generators.Attributes.csproj" />
-    <ProjectReference Include="..\nuget-packages\AStar.Dev.Source.Generators\AStar.Dev.Source.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\nuget-packages\AStar.Dev.Source.Analyzers\AStar.Dev.Source.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\nuget-packages\AStar.Dev.Source.Generators.Attributes\AStar.Dev.Source.Generators.Attributes.csproj" />
+	  <PackageReference Include="AStar.Dev.Source.Generators" Version="0.1.0" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\nuget-packages\AStar.Dev.Source.Analyzers\AStar.Dev.Source.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

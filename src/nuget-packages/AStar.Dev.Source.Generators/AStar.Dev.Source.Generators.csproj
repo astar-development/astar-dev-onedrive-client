@@ -9,9 +9,12 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
         <PackageId>AStar.Dev.Source.Generators</PackageId>
-        <!-- When packing this project, include outputs of referenced projects (attributes) into the same nupkg -->
-        <IncludeReferencedProjects>true</IncludeReferencedProjects>
+        <!-- Do NOT include referenced projects in this generator package -->
+        <IncludeReferencedProjects>false</IncludeReferencedProjects>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <!-- Include generator DLL in analyzers folder for proper loading -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
 
         <!-- Package metadata -->
         <Version>0.1.0</Version>
@@ -29,16 +32,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\AStar.Dev.Source.Generators.Attributes\AStar.Dev.Source.Generators.Attributes.csproj" />
+    </ItemGroup>
+
+    <!-- Package the generator DLL and its dependencies in the analyzers folder -->
+    <ItemGroup>
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <!-- Include the Attributes DLL that the generator depends on -->
+        <None Include="$(OutputPath)\AStar.Dev.Source.Generators.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
 
 

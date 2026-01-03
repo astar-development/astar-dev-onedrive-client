@@ -3,6 +3,7 @@ using AStar.Dev.Logging.Extensions.Messages;
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
+using AStar.Dev.Source.Generators.OptionsBindingGeneration;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
@@ -24,8 +25,7 @@ internal static class HostExtensions
         _ = services.AddLogging();
         IConfiguration config = context.Configuration;
 
-        RegisterConfiguration(context, services);
-        //_ = services.AddAutoRegisteredOptions(config);
+        _ = services.AddAutoRegisteredOptions(config);
 
         var connectionString = string.Empty;
         var localRoot = string.Empty;
@@ -72,19 +72,7 @@ internal static class HostExtensions
         initializer(servicesProvider);
     }
 
-    private static void RegisterConfiguration(HostBuilderContext context, IServiceCollection services)
-    {
-        _ = services
-                .AddOptions<ApplicationSettings>()
-                .Bind(context.Configuration.GetSection(ApplicationSettings.SectionName))
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
-        _ = services
-                .AddOptions<EntraIdSettings>()
-                .Bind(context.Configuration.GetSection(EntraIdSettings.SectionName))
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
-    }
+
 
     private static void CreateDirectoriesAndUserPreferencesIfRequired(ApplicationSettings appSettings, ILogger<Program> log)
         => _ = Try.Run(() =>

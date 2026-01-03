@@ -8,6 +8,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="5.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="1.1.2" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="Shouldly" Version="4.3.0" />
@@ -17,6 +19,10 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
     </ItemGroup>
+
+<PropertyGroup>
+ <NoWarn>$(NoWarn);NU1701;</NoWarn>
+</PropertyGroup>
 
 	<ItemGroup>
 		<Using Include="Xunit" />
