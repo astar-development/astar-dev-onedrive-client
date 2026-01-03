@@ -38,7 +38,6 @@
     <Project Path="test/nuget-packages/AStar.Dev.Functional.Extensions.Tests.Unit/AStar.Dev.Functional.Extensions.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit/AStar.Dev.Logging.Extensions.Serilog.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Logging.Extensions.Tests.Unit/AStar.Dev.Logging.Extensions.Tests.Unit.csproj" />
-    <Project Path="test/nuget-packages/AStar.Dev.Source.Analyzers.Tests.Unit/AStar.Dev.Source.Analyzers.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Source.Generators.Attributes.Tests.Unit/AStar.Dev.Source.Generators.Attributes.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Source.Generators.Tests.Unit/AStar.Dev.Source.Generators.Tests.Unit.csproj" />
     <Project Path="test/nuget-packages/AStar.Dev.Utilities.Tests.Unit/AStar.Dev.Utilities.Tests.Unit.csproj" />
