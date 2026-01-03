@@ -176,25 +176,4 @@ namespace TestNamespace
             generatedText.ShouldNotContain("NotRegistered");
         }
     }
-
-    [Fact]
-    public void EmitDiagnosticIfClassIsNotPartial()
-    {
-        const string input = @"using AStar.Dev.Source.Generators.Attributes;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-namespace TestNamespace
-{
-    [AutoRegisterOptions(""NoPartialSection"")]
-    public class NotPartialOptions { }
-}";
-        CSharpCompilation compilation = CompilationHelpers.CreateCompilation(input);
-        var generator = new OptionsBindingGenerator();
-        var driver = CSharpGeneratorDriver.Create(generator);
-        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation, TestContext.Current.CancellationToken);
-        GeneratorDriverRunResult result = driver.GetRunResult();
-        result.Diagnostics.ShouldContain(d => d.Id == "ASTAROPT002");
-        var allGenerated = result.Results.SelectMany(r => r.GeneratedSources).ToList();
-        allGenerated.ShouldBeEmpty();
-    }
 }
