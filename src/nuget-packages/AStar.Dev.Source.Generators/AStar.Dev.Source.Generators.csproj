@@ -17,7 +17,7 @@
         <NoWarn>$(NoWarn);NU5128</NoWarn>
 
         <!-- Package metadata -->
-        <Version>0.1.0</Version>
+        <Version>0.1.2</Version>
         <Authors>AStar Dev</Authors>
         <Company>AStar</Company>
         <Description>Source generators and supporting attribute types for AStar.Dev projects.</Description>
@@ -27,7 +27,7 @@
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageReleaseNotes>Initial 0.1.0 release.</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial 0.1.1 release.</PackageReleaseNotes>
         <RepositoryBranch>main</RepositoryBranch>
     </PropertyGroup>
 
@@ -37,9 +37,17 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\AStar.Dev.Source.Generators.Attributes\AStar.Dev.Source.Generators.Attributes.csproj" />
-    </ItemGroup>
+        <!-- Build the Attributes project separately and copy its DLL into the output
+             so the generator package contains the attributes types without creating
+             a NuGet package dependency on a separate Attributes package. -->
+        <Target Name="BuildAndCopyAttributes" BeforeTargets="Pack;GenerateNuspec">
+            <MSBuild Projects="$(MSBuildThisFileDirectory)..\AStar.Dev.Source.Generators.Attributes\AStar.Dev.Source.Generators.Attributes.csproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
+            <ItemGroup>
+                <_AttributesDll Include="$(MSBuildThisFileDirectory)..\AStar.Dev.Source.Generators.Attributes\bin\$(Configuration)\$(TargetFramework)\AStar.Dev.Source.Generators.Attributes.dll" />
+            </ItemGroup>
+            <Message Importance="High" Text="Copying Attributes DLL from '@(_AttributesDll)' to '$(OutputPath)'" />
+            <Copy SourceFiles="@(_AttributesDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+        </Target>
 
     <!-- Package the generator DLL and its dependencies in the analyzers folder -->
     <ItemGroup>
@@ -47,6 +55,8 @@
         <!-- Include the Attributes DLL that the generator depends on -->
         <None Include="$(OutputPath)\AStar.Dev.Source.Generators.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
+
+        <!-- (BuildAndCopyAttributes target above handles building and copying the Attributes DLL) -->
 
 
 </Project>
