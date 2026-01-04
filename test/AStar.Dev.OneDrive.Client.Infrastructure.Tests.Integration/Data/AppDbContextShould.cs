@@ -230,7 +230,7 @@ public sealed class AppDbContextShould : IDisposable
         TransferLog logWithNull = new("test1", TransferType.Download, "item1", DateTimeOffset.UtcNow, null, TransferStatus.Pending, null, null);
         TransferLog logWithValue = new("test2", TransferType.Upload, "item2", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(1), TransferStatus.Success, null, null);
 
-        _context.TransferLogs.AddRange([logWithNull, logWithValue]);
+        _context.TransferLogs.AddRange(logWithNull, logWithValue);
         _ = await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
         _context.ChangeTracker.Clear();
 
@@ -250,7 +250,7 @@ public sealed class AppDbContextShould : IDisposable
         DriveItemRecord itemWithNulls = new("id1", "driveId1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         DriveItemRecord itemWithValues = new("id2", "driveId2", "file2.txt", "etag123", "ctag456", 200, DateTimeOffset.UtcNow, false, false);
 
-        _context.DriveItems.AddRange([itemWithNulls, itemWithValues]);
+        _context.DriveItems.AddRange(itemWithNulls, itemWithValues);
         _ = await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
         _context.ChangeTracker.Clear();
 

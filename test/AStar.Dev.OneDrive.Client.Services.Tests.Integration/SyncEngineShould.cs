@@ -4,7 +4,6 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
-using AStar.Dev.OneDrive.Client.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -20,6 +19,10 @@ public sealed class SyncEngineShould : IDisposable
     private readonly IGraphClient _mockGraph;
     private readonly ITransferService _mockTransfer;
     private readonly ILogger<SyncEngine> _mockLogger;
+    private readonly IDeltaPageProcessor _mockDeltaPageProcessor;
+    private readonly ILocalFileScanner _mockLocalFileScanner;
+    private readonly IDbContextFactory<AppDbContext> _mockDbContextFactory;
+    private readonly ILogger<EfSyncRepository> _mockRepoLogger;
 
     public SyncEngineShould()
     {
@@ -31,12 +34,17 @@ public sealed class SyncEngineShould : IDisposable
             .Options;
 
         _context = new AppDbContext(options);
-        _context.Database.EnsureCreated();
+        _ = _context.Database.EnsureCreated();
 
-        _repo = new EfSyncRepository(_context);
+        _mockDbContextFactory = Substitute.For<IDbContextFactory<AppDbContext>>();
+        _ = _mockDbContextFactory.CreateDbContext().Returns(_context);
+        _mockRepoLogger = Substitute.For<ILogger<EfSyncRepository>>();
+        _repo = new EfSyncRepository(_mockDbContextFactory, _mockRepoLogger);
         _mockGraph = Substitute.For<IGraphClient>();
         _mockTransfer = Substitute.For<ITransferService>();
         _mockLogger = Substitute.For<ILogger<SyncEngine>>();
+        _mockDeltaPageProcessor = Substitute.For<IDeltaPageProcessor>();
+        _mockLocalFileScanner = Substitute.For<ILocalFileScanner>();
     }
 
     public void Dispose()
@@ -58,23 +66,23 @@ public sealed class SyncEngineShould : IDisposable
             "deltaToken123"
         );
 
-        _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act
         await engine.InitialFullSyncAsync(TestContext.Current.CancellationToken);
 
         // Assert
         DeltaToken? savedToken = await _repo.GetDeltaTokenAsync(TestContext.Current.CancellationToken);
-        savedToken.ShouldNotBeNull();
+        _ = savedToken.ShouldNotBeNull();
         savedToken.Token.ShouldBe("deltaToken123");
 
         await _mockTransfer.Received(1).ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>());
@@ -109,34 +117,34 @@ public sealed class SyncEngineShould : IDisposable
             "finalDeltaToken"
         );
 
-        _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
             .Returns(page1);
 
-        _mockGraph.GetDriveDeltaPageAsync("nextLink1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync("nextLink1", Arg.Any<CancellationToken>())
             .Returns(page2);
 
-        _mockGraph.GetDriveDeltaPageAsync("nextLink2", Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync("nextLink2", Arg.Any<CancellationToken>())
             .Returns(page3);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act
         await engine.InitialFullSyncAsync(TestContext.Current.CancellationToken);
 
         // Assert
         DeltaToken? savedToken = await _repo.GetDeltaTokenAsync(TestContext.Current.CancellationToken);
-        savedToken.ShouldNotBeNull();
+        _ = savedToken.ShouldNotBeNull();
         savedToken.Token.ShouldBe("finalDeltaToken");
 
         // Verify all 3 drive items were saved
         IEnumerable<DriveItemRecord> items = await _repo.GetPendingDownloadsAsync(100, 0, TestContext.Current.CancellationToken);
-        List<DriveItemRecord> itemList = items.ToList();
+        var itemList = items.ToList();
         itemList.Count.ShouldBe(3);
     }
 
@@ -152,27 +160,27 @@ public sealed class SyncEngineShould : IDisposable
             "deltaToken123"
         );
 
-        _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         List<SyncProgress> progressEvents = [];
-        engine.Progress.Subscribe(progressEvents.Add);
+        _ = engine.Progress.Subscribe(progressEvents.Add);
 
         // Act
         await engine.InitialFullSyncAsync(TestContext.Current.CancellationToken);
 
         // Assert
         progressEvents.Count.ShouldBeGreaterThan(0);
-        progressEvents[0].CurrentOperation.ShouldContain("Starting initial full sync");
-        progressEvents[^1].CurrentOperation.ShouldContain("completed");
+        progressEvents[0].CurrentOperationMessage.ShouldContain("Starting initial full sync");
+        progressEvents[^1].CurrentOperationMessage.ShouldContain("completed");
     }
 
     [Fact]
@@ -190,23 +198,23 @@ public sealed class SyncEngineShould : IDisposable
             "newDeltaToken"
         );
 
-        _mockGraph.GetDriveDeltaPageAsync("oldToken", Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync("oldToken", Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act
-        await engine.IncrementalSyncAsync(TestContext.Current.CancellationToken);
+        await engine.IncrementalSyncAsync(initialToken, TestContext.Current.CancellationToken);
 
         // Assert
         DeltaToken? updatedToken = await _repo.GetDeltaTokenAsync(TestContext.Current.CancellationToken);
-        updatedToken.ShouldNotBeNull();
+        _ = updatedToken.ShouldNotBeNull();
         updatedToken.Token.ShouldBe("newDeltaToken");
         updatedToken.Id.ShouldBe(initialToken.Id); // Same record, updated
 
@@ -218,11 +226,11 @@ public sealed class SyncEngineShould : IDisposable
     public async Task IncrementalSyncAsync_WithoutDeltaToken_ThrowsInvalidOperationException()
     {
         // Arrange
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act & Assert
         InvalidOperationException exception = await Should.ThrowAsync<InvalidOperationException>(
-            async () => await engine.IncrementalSyncAsync(TestContext.Current.CancellationToken)
+            async () => await engine.IncrementalSyncAsync(null!, TestContext.Current.CancellationToken)
         );
 
         exception.Message.ShouldContain("Delta token missing");
@@ -244,23 +252,23 @@ public sealed class SyncEngineShould : IDisposable
             null // No new delta token
         );
 
-        _mockGraph.GetDriveDeltaPageAsync("existingToken", Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync("existingToken", Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act
-        await engine.IncrementalSyncAsync(TestContext.Current.CancellationToken);
+        await engine.IncrementalSyncAsync(initialToken, TestContext.Current.CancellationToken);
 
         // Assert - token should remain unchanged
         DeltaToken? token = await _repo.GetDeltaTokenAsync(TestContext.Current.CancellationToken);
-        token.ShouldNotBeNull();
+        _ = token.ShouldNotBeNull();
         token.Token.ShouldBe("existingToken");
     }
 
@@ -273,27 +281,27 @@ public sealed class SyncEngineShould : IDisposable
 
         DeltaPage deltaPage = new([], null, "newToken");
 
-        _mockGraph.GetDriveDeltaPageAsync("token", Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync("token", Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         List<SyncProgress> progressEvents = [];
-        engine.Progress.Subscribe(progressEvents.Add);
+        _ = engine.Progress.Subscribe(progressEvents.Add);
 
         // Act
-        await engine.IncrementalSyncAsync(TestContext.Current.CancellationToken);
+        await engine.IncrementalSyncAsync(initialToken, TestContext.Current.CancellationToken);
 
         // Assert
         progressEvents.Count.ShouldBeGreaterThan(0);
-        progressEvents[0].CurrentOperation.ShouldContain("Starting incremental sync");
-        progressEvents[^1].CurrentOperation.ShouldContain("completed");
+        progressEvents[0].CurrentOperationMessage.ShouldContain("Starting incremental sync");
+        progressEvents[^1].CurrentOperationMessage.ShouldContain("completed");
     }
 
     [Fact]
@@ -302,23 +310,23 @@ public sealed class SyncEngineShould : IDisposable
         // Arrange
         DeltaPage emptyPage = new([], null, "emptyDeltaToken");
 
-        _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
             .Returns(emptyPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act
         await engine.InitialFullSyncAsync(TestContext.Current.CancellationToken);
 
         // Assert
         DeltaToken? savedToken = await _repo.GetDeltaTokenAsync(TestContext.Current.CancellationToken);
-        savedToken.ShouldNotBeNull();
+        _ = savedToken.ShouldNotBeNull();
         savedToken.Token.ShouldBe("emptyDeltaToken");
 
         IEnumerable<DriveItemRecord> items = await _repo.GetPendingDownloadsAsync(100, 0, TestContext.Current.CancellationToken);
@@ -331,22 +339,22 @@ public sealed class SyncEngineShould : IDisposable
         // Arrange
         DeltaPage deltaPage = new([], null, "token");
 
-        _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         List<SyncProgress> subscriber1Events = [];
         List<SyncProgress> subscriber2Events = [];
 
-        engine.Progress.Subscribe(subscriber1Events.Add);
-        engine.Progress.Subscribe(subscriber2Events.Add);
+        _ = engine.Progress.Subscribe(subscriber1Events.Add);
+        _ = engine.Progress.Subscribe(subscriber2Events.Add);
 
         // Act
         await engine.InitialFullSyncAsync(TestContext.Current.CancellationToken);
@@ -372,23 +380,23 @@ public sealed class SyncEngineShould : IDisposable
             "deltaToken"
         );
 
-        _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
+        _ = _mockGraph.GetDriveDeltaPageAsync(null, Arg.Any<CancellationToken>())
             .Returns(deltaPage);
 
-        _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingDownloadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
+        _ = _mockTransfer.ProcessPendingUploadsAsync(Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        SyncEngine engine = new(_repo, _mockGraph, _mockTransfer, _mockLogger);
+        var engine = new SyncEngine(_mockDeltaPageProcessor, _mockLocalFileScanner, _mockTransfer, _repo, _mockLogger);
 
         // Act
         await engine.InitialFullSyncAsync(TestContext.Current.CancellationToken);
 
         // Assert
         IEnumerable<DriveItemRecord> items = await _repo.GetPendingDownloadsAsync(100, 0, TestContext.Current.CancellationToken);
-        List<DriveItemRecord> itemList = items.ToList();
+        var itemList = items.ToList();
 
         itemList.Count.ShouldBe(3);
         itemList.ShouldContain(item => item.RelativePath == "docs/file1.txt");
