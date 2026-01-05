@@ -17,7 +17,7 @@
         <NoWarn>$(NoWarn);NU5128</NoWarn>
 
         <!-- Package metadata -->
-        <Version>0.1.2</Version>
+        <Version>0.1.3</Version>
         <Authors>AStar Dev</Authors>
         <Company>AStar</Company>
         <Description>Source generators and supporting attribute types for AStar.Dev projects.</Description>
@@ -27,7 +27,7 @@
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageReleaseNotes>Initial 0.1.1 release.</PackageReleaseNotes>
+        <PackageReleaseNotes>Initial 0.1.2 release.</PackageReleaseNotes>
         <RepositoryBranch>main</RepositoryBranch>
     </PropertyGroup>
 
@@ -48,14 +48,17 @@
             <Message Importance="High" Text="Copying Attributes DLL from '@(_AttributesDll)' to '$(OutputPath)'" />
             <Copy SourceFiles="@(_AttributesDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
         </Target>
-
+        
     <!-- Package the generator DLL and its dependencies in the analyzers folder -->
     <ItemGroup>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         <!-- Include the Attributes DLL that the generator depends on -->
         <None Include="$(OutputPath)\AStar.Dev.Source.Generators.Attributes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <!-- Include the Attributes DLL in lib folder for compile-time reference -->
+        <None Include="$(OutputPath)\AStar.Dev.Source.Generators.Attributes.dll" Pack="true" PackagePath="lib/netstandard2.0" />
+        <!-- Include build props to auto-reference the Attributes assembly -->
+        <None Include="build\AStar.Dev.Source.Generators.props" Pack="true" PackagePath="build" />
     </ItemGroup>
-
         <!-- (BuildAndCopyAttributes target above handles building and copying the Attributes DLL) -->
 
 
