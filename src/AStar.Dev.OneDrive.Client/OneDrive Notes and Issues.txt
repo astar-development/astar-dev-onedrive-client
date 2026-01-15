@@ -1,0 +1,2 @@
+1st sync leaces the "Start Sync" button on the overlay as active with the "Start Sync" text when it should change to "Pause Sync"
+"Scanning for changes..." is static whilst scanning the content of the folder. If a large folder, the scan could take a considerable amount of time and make the user think nothing is happening / app has hung. Can we add the spinner used elsewhere or is there a better option?
