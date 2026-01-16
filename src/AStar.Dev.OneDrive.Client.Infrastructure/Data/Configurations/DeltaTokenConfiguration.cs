@@ -12,7 +12,7 @@ public sealed class DeltaTokenConfiguration : IEntityTypeConfiguration<DeltaToke
         _ = builder.ToTable("DeltaTokens");
         _ = builder.HasKey(t => t.Id);
 
-        _ = builder.Property("TokenValue").HasColumnType("TEXT");
+        _ = builder.Property(e => e.Token).HasColumnType("TEXT");
 
         _ = builder.HasOne<Account>()
             .WithMany()
