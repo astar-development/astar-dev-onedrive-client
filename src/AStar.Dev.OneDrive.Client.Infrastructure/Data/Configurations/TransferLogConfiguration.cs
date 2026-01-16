@@ -7,18 +7,18 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Configurations;
 
 public sealed class TransferLogConfiguration : IEntityTypeConfiguration<TransferLog>
 {
-    public void Configure(EntityTypeBuilder<TransferLog> b)
+    public void Configure(EntityTypeBuilder<TransferLog> builder)
     {
-        _ = b.ToTable("TransferLogs");
-        _ = b.HasKey(t => t.Id);
+        _ = builder.ToTable("TransferLogs");
+        _ = builder.HasKey(t => t.Id);
 
-        if(PropertyExists(typeof(TransferLog), "Status"))
-            _ = b.Property("Status").HasColumnType("TEXT");
+        _ = builder.Property("Status").HasColumnType("TEXT");
 
-        // BytesTransferred may not exist on your TransferLog; check before mapping
-        if(PropertyExists(typeof(TransferLog), "BytesTransferred"))
-            _ = b.Property("BytesTransferred").HasColumnType("INTEGER");
+        _ = builder.Property("BytesTransferred").HasColumnType("INTEGER");
+
+        _ = builder.HasOne<Account>()
+            .WithMany()
+            .HasForeignKey(e => e.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
-
-    static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;
 }

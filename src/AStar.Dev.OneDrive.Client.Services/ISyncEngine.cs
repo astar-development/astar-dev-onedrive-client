@@ -18,7 +18,7 @@ public interface ISyncEngine
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task InitialFullSyncAsync(CancellationToken cancellationToken);
+    Task InitialFullSyncAsync(string accountId, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Performs an incremental sync using the stored delta token.
@@ -26,14 +26,14 @@ public interface ISyncEngine
     /// <param name="deltaToken">The delta token to use for the sync.</param>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task IncrementalSyncAsync(DeltaToken deltaToken, CancellationToken cancellationToken);
+    Task IncrementalSyncAsync(string accountId, DeltaToken deltaToken, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Scans the local file system and marks new or modified files for upload.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task ScanLocalFilesAsync(CancellationToken cancellationToken);
+    Task ScanLocalFilesAsync(string accountId, CancellationToken cancellationToken);
 
-    Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken);
+    Task<DeltaToken?> GetDeltaTokenAsync(string accountId, CancellationToken cancellationToken);
 }

@@ -5,7 +5,7 @@ namespace AStar.Dev.OneDrive.Client.Services;
 
 public class UploadQueueConsumer : IUploadQueueConsumer
 {
-    public async Task ConsumeAsync(ChannelReader<LocalFileRecord> reader, Func<LocalFileRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken)
+    public async Task ConsumeAsync(string accountId, ChannelReader<LocalFileRecord> reader, Func<LocalFileRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken)
     {
         var tasks = new List<Task>();
         for(var i = 0; i < parallelism; i++)

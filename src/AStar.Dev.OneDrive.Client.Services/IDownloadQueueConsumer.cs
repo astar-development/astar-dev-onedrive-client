@@ -15,5 +15,5 @@ public interface IDownloadQueueConsumer
     /// <param name="processItemAsync">The async action to process each item.</param>
     /// <param name="parallelism">The maximum number of parallel consumers.</param>
     /// <param name="cancellationToken">Token to observe for cancellation.</param>
-    Task ConsumeAsync(ChannelReader<DriveItemRecord> reader, Func<DriveItemRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken);
+    Task ConsumeAsync(string accountId, ChannelReader<DriveItemRecord> reader, Func<DriveItemRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken);
 }

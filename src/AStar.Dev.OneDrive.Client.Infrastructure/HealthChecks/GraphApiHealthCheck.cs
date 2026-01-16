@@ -12,19 +12,18 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.HealthChecks;
 /// <param name="authService">The authentication service.</param>
 public sealed class GraphApiHealthCheck(IAuthService authService) : IHealthCheck
 {
-
     /// <inheritdoc/>
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
-            var signedIn = await authService.IsUserSignedInAsync(cancellationToken);
+            var signedIn = await authService.IsUserSignedInAsync("PlaceholderAccountId", cancellationToken);
             if(!signedIn)
             {
                 return HealthCheckResult.Degraded("User is not authenticated with Microsoft Graph API");
             }
 
-            var token = await authService.GetAccessTokenAsync(cancellationToken);
+            var token = await authService.GetAccessTokenAsync("PlaceholderAccountId", cancellationToken);
 
             var data = new Dictionary<string, object>
             {

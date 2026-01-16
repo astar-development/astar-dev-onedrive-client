@@ -47,10 +47,10 @@ public class TransferServiceShould
         fs.GetFileInfo(Arg.Any<string>()).Returns(callInfo => mockFileSystem.FileInfo.New((string)callInfo[0]));
         fs.WriteFileAsync(Arg.Any<string>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         fs.OpenReadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Stream?>(new MemoryStream(new byte[10])));
-        repo.MarkLocalFileStateAsync(Arg.Any<string>(), Arg.Any<SyncState>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        repo.LogTransferAsync(Arg.Any<TransferLog>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
-        graph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Stream>(new MemoryStream(new byte[10])));
-        graph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        repo.MarkLocalFileStateAsync("PlaceholderAccountId", Arg.Any<string>(), Arg.Any<SyncState>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        repo.LogTransferAsync("PlaceholderAccountId", Arg.Any<TransferLog>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        graph.DownloadDriveItemContentAsync("PlaceholderAccountId", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Stream>(new MemoryStream(new byte[10])));
+        graph.CreateUploadSessionAsync("PlaceholderAccountId", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new UploadSessionInfo("url", "id", DateTimeOffset.UtcNow.AddMinutes(5)));
         graph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -75,10 +75,10 @@ public class TransferServiceShould
         (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
         TransferService sut = tuple.sut;
         ISyncRepository repo = tuple.repo;
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(0);
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(0);
         var progressReported = false;
         using IDisposable subscription = sut.Progress.Subscribe(_ => progressReported = true);
-        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await sut.ProcessPendingDownloadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
         progressReported.ShouldBeFalse();
     }
 
@@ -88,18 +88,18 @@ public class TransferServiceShould
         (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? _, IGraphClient? _, ILogger<TransferService>? _, MockFileSystem? _, UserPreferences? _, SyncProgressReporter? progressReporter, ISyncErrorLogger? _, IChannelFactory? _, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
         DriveItemRecord[] driveItems =
     [
-        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
-        new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
+        new DriveItemRecord("PlaceholderAccountId", "id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("PlaceholderAccountId", "id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
     ];
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
-        repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
-        producer.ProduceAsync(Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>())
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(2);
+        repo.GetAllPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(driveItems);
+        repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
+        producer.ProduceAsync("PlaceholderAccountId", Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelWriter<DriveItemRecord> writer = callInfo.Arg<ChannelWriter<DriveItemRecord>>();
                 // Write all items from the test setup if available
-                if(repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is DriveItemRecord[] items)
+                if(repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is DriveItemRecord[] items)
                 {
                     foreach(DriveItemRecord item in items)
                         await writer.WriteAsync(item, callInfo.Arg<CancellationToken>());
@@ -108,7 +108,7 @@ public class TransferServiceShould
                 writer.Complete();
             });
 
-        consumer.ConsumeAsync(Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        consumer.ConsumeAsync("PlaceholderAccountId", Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelReader<DriveItemRecord> reader = callInfo.Arg<ChannelReader<DriveItemRecord>>();
@@ -119,7 +119,7 @@ public class TransferServiceShould
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
 
-        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await sut.ProcessPendingDownloadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
 
         progressList.ShouldContain(p => p.EstimatedTimeRemaining != null);
         progressList.ShouldAllBe(p => p.TotalBytes == 300);
@@ -131,19 +131,19 @@ public class TransferServiceShould
         (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? _, IGraphClient? _, ILogger<TransferService>? _, MockFileSystem? _, UserPreferences? _, SyncProgressReporter? progressReporter, ISyncErrorLogger? _, IChannelFactory? _, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
         DriveItemRecord[] driveItems =
     [
-        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
-        new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false),
-        new DriveItemRecord("id3", "did3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow, false, false)
+        new DriveItemRecord("PlaceholderAccountId", "id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("PlaceholderAccountId", "id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord("PlaceholderAccountId", "id3", "did3", "file3.txt", null, null, 300, DateTimeOffset.UtcNow, false, false)
     ];
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(3);
-        repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
-        producer.ProduceAsync(Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>())
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(3);
+        repo.GetAllPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(driveItems);
+        repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
+        producer.ProduceAsync("PlaceholderAccountId", Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelWriter<DriveItemRecord> writer = callInfo.Arg<ChannelWriter<DriveItemRecord>>();
                 // Write all items from the test setup if available
-                if(repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is DriveItemRecord[] items)
+                if(repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is DriveItemRecord[] items)
                 {
                     foreach(DriveItemRecord item in items)
                         await writer.WriteAsync(item, callInfo.Arg<CancellationToken>());
@@ -152,7 +152,7 @@ public class TransferServiceShould
                 writer.Complete();
             });
 
-        consumer.ConsumeAsync(Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        consumer.ConsumeAsync("PlaceholderAccountId", Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelReader<DriveItemRecord> reader = callInfo.Arg<ChannelReader<DriveItemRecord>>();
@@ -163,9 +163,9 @@ public class TransferServiceShould
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
 
-        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await sut.ProcessPendingDownloadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
 
-        await repo.Received(1).GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>());
+        await repo.Received(1).GetAllPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<CancellationToken>());
         progressList.ShouldAllBe(p => p.TotalBytes == 600);
     }
 
@@ -175,17 +175,17 @@ public class TransferServiceShould
         (TransferService? sut, ISyncRepository? repo, IFileSystemAdapter? _, IGraphClient? _, ILogger<TransferService>? _, MockFileSystem? _, UserPreferences? _, SyncProgressReporter? progressReporter, ISyncErrorLogger? _, IChannelFactory? _, IDownloadQueueProducer? producer, IDownloadQueueConsumer? consumer) = CreateSut();
         DriveItemRecord[] driveItems =
     [
-        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
+        new DriveItemRecord("PlaceholderAccountId", "id", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
     ];
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
-        repo.GetAllPendingDownloadsAsync(Arg.Any<CancellationToken>()).Returns(driveItems);
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
-        producer.ProduceAsync(Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>())
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(1);
+        repo.GetAllPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(driveItems);
+        repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(driveItems);
+        producer.ProduceAsync("PlaceholderAccountId", Arg.Any<ChannelWriter<DriveItemRecord>>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelWriter<DriveItemRecord> writer = callInfo.Arg<ChannelWriter<DriveItemRecord>>();
                 // Write all items from the test setup if available
-                if(repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is DriveItemRecord[] items)
+                if(repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is DriveItemRecord[] items)
                 {
                     foreach(DriveItemRecord item in items)
                         await writer.WriteAsync(item, callInfo.Arg<CancellationToken>());
@@ -194,7 +194,7 @@ public class TransferServiceShould
                 writer.Complete();
             });
 
-        consumer.ConsumeAsync(Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        consumer.ConsumeAsync("PlaceholderAccountId", Arg.Any<ChannelReader<DriveItemRecord>>(), Arg.Any<Func<DriveItemRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelReader<DriveItemRecord> reader = callInfo.Arg<ChannelReader<DriveItemRecord>>();
@@ -205,7 +205,7 @@ public class TransferServiceShould
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
 
-        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await sut.ProcessPendingDownloadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
 
         progressList.ShouldAllBe(p => p.EstimatedTimeRemaining == null || p.EstimatedTimeRemaining >= TimeSpan.Zero);
     }
@@ -217,11 +217,11 @@ public class TransferServiceShould
         TransferService sut = tuple.sut;
         ISyncRepository repo = tuple.repo;
         ILogger<TransferService> logger = tuple.logger;
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(1);
+        repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
         using CancellationTokenSource cts = new();
         await cts.CancelAsync();
-        await sut.ProcessPendingDownloadsAsync(cts.Token);
+        await sut.ProcessPendingDownloadsAsync("PlaceholderAccountId", cts.Token);
         logger.Received().Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
@@ -246,15 +246,15 @@ public class TransferServiceShould
         IGraphClient graph = Substitute.For<IGraphClient>();
         IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
         IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(1);
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
-            new DriveItemRecord("id", "did", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(1);
+        repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
+            new DriveItemRecord("PlaceholderAccountId", "id", "did", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false)
         ]);
-        graph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        graph.DownloadDriveItemContentAsync("PlaceholderAccountId", Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<Stream>(new IOException("fail")));
         var sutWithFailingGraph = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, producer, consumer, uploadProducer, uploadConsumer);
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-        Exception? ex = await Record.ExceptionAsync(() => sutWithFailingGraph.ProcessPendingDownloadsAsync(cts.Token));
+        Exception? ex = await Record.ExceptionAsync(() => sutWithFailingGraph.ProcessPendingDownloadsAsync("PlaceholderAccountId", cts.Token));
         if(ex is AggregateException aggEx)
         {
             aggEx = aggEx.Flatten();
@@ -274,20 +274,20 @@ public class TransferServiceShould
         ISyncRepository repo = tuple.repo;
         MockFileSystem mockFileSystem = tuple.mockFileSystem;
         SyncProgressReporter progressReporter = tuple.progressReporter;
-        repo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>()).Returns(2);
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(2);
         var callCount = 0;
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        repo.GetPendingDownloadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(_ => callCount++ == 0
                 ? [
-                    new("id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
-                    new("id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
+                    new("PlaceholderAccountId", "id1", "did1", "file1.txt", null, null, 100, DateTimeOffset.UtcNow, false, false),
+                    new("PlaceholderAccountId", "id2", "did2", "file2.txt", null, null, 200, DateTimeOffset.UtcNow, false, false)
                 ]
                 : []);
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
         mockFileSystem.AddFile("file2.txt", new MockFileData("dummy"));
         var progressCount = 0;
         using IDisposable subscription = progressReporter.Progress.Subscribe(_ => progressCount++);
-        await sut.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await sut.ProcessPendingDownloadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
         progressCount.ShouldBeGreaterThan(0);
     }
 
@@ -299,15 +299,15 @@ public class TransferServiceShould
         ISyncRepository repo = tuple.repo;
         MockFileSystem mockFileSystem = tuple.mockFileSystem;
         SyncProgressReporter progressReporter = tuple.progressReporter;
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
-            new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
-            new LocalFileRecord("id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
+        repo.GetPendingUploadsAsync("PlaceholderAccountId",Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
+            new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
+            new LocalFileRecord("PlaceholderAccountId", "id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ]);
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
         mockFileSystem.AddFile("file2.txt", new MockFileData("dummy"));
         var progressCount = 0;
         using IDisposable subscription = progressReporter.Progress.Subscribe(_ => progressCount++);
-        await sut.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
+        await sut.ProcessPendingUploadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
         progressCount.ShouldBeGreaterThan(0);
     }
 
@@ -319,13 +319,13 @@ public class TransferServiceShould
         ISyncRepository repo = tuple.repo;
         IFileSystemAdapter fs = tuple.fs;
         MockFileSystem mockFileSystem = tuple.mockFileSystem;
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
-            new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
+        repo.GetPendingUploadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
+            new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ]);
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
         fs.OpenReadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromException<Stream?>(new IOException("fail")));
-        await sut.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
-        await repo.Received().LogTransferAsync(Arg.Is<TransferLog>(t => t.Status == TransferStatus.Failed), Arg.Any<CancellationToken>());
+        await sut.ProcessPendingUploadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken);
+        await repo.Received().LogTransferAsync(Arg.Any<string>(),Arg.Is<TransferLog>(t => t.Status == TransferStatus.Failed),  Arg.Any<CancellationToken>());
     }
 
     [Fact(Skip = "Skipped due to complex channel/producer/consumer test setup issues. Requires refactor or integration test.")]
@@ -345,11 +345,11 @@ public class TransferServiceShould
         IGraphClient graph = Substitute.For<IGraphClient>();
         IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
         IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
-            new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
+        repo.GetPendingUploadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([
+            new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ]);
         mockFileSystem.AddFile("file1.txt", new MockFileData("dummy"));
-        graph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        graph.CreateUploadSessionAsync("PlaceholderAccountId", Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new UploadSessionInfo("url", "id", DateTimeOffset.UtcNow.AddMinutes(5)));
         graph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new OperationCanceledException());
@@ -357,7 +357,7 @@ public class TransferServiceShould
         using var cts = new CancellationTokenSource();
         try
         {
-            await sutWithCancel.ProcessPendingUploadsAsync(cts.Token);
+            await sutWithCancel.ProcessPendingUploadsAsync("PlaceholderAccountId", cts.Token);
         }
         catch(OperationCanceledException)
         {
@@ -378,8 +378,8 @@ public class TransferServiceShould
         (TransferService sut, ISyncRepository repo, IFileSystemAdapter fs, IGraphClient graph, ILogger<TransferService> logger, MockFileSystem mockFileSystem, UserPreferences settings, SyncProgressReporter progressReporter, ISyncErrorLogger errorLogger, IChannelFactory channelFactory, IDownloadQueueProducer producer, IDownloadQueueConsumer consumer) tuple = CreateSut();
         TransferService sut = tuple.sut;
         ISyncRepository repo = tuple.repo;
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
-        await Should.NotThrowAsync(() => sut.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken));
+        repo.GetPendingUploadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
+        await Should.NotThrowAsync(() => sut.ProcessPendingUploadsAsync("PlaceholderAccountId", TestContext.Current.CancellationToken));
     }
 
     [Fact(Skip = "Skipped due to complex channel/producer/consumer test setup issues. Requires refactor or integration test.")]
@@ -411,16 +411,16 @@ public class TransferServiceShould
         IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
         LocalFileRecord[] uploads =
         [
-            new LocalFileRecord("id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
-            new LocalFileRecord("id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
+            new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash1", 100, DateTimeOffset.UtcNow, SyncState.PendingUpload),
+            new LocalFileRecord("PlaceholderAccountId", "id2", "file2.txt", "hash2", 200, DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ];
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(uploads);
-        uploadProducer.ProduceAsync(Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>())
+        repo.GetPendingUploadsAsync("PlaceholderAccountId",Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(uploads);
+        uploadProducer.ProduceAsync("PlaceholderAccountId", Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelWriter<LocalFileRecord> writer = callInfo.Arg<ChannelWriter<LocalFileRecord>>();
                 // Write all items from the test setup if available
-                if(repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is LocalFileRecord[] items)
+                if(repo.GetPendingUploadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is LocalFileRecord[] items)
                 {
                     foreach(LocalFileRecord item in items)
                         await writer.WriteAsync(item, callInfo.Arg<CancellationToken>());
@@ -429,7 +429,7 @@ public class TransferServiceShould
                 writer.Complete();
             });
 
-        uploadConsumer.ConsumeAsync(Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        uploadConsumer.ConsumeAsync("PlaceholderAccountId", Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelReader<LocalFileRecord> reader = callInfo.Arg<ChannelReader<LocalFileRecord>>();
@@ -440,7 +440,7 @@ public class TransferServiceShould
         var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, downloadProducer, downloadConsumer, uploadProducer, uploadConsumer);
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
-        await sut.ProcessPendingUploadsAsync(CancellationToken.None);
+        await sut.ProcessPendingUploadsAsync("PlaceholderAccountId", CancellationToken.None);
         progressList.ShouldContain(p => p.EstimatedTimeRemaining != null);
         progressList.ShouldAllBe(p => p.TotalBytes == 300);
     }
@@ -472,14 +472,14 @@ public class TransferServiceShould
         IDownloadQueueConsumer downloadConsumer = Substitute.For<IDownloadQueueConsumer>();
         IUploadQueueProducer uploadProducer = Substitute.For<IUploadQueueProducer>();
         IUploadQueueConsumer uploadConsumer = Substitute.For<IUploadQueueConsumer>();
-        var upload = new LocalFileRecord("id1", "file1.txt", "hash1", 20 * 1024 * 1024, DateTimeOffset.UtcNow, SyncState.PendingUpload); // 20MB
-        repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([upload]);
-        uploadProducer.ProduceAsync(Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>())
+        var upload = new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash1", 20 * 1024 * 1024, DateTimeOffset.UtcNow, SyncState.PendingUpload); // 20MB
+        repo.GetPendingUploadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([upload]);
+        uploadProducer.ProduceAsync("PlaceholderAccountId", Arg.Any<ChannelWriter<LocalFileRecord>>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelWriter<LocalFileRecord> writer = callInfo.Arg<ChannelWriter<LocalFileRecord>>();
                 // Write all items from the test setup if available
-                if(repo.GetPendingUploadsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is LocalFileRecord[] items)
+                if(repo.GetPendingUploadsAsync("PlaceholderAccountId", Arg.Any<int>(), Arg.Any<CancellationToken>()).GetAwaiter().GetResult() is LocalFileRecord[] items)
                 {
                     foreach(LocalFileRecord item in items)
                         await writer.WriteAsync(item, callInfo.Arg<CancellationToken>());
@@ -488,7 +488,7 @@ public class TransferServiceShould
                 writer.Complete();
             });
 
-        uploadConsumer.ConsumeAsync(Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        uploadConsumer.ConsumeAsync("PlaceholderAccountId", Arg.Any<ChannelReader<LocalFileRecord>>(), Arg.Any<Func<LocalFileRecord, Task>>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 ChannelReader<LocalFileRecord> reader = callInfo.Arg<ChannelReader<LocalFileRecord>>();
@@ -499,7 +499,7 @@ public class TransferServiceShould
         var sut = new TransferService(fs, graph, repo, logger, settings, progressReporter, errorLogger, channelFactory, downloadProducer, downloadConsumer, uploadProducer, uploadConsumer);
         var progressList = new List<SyncProgress>();
         using IDisposable subscription = progressReporter.Progress.Subscribe(progressList.Add);
-        await sut.ProcessPendingUploadsAsync(CancellationToken.None);
+        await sut.ProcessPendingUploadsAsync("PlaceholderAccountId", CancellationToken.None);
         progressList.Count.ShouldBeGreaterThan(0);
         progressList.ShouldContain(p => p.CurrentOperationMessage.Contains("Uploading"));
     }

@@ -11,8 +11,8 @@ public class DownloadQueueConsumerShould
         // Arrange
         DriveItemRecord[] items =
         [
-            new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, System.DateTimeOffset.UtcNow, false, false),
-            new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, System.DateTimeOffset.UtcNow, false, false)
+            new DriveItemRecord(Arg.Any<string>(), "id1", "did1", "file1.txt", null, null, 100, System.DateTimeOffset.UtcNow, false, false),
+            new DriveItemRecord(Arg.Any<string>(), "id2", "did2", "file2.txt", null, null, 200, System.DateTimeOffset.UtcNow, false, false)
         ];
         var channel = Channel.CreateUnbounded<DriveItemRecord>();
         foreach(DriveItemRecord? item in items)
@@ -21,7 +21,7 @@ public class DownloadQueueConsumerShould
         var processed = new List<string>();
         var consumer = new DownloadQueueConsumer();
         // Act
-        await consumer.ConsumeAsync(channel.Reader, async item => { processed.Add(item.Id); await Task.CompletedTask; }, 2, CancellationToken.None);
+        await consumer.ConsumeAsync(Arg.Any<string>(),channel.Reader, async item => { processed.Add(item.Id); await Task.CompletedTask; }, 2, CancellationToken.None);
         // Assert
         processed.Count.ShouldBe(2);
         processed.ShouldContain("id1");

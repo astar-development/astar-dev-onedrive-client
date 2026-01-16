@@ -142,7 +142,7 @@ public sealed class DbInitializerShould : IDisposable
         DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
 
         // Verify we can perform database operations after initialization
-        DeltaToken token = new("test1", "token123", DateTimeOffset.UtcNow);
+        DeltaToken token = new("PlaceholderAccountId", "test1", "token123", DateTimeOffset.UtcNow);
         _ = context.DeltaTokens.Add(token);
         var rowsAffected = context.SaveChanges();
 
@@ -159,7 +159,7 @@ public sealed class DbInitializerShould : IDisposable
         DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
 
         // Verify async operations work after initialization
-        DeltaToken token = new("test1", "token123", DateTimeOffset.UtcNow);
+        DeltaToken token = new("PlaceholderAccountId", "test1", "token123", DateTimeOffset.UtcNow);
         _ = context.DeltaTokens.Add(token);
         var rowsAffected = await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -181,7 +181,7 @@ public sealed class DbInitializerShould : IDisposable
         {
             DbInitializer.EnsureDatabaseCreatedAndConfigured(context1);
 
-            DeltaToken token = new("test1", "token123", DateTimeOffset.UtcNow);
+            DeltaToken token = new("PlaceholderAccountId", "test1", "token123", DateTimeOffset.UtcNow);
             _ = context1.DeltaTokens.Add(token);
             _ = context1.SaveChanges();
         }

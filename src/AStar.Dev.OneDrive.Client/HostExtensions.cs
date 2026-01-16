@@ -83,5 +83,5 @@ internal static class HostExtensions
                     File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());
                 }
             })
-            .TapError(ex => AStarLog.Application.ApplicationFailedToStart(log, "AStar.Dev.OneDrive.Client", ex.Message));
+            .TapError(ex => AStarLog.Application.ApplicationFailedToStart(log, ApplicationMetadata.ApplicationName, ex.Message));
 }

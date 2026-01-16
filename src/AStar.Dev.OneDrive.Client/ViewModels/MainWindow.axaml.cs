@@ -1,3 +1,4 @@
+using AStar.Dev.OneDrive.Client;
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Theme;
 using Avalonia.Controls;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window, IWindowPositionable
     public MainWindow(IMainWindowCoordinator coordinator, IThemeSelectionHandler themeHandler, IAutoSaveService autoSaveService, MainWindowViewModel vm)
     {
         InitializeComponent();
+        Title = $"{vm.ApplicationName} - V{ApplicationMetadata.ApplicationVersion}";
 
         _coordinator = coordinator;
         _themeHandler = themeHandler;

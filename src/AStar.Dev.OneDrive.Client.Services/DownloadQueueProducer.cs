@@ -8,12 +8,12 @@ namespace AStar.Dev.OneDrive.Client.Services;
 public class DownloadQueueProducer(ISyncRepository repo, int batchSize) : IDownloadQueueProducer
 {
     /// <inheritdoc/>
-    public async Task ProduceAsync(ChannelWriter<DriveItemRecord> writer, CancellationToken cancellationToken)
+    public async Task ProduceAsync(string accountId, ChannelWriter<DriveItemRecord> writer, CancellationToken cancellationToken)
     {
         var page = 0;
         while(!cancellationToken.IsCancellationRequested)
         {
-            var items = (await repo.GetPendingDownloadsAsync(batchSize, page, cancellationToken)).ToList();
+            var items = (await repo.GetPendingDownloadsAsync(accountId, batchSize, page, cancellationToken)).ToList();
             if(items.Count == 0)
                 break;
             foreach(DriveItemRecord? item in items)

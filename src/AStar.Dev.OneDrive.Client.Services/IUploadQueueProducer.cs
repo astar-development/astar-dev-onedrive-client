@@ -5,5 +5,5 @@ namespace AStar.Dev.OneDrive.Client.Services;
 
 public interface IUploadQueueProducer
 {
-    Task ProduceAsync(ChannelWriter<LocalFileRecord> writer, CancellationToken cancellationToken);
+    Task ProduceAsync(string accountId, ChannelWriter<LocalFileRecord> writer, CancellationToken cancellationToken);
 }

@@ -11,6 +11,6 @@ public class ChannelFactoryShould
         var factory = new ChannelFactory();
         Channel<DriveItemRecord> channel = factory.CreateBoundedDriveItemRecord(5);
         channel.ShouldNotBeNull();
-        channel.Writer.TryWrite(new DriveItemRecord("Id", "DriveItemId", "test.txt", "Etag", "Ctag", 1234, DateTimeOffset.UtcNow, false, true)).ShouldBeTrue();
+        channel.Writer.TryWrite(new DriveItemRecord("PlaceholderAccountId","Id", "DriveItemId", "test.txt", "Etag", "Ctag", 1234, DateTimeOffset.UtcNow, false, true)).ShouldBeTrue();
     }
 }

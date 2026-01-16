@@ -45,7 +45,7 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
         }
     }
 
-    public async Task SignOutAsync(CancellationToken cancellationToken)
+    public async Task SignOutAsync(string accountId, CancellationToken cancellationToken)
     {
         IEnumerable<IAccount> accounts = await _pca.GetAccountsAsync();
 
@@ -57,7 +57,7 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
         _account = null;
     }
 
-    public async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
+    public async Task<string> GetAccessTokenAsync(string accountId, CancellationToken cancellationToken)
     {
         if(_account is null)
             throw new InvalidOperationException("Not signed in");
@@ -65,7 +65,7 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
         return result.AccessToken;
     }
 
-    public async Task<bool> IsUserSignedInAsync(CancellationToken cancellationToken)
+    public async Task<bool> IsUserSignedInAsync(string accountId, CancellationToken cancellationToken)
     {
         await InitializeAsync(); // 🔑 CRITICAL
 

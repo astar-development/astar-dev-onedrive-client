@@ -10,7 +10,7 @@ public class LocalFileScanner(ISyncRepository repo, IFileSystemAdapter fs, ILogg
 {
 
     /// <inheritdoc/>
-    public async Task<(int processedCount, int newFilesCount, int modifiedFilesCount)> ScanAndSyncLocalFilesAsync(CancellationToken cancellationToken)
+    public async Task<(int processedCount, int newFilesCount, int modifiedFilesCount)> ScanAndSyncLocalFilesAsync(string accountId, CancellationToken cancellationToken)
     {
         var localFilesList = (await fs.EnumerateFilesAsync(cancellationToken)).ToList();
         logger.LogInformation("Found {FileCount} local files to process", localFilesList.Count);
@@ -19,7 +19,7 @@ public class LocalFileScanner(ISyncRepository repo, IFileSystemAdapter fs, ILogg
         {
             cancellationToken.ThrowIfCancellationRequested();
             processedCount++;
-            FileProcessResult result = await ProcessLocalFileAsync(localFile, cancellationToken);
+            FileProcessResult result = await ProcessLocalFileAsync(accountId, localFile, cancellationToken);
             if(result == FileProcessResult.New)
                 newFilesCount++;
             else if(result == FileProcessResult.Modified)
@@ -31,22 +31,22 @@ public class LocalFileScanner(ISyncRepository repo, IFileSystemAdapter fs, ILogg
 
     private enum FileProcessResult { None, New, Modified }
 
-    private async Task<FileProcessResult> ProcessLocalFileAsync(LocalFileInfo localFile, CancellationToken cancellationToken)
+    private async Task<FileProcessResult> ProcessLocalFileAsync(string accountId, LocalFileInfo localFile, CancellationToken cancellationToken)
     {
-        LocalFileRecord? existingFile = await repo.GetLocalFileByPathAsync(localFile.RelativePath, cancellationToken);
-        DriveItemRecord? driveItem = await repo.GetDriveItemByPathAsync(localFile.RelativePath, cancellationToken);
+        LocalFileRecord? existingFile = await repo.GetLocalFileByPathAsync(accountId, localFile.RelativePath, cancellationToken);
+        DriveItemRecord? driveItem = await repo.GetDriveItemByPathAsync(accountId, localFile.RelativePath, cancellationToken);
         if(driveItem is null)
         {
             if(existingFile is null)
             {
-                await repo.AddOrUpdateLocalFileAsync(new LocalFileRecord(
+                await repo.AddOrUpdateLocalFileAsync(accountId, new LocalFileRecord(accountId, 
                     Guid.CreateVersion7().ToString(), localFile.RelativePath, localFile.Hash, localFile.Size, localFile.LastWriteUtc, SyncState.PendingUpload), cancellationToken);
                 logger.LogDebug("Marked new file for upload: {Path}", localFile.RelativePath);
                 return FileProcessResult.New;
             }
             else if(existingFile.SyncState != SyncState.PendingUpload)
             {
-                await repo.AddOrUpdateLocalFileAsync(existingFile with { SyncState = SyncState.PendingUpload }, cancellationToken);
+                await repo.AddOrUpdateLocalFileAsync(accountId, existingFile with { SyncState = SyncState.PendingUpload }, cancellationToken);
                 logger.LogDebug("Marked existing local file (not in OneDrive) for upload: {Path}", localFile.RelativePath);
                 return FileProcessResult.New;
             }
@@ -55,14 +55,14 @@ public class LocalFileScanner(ISyncRepository repo, IFileSystemAdapter fs, ILogg
         {
             if(existingFile is null)
             {
-                await repo.AddOrUpdateLocalFileAsync(new LocalFileRecord(
+                await repo.AddOrUpdateLocalFileAsync(accountId, new LocalFileRecord(accountId, 
                     driveItem.Id, localFile.RelativePath, localFile.Hash, localFile.Size, localFile.LastWriteUtc, SyncState.PendingUpload), cancellationToken);
                 logger.LogDebug("Marked modified file for upload: {Path}", localFile.RelativePath);
                 return FileProcessResult.Modified;
             }
             else if(ShouldUpdateExistingFileForUpload(existingFile, localFile))
             {
-                await repo.AddOrUpdateLocalFileAsync(existingFile with
+                await repo.AddOrUpdateLocalFileAsync(accountId, existingFile with
                 {
                     Hash = localFile.Hash,
                     Size = localFile.Size,

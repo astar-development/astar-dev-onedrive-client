@@ -7,18 +7,18 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Configurations;
 
 public sealed class DriveItemRecordConfiguration : IEntityTypeConfiguration<DriveItemRecord>
 {
-    public void Configure(EntityTypeBuilder<DriveItemRecord> b)
+    public void Configure(EntityTypeBuilder<DriveItemRecord> builder)
     {
-        _ = b.ToTable("DriveItems");
-        _ = b.HasKey(d => d.Id);
+        _ = builder.ToTable("DriveItems");
+        _ = builder.HasKey(d => d.Id);
 
-        // Use reflection to avoid compile-time errors if the property doesn't exist
-        if(PropertyExists(typeof(DriveItemRecord), "RelativePath"))
-            _ = b.Property("RelativePath").IsRequired();
+        _ = builder.Property("RelativePath").IsRequired();
 
-        if(PropertyExists(typeof(DriveItemRecord), "DriveItemId"))
-            _ = b.HasIndex("DriveItemId");
+        _ = builder.HasIndex("DriveItemId");
+
+        _ = builder.HasOne<Account>()
+            .WithMany()
+            .HasForeignKey(e => e.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
-
-    static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;
 }

@@ -6,14 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>preview</LangVersion>
     <UseWPF>false</UseWPF>
-    <UserSecretsId>astar-dev-onedrive-client-secrets</UserSecretsId>
     <!-- Enable Avalonia build targets; do NOT add explicit AvaloniaResource entries -->
     <UseAvalonia>true</UseAvalonia>
     <AvaloniaUsePrecompiledXaml>false</AvaloniaUsePrecompiledXaml>
   </PropertyGroup>
-
+  
   <ItemGroup>
         <PackageReference Include="ReactiveUI.Avalonia" Version="11.3.8" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="TestableIO.System.IO.Abstractions" Version="22.1.0" />
         <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" Version="22.1.0" />
     <PackageReference Include="Avalonia" Version="11.3.10" />

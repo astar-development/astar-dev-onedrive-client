@@ -82,23 +82,23 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingDownloadsWithSingleItem()
     {
-        var driveItem = new DriveItemRecord("item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
+        var driveItem = new DriveItemRecord(Arg.Any<string>(),"item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         _ = await _db.DriveItems.AddAsync(driveItem, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),"driveItem1", Arg.Any<CancellationToken>())
             .Returns(new MemoryStream("file content"u8.ToArray()));
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(), TestContext.Current.CancellationToken);
 
         _mockFileSystem.FileExists(@"C:\OneDrive\file.txt").ShouldBeTrue();
         var content = await _mockFileSystem.File.ReadAllTextAsync(@"C:\OneDrive\file.txt", TestContext.Current.CancellationToken);
         content.ShouldBe("file content");
 
-        LocalFileRecord? localFile = await _repo.GetLocalFileByPathAsync("file.txt", TestContext.Current.CancellationToken);
+        LocalFileRecord? localFile = await _repo.GetLocalFileByPathAsync("PlaceholderAccountId", Arg.Any<string>(), TestContext.Current.CancellationToken);
         _ = localFile.ShouldNotBeNull();
         localFile.SyncState.ShouldBe(SyncState.Downloaded);
     }
@@ -106,20 +106,20 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingDownloadsWithMultipleItems()
     {
-        var item1 = new DriveItemRecord("item1", "driveItem1", "file1.txt", null, null, 50, DateTimeOffset.UtcNow, false, false);
-        var item2 = new DriveItemRecord("item2", "driveItem2", "subfolder/file2.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
+        var item1 = new DriveItemRecord(Arg.Any<string>(),"item1", "driveItem1", "file1.txt", null, null, 50, DateTimeOffset.UtcNow, false, false);
+        var item2 = new DriveItemRecord(Arg.Any<string>(),"item2", "driveItem2", "subfolder/file2.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         await _db.DriveItems.AddRangeAsync([item1, item2], TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),"driveItem1", Arg.Any<CancellationToken>())
             .Returns(new MemoryStream("content1"u8.ToArray()));
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem2", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),"driveItem2", Arg.Any<CancellationToken>())
             .Returns(new MemoryStream("content2"u8.ToArray()));
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         _mockFileSystem.FileExists(@"C:\OneDrive\file1.txt").ShouldBeTrue();
         _mockFileSystem.FileExists(@"C:\OneDrive\subfolder\file2.txt").ShouldBeTrue();
@@ -128,19 +128,19 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingDownloadsEmitsProgressEvents()
     {
-        var driveItem = new DriveItemRecord("item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
+        var driveItem = new DriveItemRecord(Arg.Any<string>(),"item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         _ = await _db.DriveItems.AddAsync(driveItem, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),"driveItem1", Arg.Any<CancellationToken>())
             .Returns(new MemoryStream("content"u8.ToArray()));
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
         var progressEvents = new List<SyncProgress>();
         _ = service.Progress.Subscribe(progressEvents.Add);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         progressEvents.Count.ShouldBeGreaterThan(0);
         progressEvents[0].CurrentOperationMessage.ShouldBe("Downloading files");
@@ -150,17 +150,17 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingDownloadsLogsTransferEvents()
     {
-        var driveItem = new DriveItemRecord("item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
+        var driveItem = new DriveItemRecord(Arg.Any<string>(),"item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         _ = await _db.DriveItems.AddAsync(driveItem, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),"driveItem1", Arg.Any<CancellationToken>())
             .Returns(new MemoryStream("content"u8.ToArray()));
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         List<TransferLog> logs = await _db.TransferLogs.Where(l => l.Type == TransferType.Download).ToListAsync(TestContext.Current.CancellationToken);
         logs.Count.ShouldBeGreaterThanOrEqualTo(1); // At least one log entry
@@ -172,17 +172,17 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingDownloadsHandlesDownloadFailure()
     {
-        var driveItem = new DriveItemRecord("item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
+        var driveItem = new DriveItemRecord(Arg.Any<string>(),"item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         _ = await _db.DriveItems.AddAsync(driveItem, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(), "driveItem1", Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("Network error"));
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         _mockFileSystem.FileExists(@"C:\OneDrive\file.txt").ShouldBeFalse();
         List<TransferLog> logs = await _db.TransferLogs.Where(l => l.Type == TransferType.Download && l.Status == TransferStatus.Failed).ToListAsync(TestContext.Current.CancellationToken);
@@ -194,13 +194,13 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingDownloadsRetriesOnFailure()
     {
-        var driveItem = new DriveItemRecord("item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
+        var driveItem = new DriveItemRecord(Arg.Any<string>(),"item1", "driveItem1", "file.txt", null, null, 100, DateTimeOffset.UtcNow, false, false);
         _ = await _db.DriveItems.AddAsync(driveItem, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
         var callCount = 0;
-        _ = _mockGraph.DownloadDriveItemContentAsync("driveItem1", Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(), "driveItem1", Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
                 callCount++;
@@ -209,7 +209,7 @@ public sealed class TransferServiceShould : IDisposable
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         callCount.ShouldBeGreaterThanOrEqualTo(1); // At least initial attempt
         _mockFileSystem.FileExists(@"C:\OneDrive\file.txt").ShouldBeTrue();
@@ -220,20 +220,20 @@ public sealed class TransferServiceShould : IDisposable
     {
         for(var i = 0; i < 15; i++)
         {
-            var item = new DriveItemRecord($"item{i}", $"driveItem{i}", $"file{i}.txt", null, null, 50, DateTimeOffset.UtcNow, false, false);
+            var item = new DriveItemRecord(Arg.Any<string>(),$"item{i}", $"driveItem{i}", $"file{i}.txt", null, null, 50, DateTimeOffset.UtcNow, false, false);
             _ = await _db.DriveItems.AddAsync(item, TestContext.Current.CancellationToken);
         }
 
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddDirectory(@"C:\OneDrive");
-        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(new MemoryStream("content"u8.ToArray()));
 
         _settings.UiSettings.SyncSettings.DownloadBatchSize = 10;
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(), TestContext.Current.CancellationToken);
 
         var downloadedFiles = _mockFileSystem.AllFiles.Count();
         downloadedFiles.ShouldBe(15);
@@ -242,23 +242,23 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingUploadsWithSingleFile()
     {
-        var localFile = new LocalFileRecord("local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
+        var localFile = new LocalFileRecord(Arg.Any<string>(), "local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
         _ = await _db.LocalFiles.AddAsync(localFile, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddFile(@"C:\OneDrive\upload.txt", new MockFileData("upload content"));
 
         var session = new UploadSessionInfo("https://upload.url", "session123", DateTimeOffset.UtcNow.AddHours(1));
-        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), "upload.txt", Arg.Any<CancellationToken>())
+        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(),Arg.Any<string>(), "upload.txt", Arg.Any<CancellationToken>())
             .Returns(session);
         _ = _mockGraph.UploadChunkAsync(Arg.Is<UploadSessionInfo>(s => s.SessionId == "session123"), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingUploadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
-        _ = await _mockGraph.Received().CreateUploadSessionAsync(Arg.Any<string>(), "upload.txt", Arg.Any<CancellationToken>());
+        _ = await _mockGraph.Received().CreateUploadSessionAsync(Arg.Any<string>(),Arg.Any<string>(), "upload.txt", Arg.Any<CancellationToken>());
         await _mockGraph.Received().UploadChunkAsync(Arg.Is<UploadSessionInfo>(s => s.SessionId == "session123"), Arg.Any<Stream>(), 0, Arg.Any<long>(), Arg.Any<CancellationToken>());
 
         LocalFileRecord? updatedFile = await _db.LocalFiles.FindAsync(["local1"], TestContext.Current.CancellationToken);
@@ -269,14 +269,14 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingUploadsEmitsProgressEvents()
     {
-        var localFile = new LocalFileRecord("local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
+        var localFile = new LocalFileRecord(Arg.Any<string>(), "local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
         _ = await _db.LocalFiles.AddAsync(localFile, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddFile(@"C:\OneDrive\upload.txt", new MockFileData("upload content"));
 
         var session = new UploadSessionInfo("https://upload.url", "session123", DateTimeOffset.UtcNow.AddHours(1));
-        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(session);
         _ = _mockGraph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -285,7 +285,7 @@ public sealed class TransferServiceShould : IDisposable
         var progressEvents = new List<SyncProgress>();
         _ = service.Progress.Subscribe(progressEvents.Add);
 
-        await service.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingUploadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         progressEvents.Count.ShouldBeGreaterThan(0);
         progressEvents[0].CurrentOperationMessage.ShouldBe("Uploading files");
@@ -294,18 +294,18 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingUploadsHandlesUploadFailure()
     {
-        var localFile = new LocalFileRecord("local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
+        var localFile = new LocalFileRecord(Arg.Any<string>(), "local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
         _ = await _db.LocalFiles.AddAsync(localFile, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddFile(@"C:\OneDrive\upload.txt", new MockFileData("content"));
 
-        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("Upload failed"));
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingUploadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         List<TransferLog> logs = await _db.TransferLogs.Where(l => l.Type == TransferType.Upload && l.Status == TransferStatus.Failed).ToListAsync(TestContext.Current.CancellationToken);
         logs.Count.ShouldBeGreaterThan(0);
@@ -319,21 +319,21 @@ public sealed class TransferServiceShould : IDisposable
         var largeContent = new byte[1024 * 1024]; // 1MB file
         Array.Fill(largeContent, (byte)0x42);
 
-        var localFile = new LocalFileRecord("local1", "large.bin", null, largeContent.Length, DateTimeOffset.UtcNow, SyncState.PendingUpload);
+        var localFile = new LocalFileRecord(Arg.Any<string>(),"local1", "large.bin", null, largeContent.Length, DateTimeOffset.UtcNow, SyncState.PendingUpload);
         _ = await _db.LocalFiles.AddAsync(localFile, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddFile(@"C:\OneDrive\large.bin", new MockFileData(largeContent));
 
         var session = new UploadSessionInfo("https://upload.url", "session123", DateTimeOffset.UtcNow.AddHours(1));
-        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(),Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(session);
         _ = _mockGraph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingUploadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         // 1MB / 320KB = 4 chunks
         await _mockGraph.Received(4).UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>());
@@ -344,7 +344,7 @@ public sealed class TransferServiceShould : IDisposable
     {
         for(var i = 0; i < 5; i++)
         {
-            var item = new DriveItemRecord($"item{i}", $"driveItem{i}", $"file{i}.txt", null, null, 50, DateTimeOffset.UtcNow, false, false);
+            var item = new DriveItemRecord(Arg.Any<string>(),$"item{i}", $"driveItem{i}", $"file{i}.txt", null, null, 50, DateTimeOffset.UtcNow, false, false);
             _ = await _db.DriveItems.AddAsync(item, TestContext.Current.CancellationToken);
         }
 
@@ -356,7 +356,7 @@ public sealed class TransferServiceShould : IDisposable
         var maxConcurrent = 0;
         var semaphore = new SemaphoreSlim(1);
 
-        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _ = _mockGraph.DownloadDriveItemContentAsync(Arg.Any<string>(),Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(async callInfo =>
             {
                 await semaphore.WaitAsync();
@@ -377,7 +377,7 @@ public sealed class TransferServiceShould : IDisposable
         _settings.UiSettings.SyncSettings.MaxParallelDownloads = 2;
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingDownloadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingDownloadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         maxConcurrent.ShouldBeLessThanOrEqualTo(2);
     }
@@ -385,21 +385,21 @@ public sealed class TransferServiceShould : IDisposable
     [Fact]
     public async Task ProcessPendingUploadsLogsTransferEvents()
     {
-        var localFile = new LocalFileRecord("local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
+        var localFile = new LocalFileRecord(Arg.Any<string>(),"local1", "upload.txt", null, 200, DateTimeOffset.UtcNow, SyncState.PendingUpload);
         _ = await _db.LocalFiles.AddAsync(localFile, TestContext.Current.CancellationToken);
         _ = await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         _mockFileSystem.AddFile(@"C:\OneDrive\upload.txt", new MockFileData("content"));
 
         var session = new UploadSessionInfo("https://upload.url", "session123", DateTimeOffset.UtcNow.AddHours(1));
-        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _ = _mockGraph.CreateUploadSessionAsync(Arg.Any<string>(),Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(session);
         _ = _mockGraph.UploadChunkAsync(Arg.Any<UploadSessionInfo>(), Arg.Any<Stream>(), Arg.Any<long>(), Arg.Any<long>(), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         var service = new TransferService(_fsAdapter, _mockGraph, _repo, _mockLogger, _settings, _progressReporter, _mockErrorLogger, _mockChannelFactory, _mockDownloadQueueProducer, _mockDownloadQueueConsumer, _mockUploadQueueProducer, _mockUploadQueueConsumer);
 
-        await service.ProcessPendingUploadsAsync(TestContext.Current.CancellationToken);
+        await service.ProcessPendingUploadsAsync(Arg.Any<string>(),TestContext.Current.CancellationToken);
 
         List<TransferLog> logs = await _db.TransferLogs.Where(l => l.Type == TransferType.Upload).ToListAsync(TestContext.Current.CancellationToken);
         logs.Count.ShouldBe(2); // InProgress and Success

@@ -7,17 +7,16 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Configurations;
 
 public sealed class DeltaTokenConfiguration : IEntityTypeConfiguration<DeltaToken>
 {
-    public void Configure(EntityTypeBuilder<DeltaToken> b)
+    public void Configure(EntityTypeBuilder<DeltaToken> builder)
     {
-        _ = b.ToTable("DeltaTokens");
-        _ = b.HasKey(t => t.Id);
+        _ = builder.ToTable("DeltaTokens");
+        _ = builder.HasKey(t => t.Id);
 
-        // We don't assume TokenValue exists; check first.
-        if(PropertyExists(typeof(DeltaToken), "TokenValue"))
-            _ = b.Property("TokenValue").HasColumnType("TEXT");
+        _ = builder.Property("TokenValue").HasColumnType("TEXT");
 
-        // If there are timestamp properties (CreatedAt, ExpiresAt), conversions are applied by UseSqliteFriendlyConversions
+        _ = builder.HasOne<Account>()
+            .WithMany()
+            .HasForeignKey(e => e.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
-
-    static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;
 }

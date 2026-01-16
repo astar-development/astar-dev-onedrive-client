@@ -25,7 +25,7 @@ public class SyncCommandServiceShould
     public async Task CreateInitialSyncCommand_HappyPath()
     {
         (SyncCommandService service, ISyncEngine sync, IAuthService _, ISyncStatusTarget target, ILogger<SyncCommandService> logger) = Create();
-        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        sync.InitialFullSyncAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateInitialSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Running initial full sync");
@@ -40,9 +40,9 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HappyPath()
     {
-        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        var deltaToken = new DeltaToken("PlaceholderAccountId","deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService service, ISyncEngine sync, IAuthService _, ISyncStatusTarget target, ILogger<SyncCommandService> logger) = Create();
-        sync.IncrementalSyncAsync(deltaToken, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        sync.IncrementalSyncAsync("PlaceholderAccountId", deltaToken, Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Running incremental sync");
@@ -58,7 +58,7 @@ public class SyncCommandServiceShould
     public async Task CreateScanLocalFilesCommand_HappyPath()
     {
         (SyncCommandService service, ISyncEngine sync, IAuthService _, ISyncStatusTarget target, ILogger<SyncCommandService> logger) = Create();
-        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+        sync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateScanLocalFilesCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Processing local file sync...");
@@ -98,7 +98,7 @@ public class SyncCommandServiceShould
     public async Task CreateInitialSyncCommand_HandlesCancellation()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
+        sync.InitialFullSyncAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateInitialSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Initial sync");
@@ -108,7 +108,7 @@ public class SyncCommandServiceShould
     public async Task CreateInitialSyncCommand_HandlesException()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.InitialFullSyncAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
+        sync.InitialFullSyncAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateInitialSyncCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Initial sync", Arg.Any<InvalidOperationException>());
@@ -118,9 +118,9 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HandlesCancellation()
     {
-        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        var deltaToken = new DeltaToken("PlaceholderAccountId","deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
+        sync.IncrementalSyncAsync("PlaceholderAccountId", Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Incremental sync");
@@ -129,9 +129,9 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HandlesDeltaTokenException()
     {
-        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        var deltaToken = new DeltaToken("PlaceholderAccountId","deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("Delta token missing"));
+        sync.IncrementalSyncAsync("PlaceholderAccountId", Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("Delta token missing"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().SetStatus("Incremental sync failed");
@@ -143,9 +143,9 @@ public class SyncCommandServiceShould
     [Fact]
     public async Task CreateIncrementalSyncCommand_HandlesOtherException()
     {
-        var deltaToken = new DeltaToken("deltaId", "anotherId", DateTimeOffset.MinValue);
+        var deltaToken = new DeltaToken("PlaceholderAccountId","deltaId", "anotherId", DateTimeOffset.MinValue);
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.IncrementalSyncAsync(Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("other error"));
+        sync.IncrementalSyncAsync("PlaceholderAccountId",Arg.Any<DeltaToken>(), Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("other error"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateIncrementalSyncCommand(deltaToken, target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Incremental sync", Arg.Any<InvalidOperationException>());
@@ -156,7 +156,7 @@ public class SyncCommandServiceShould
     public async Task CreateScanLocalFilesCommand_HandlesCancellation()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? _) = Create();
-        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
+        sync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(_ => throw new OperationCanceledException());
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateScanLocalFilesCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncCancelled("Local file sync");
@@ -166,7 +166,7 @@ public class SyncCommandServiceShould
     public async Task CreateScanLocalFilesCommand_HandlesException()
     {
         (SyncCommandService? service, ISyncEngine? sync, IAuthService _, ISyncStatusTarget? target, ILogger<SyncCommandService>? logger) = Create();
-        sync.ScanLocalFilesAsync(Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
+        sync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns(_ => throw new InvalidOperationException("fail"));
         ReactiveCommand<System.Reactive.Unit, System.Reactive.Unit> command = service.CreateScanLocalFilesCommand(target, Observable.Return(false));
         await command.Execute();
         target.Received().OnSyncFailed("Local file sync", Arg.Any<InvalidOperationException>());

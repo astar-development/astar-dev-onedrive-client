@@ -16,7 +16,7 @@ public class DatabaseHealthCheckShould
         .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
         .Options;
         await using var dbContext = new AppDbContext(options);
-        dbContext.DeltaTokens.Add(new DeltaToken("MockId", "MockToken", DateTime.UtcNow));
+        dbContext.DeltaTokens.Add(new DeltaToken("PlaceholderAccountId","MockId", "MockToken", DateTime.UtcNow));
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var check = new DatabaseHealthCheck(dbContext);
