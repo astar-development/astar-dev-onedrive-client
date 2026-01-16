@@ -11,13 +11,13 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Graph;
 
 public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalConfigurationSettings msalConfigurationSettings, ILogger<GraphClientWrapper> logger) : IGraphClient
 {
-    public async Task<DeltaPage> GetDriveDeltaPageAsync(string? deltaOrNextLink, CancellationToken cancellationToken)
+    public async Task<DeltaPage> GetDriveDeltaPageAsync(string accountId, string? deltaOrNextLink, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         var url = GetDeltaOrNextUrl(deltaOrNextLink);
 
-        var token = await auth.GetAccessTokenAsync(cancellationToken);
+        var token = await auth.GetAccessTokenAsync(accountId, cancellationToken);
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -27,7 +27,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         await using Stream stream = await res.Content.ReadAsStreamAsync(cancellationToken);
         using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
 
-        List<DriveItemRecord> items = ParseDriveItemRecords(doc);
+        List<DriveItemRecord> items = ParseDriveItemRecords(accountId, doc);
 
         var next = TryGetODataProperty(doc, "@odata.nextLink");
         var delta = TryGetODataProperty(doc, "@odata.deltaLink");
@@ -35,13 +35,13 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         return new DeltaPage(items, next, delta);
     }
 
-    public async Task<Stream> DownloadDriveItemContentAsync(string driveItemId, CancellationToken cancellationToken)
+    public async Task<Stream> DownloadDriveItemContentAsync(string accountId, string driveItemId, CancellationToken cancellationToken)
     {
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
             logger.LogDebug("Requesting download for DriveItemId: {DriveItemId}", driveItemId);
-            var token = await auth.GetAccessTokenAsync(cancellationToken);
+            var token = await auth.GetAccessTokenAsync(accountId, cancellationToken);
             var url = $"{msalConfigurationSettings.GraphUri}/items/{driveItemId}/content";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -73,10 +73,10 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         throw new InvalidOperationException("Failed to download DriveItem content");
     }
 
-    public async Task<UploadSessionInfo> CreateUploadSessionAsync(string parentPath, string fileName, CancellationToken cancellationToken)
+    public async Task<UploadSessionInfo> CreateUploadSessionAsync(string accountId, string parentPath, string fileName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var token = await auth.GetAccessTokenAsync(cancellationToken);
+        var token = await auth.GetAccessTokenAsync(accountId, cancellationToken);
 
         var path = string.IsNullOrWhiteSpace(parentPath) ? fileName : $"{parentPath.Trim('/')}/{fileName}";
         var url = $"{msalConfigurationSettings.GraphUri}/root:/{Uri.EscapeDataString(path)}:/createUploadSession";
@@ -104,9 +104,9 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
             _ = res.EnsureSuccessStatusCode();
     }
 
-    public async Task DeleteDriveItemAsync(string driveItemId, CancellationToken cancellationToken)
+    public async Task DeleteDriveItemAsync(string accountId, string driveItemId, CancellationToken cancellationToken)
     {
-        var token = await auth.GetAccessTokenAsync(cancellationToken);
+        var token = await auth.GetAccessTokenAsync(accountId, cancellationToken);
         var url = $"{msalConfigurationSettings.GraphUri}/items/{driveItemId}";
         using var req = new HttpRequestMessage(HttpMethod.Delete, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -120,21 +120,21 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
             ? $"{msalConfigurationSettings.GraphUri}/root/delta"
             : deltaOrNextLink;
 
-    private static List<DriveItemRecord> ParseDriveItemRecords(JsonDocument doc)
+    private static List<DriveItemRecord> ParseDriveItemRecords(string accountId, JsonDocument doc)
     {
         var items = new List<DriveItemRecord>();
         if(doc.RootElement.TryGetProperty("value", out JsonElement arr))
         {
             foreach(JsonElement el in arr.EnumerateArray())
             {
-                items.Add(ParseDriveItemRecord(el));
+                items.Add(ParseDriveItemRecord(accountId, el));
             }
         }
 
         return items;
     }
 
-    private static DriveItemRecord ParseDriveItemRecord(JsonElement jsonElement)
+    private static DriveItemRecord ParseDriveItemRecord(string accountId, JsonElement jsonElement)
     {
         var id = jsonElement.GetProperty("id").GetString()!;
         var isFolder = jsonElement.TryGetProperty("folder", out _);
@@ -147,7 +147,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
         DateTimeOffset lastModifiedUtc = GetLastModifiedUtc(jsonElement);
         var isDeleted = jsonElement.TryGetProperty("deleted", out _);
 
-        return new DriveItemRecord(id, id, relativePath, eTag, cTag, size, lastModifiedUtc, isFolder, isDeleted);
+        return new DriveItemRecord(accountId, id, id, relativePath, eTag, cTag, size, lastModifiedUtc, isFolder, isDeleted);
     }
 
     private static DateTimeOffset GetLastModifiedUtc(JsonElement jsonElement) => jsonElement.TryGetProperty("lastModifiedDateTime", out JsonElement lm)

@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>preview</LangVersion>
     <UseWPF>false</UseWPF>
-    <UserSecretsId>astar-dev-onedrive-client-secrets</UserSecretsId>
     <!-- Enable Avalonia build targets; do NOT add explicit AvaloniaResource entries -->
     <UseAvalonia>true</UseAvalonia>
     <AvaloniaUsePrecompiledXaml>false</AvaloniaUsePrecompiledXaml>

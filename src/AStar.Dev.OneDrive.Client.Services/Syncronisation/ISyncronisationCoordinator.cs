@@ -6,7 +6,7 @@ public interface ISyncronisationCoordinator
 {
     IObservable<SyncProgress> SyncProgress { get; }
     IObservable<SyncProgress> TransferProgress { get; }
-    Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken);
-    Task<int> GetPendingDownloadCountAsync(CancellationToken cancellationToken);
-    Task<int> GetPendingUploadCountAsync(CancellationToken cancellationToken);
+    Task<DeltaToken?> GetDeltaTokenAsync(string accountId, CancellationToken cancellationToken);
+    Task<int> GetPendingDownloadCountAsync(string accountId, CancellationToken cancellationToken);
+    Task<int> GetPendingUploadCountAsync(string accountId, CancellationToken cancellationToken);
 }

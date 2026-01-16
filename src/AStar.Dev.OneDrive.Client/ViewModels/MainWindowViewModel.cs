@@ -48,14 +48,14 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     {
         _syncCoordinator = syncCoordinator;
         UserPreferences = settingsAndPreferencesService.Load();
-        SignedIn = authService.IsUserSignedInAsync(CancellationToken.None).GetAwaiter().GetResult();
+        SignedIn = authService.IsUserSignedInAsync("PlaceholderAccountId", CancellationToken.None).GetAwaiter().GetResult();
         IObservable<bool> isSyncing = this.WhenAnyValue(x => x.OperationType)
             .Select(type => type == SyncOperationType.Syncing);
 
         SignInCommand = syncCommandService.CreateSignInCommand(this);
         InitialSyncCommand = syncCommandService.CreateInitialSyncCommand(this, isSyncing);
-        DeltaToken? fullSync = _syncCoordinator.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult();
-        IncrementalSyncCommand = syncCommandService.CreateIncrementalSyncCommand(fullSync ?? new DeltaToken(string.Empty, string.Empty, DateTimeOffset.MinValue), this, isSyncing);
+        DeltaToken? fullSync = _syncCoordinator.GetDeltaTokenAsync("PlaceholderAccountId", CancellationToken.None).GetAwaiter().GetResult();
+        IncrementalSyncCommand = syncCommandService.CreateIncrementalSyncCommand(fullSync ?? new DeltaToken("PlaceholderAccountId", string.Empty, string.Empty, DateTimeOffset.MinValue), this, isSyncing);
         CancelSyncCommand = syncCommandService.CreateCancelSyncCommand(this, isSyncing);
         ScanLocalFilesCommand = syncCommandService.CreateScanLocalFilesCommand(this, isSyncing);
 
@@ -165,8 +165,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     {
         try
         {
-            var downloads = await _syncCoordinator.GetPendingDownloadCountAsync(CancellationToken.None);
-            var uploads = await _syncCoordinator.GetPendingUploadCountAsync(CancellationToken.None);
+            var downloads = await _syncCoordinator.GetPendingDownloadCountAsync("PlaceholderAccountId",CancellationToken.None);
+            var uploads = await _syncCoordinator.GetPendingUploadCountAsync("PlaceholderAccountId", CancellationToken.None);
             return (downloads, uploads, 100d);
         }
         catch

@@ -10,5 +10,5 @@ public interface IDownloadQueueProducer
     /// </summary>
     /// <param name="writer">The channel writer to write download items to.</param>
     /// <param name="cancellationToken">Token to observe for cancellation.</param>
-    Task ProduceAsync(ChannelWriter<DriveItemRecord> writer, CancellationToken cancellationToken);
+    Task ProduceAsync(string accountId, ChannelWriter<DriveItemRecord> writer, CancellationToken cancellationToken);
 }

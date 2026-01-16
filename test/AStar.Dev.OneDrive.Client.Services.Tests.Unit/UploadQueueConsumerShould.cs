@@ -10,8 +10,8 @@ public class UploadQueueConsumerShould
     {
         LocalFileRecord[] items =
         [
-            new LocalFileRecord("id1", "file1.txt", "hash1", 100, System.DateTimeOffset.UtcNow, SyncState.PendingUpload),
-            new LocalFileRecord("id2", "file2.txt", "hash2", 200, System.DateTimeOffset.UtcNow, SyncState.PendingUpload)
+            new LocalFileRecord(Arg.Any<string>(),"id1", "file1.txt", "hash1", 100, System.DateTimeOffset.UtcNow, SyncState.PendingUpload),
+            new LocalFileRecord(Arg.Any<string>(), "id2", "file2.txt", "hash2", 200, System.DateTimeOffset.UtcNow, SyncState.PendingUpload)
         ];
         var channel = Channel.CreateUnbounded<LocalFileRecord>();
         foreach(LocalFileRecord? item in items)
@@ -19,7 +19,7 @@ public class UploadQueueConsumerShould
         channel.Writer.Complete();
         var processed = new List<string>();
         var consumer = new UploadQueueConsumer();
-        await consumer.ConsumeAsync(channel.Reader, async item => { processed.Add(item.Id); await Task.CompletedTask; }, 2, CancellationToken.None);
+        await consumer.ConsumeAsync(Arg.Any<string>(),channel.Reader, async item => { processed.Add(item.Id); await Task.CompletedTask; }, 2, CancellationToken.None);
         processed.Count.ShouldBe(2);
         processed.ShouldContain("id1");
         processed.ShouldContain("id2");

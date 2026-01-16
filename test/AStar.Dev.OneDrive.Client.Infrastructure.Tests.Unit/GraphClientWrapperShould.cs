@@ -16,7 +16,7 @@ public class GraphClientWrapperShould
     private static (GraphClientWrapper sut, IAuthService auth, TestHandler handler, ILogger<GraphClientWrapper> logger) CreateSut()
     {
         IAuthService auth = Substitute.For<IAuthService>();
-        auth.GetAccessTokenAsync(Arg.Any<CancellationToken>()).Returns("token");
+        auth.GetAccessTokenAsync("PlaceholderAccountId", Arg.Any<CancellationToken>()).Returns("token");
         var handler = new TestHandler();
         var http = new HttpClient(handler);
         var cachePrefix = "test-cache-prefix";
@@ -48,7 +48,7 @@ public class GraphClientWrapperShould
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
-        DeltaPage result = await sut.GetDriveDeltaPageAsync(null, CancellationToken.None);
+        DeltaPage result = await sut.GetDriveDeltaPageAsync("PlaceholderAccountId", null, CancellationToken.None);
         result.Items.ShouldNotBeEmpty();
         result.NextLink.ShouldBe("next");
         result.DeltaLink.ShouldBe("delta");
@@ -63,7 +63,7 @@ public class GraphClientWrapperShould
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
-        DeltaPage result = await sut.GetDriveDeltaPageAsync(null, CancellationToken.None);
+        DeltaPage result = await sut.GetDriveDeltaPageAsync("PlaceholderAccountId", null, CancellationToken.None);
         result.Items.ShouldBeEmpty();
         result.DeltaLink.ShouldBe("delta");
     }
@@ -76,7 +76,7 @@ public class GraphClientWrapperShould
         {
             Content = new StringContent("not json", Encoding.UTF8, "application/json")
         };
-        await Should.ThrowAsync<JsonException>(() => sut.GetDriveDeltaPageAsync(null, CancellationToken.None));
+        await Should.ThrowAsync<JsonException>(() => sut.GetDriveDeltaPageAsync("PlaceholderAccountId", null, CancellationToken.None));
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class GraphClientWrapperShould
         (GraphClientWrapper? sut, IAuthService _, TestHandler? handler, ILogger<GraphClientWrapper> _) = CreateSut();
         var content = new StringContent("abc");
         handler.Response = new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
-        Stream stream = await sut.DownloadDriveItemContentAsync("id1", CancellationToken.None);
+        Stream stream = await sut.DownloadDriveItemContentAsync("PlaceholderAccountId", "id1", CancellationToken.None);
         stream.ShouldNotBeNull();
     }
 
@@ -94,7 +94,7 @@ public class GraphClientWrapperShould
     {
         (GraphClientWrapper? sut, IAuthService _, TestHandler? handler, ILogger<GraphClientWrapper> _) = CreateSut();
         handler.Response = new HttpResponseMessage(HttpStatusCode.NotFound);
-        await Should.ThrowAsync<InvalidOperationException>(() => sut.DownloadDriveItemContentAsync("badid", CancellationToken.None));
+        await Should.ThrowAsync<InvalidOperationException>(() => sut.DownloadDriveItemContentAsync("PlaceholderAccountId", "badid", CancellationToken.None));
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class GraphClientWrapperShould
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
-        UploadSessionInfo result = await sut.CreateUploadSessionAsync("", "file.txt", CancellationToken.None);
+        UploadSessionInfo result = await sut.CreateUploadSessionAsync("PlaceholderAccountId", "", "file.txt", CancellationToken.None);
         result.UploadUrl.ShouldBe("http://upload");
         result.ExpiresAt.ShouldBe(DateTimeOffset.Parse("2024-12-31T23:59:59Z", CultureInfo.InvariantCulture));
     }
@@ -136,7 +136,7 @@ public class GraphClientWrapperShould
     {
         (GraphClientWrapper? sut, IAuthService _, TestHandler? handler, ILogger<GraphClientWrapper> _) = CreateSut();
         handler.Response = new HttpResponseMessage(HttpStatusCode.NoContent);
-        await Should.NotThrowAsync(() => sut.DeleteDriveItemAsync("id", CancellationToken.None));
+        await Should.NotThrowAsync(() => sut.DeleteDriveItemAsync("PlaceholderAccountId", "id", CancellationToken.None));
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class GraphClientWrapperShould
     {
         (GraphClientWrapper? sut, IAuthService _, TestHandler? handler, ILogger<GraphClientWrapper> _) = CreateSut();
         handler.Response = new HttpResponseMessage(HttpStatusCode.NotFound);
-        await Should.NotThrowAsync(() => sut.DeleteDriveItemAsync("id", CancellationToken.None));
+        await Should.NotThrowAsync(() => sut.DeleteDriveItemAsync("PlaceholderAccountId", "id", CancellationToken.None));
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class GraphClientWrapperShould
     {
         (GraphClientWrapper? sut, IAuthService _, TestHandler? handler, ILogger<GraphClientWrapper> _) = CreateSut();
         handler.Response = new HttpResponseMessage(HttpStatusCode.BadRequest);
-        await Should.ThrowAsync<HttpRequestException>(() => sut.DeleteDriveItemAsync("id", CancellationToken.None));
+        await Should.ThrowAsync<HttpRequestException>(() => sut.DeleteDriveItemAsync("PlaceholderAccountId", "id", CancellationToken.None));
     }
 
     private class TestHandler : HttpMessageHandler

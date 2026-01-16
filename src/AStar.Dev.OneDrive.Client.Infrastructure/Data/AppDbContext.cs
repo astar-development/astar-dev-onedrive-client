@@ -13,16 +13,20 @@ public class AppDbContext : DbContext
     public DbSet<LocalFileRecord> LocalFiles { get; init; } = null!;
     public DbSet<DeltaToken> DeltaTokens { get; init; } = null!;
     public DbSet<TransferLog> TransferLogs { get; init; } = null!;
+    public DbSet<Account> Accounts { get; init; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Explicit per-entity configuration
+        _ = modelBuilder.ApplyConfiguration(new AccountConfiguration());
         _ = modelBuilder.ApplyConfiguration(new DriveItemRecordConfiguration());
         _ = modelBuilder.ApplyConfiguration(new LocalFileRecordConfiguration());
         _ = modelBuilder.ApplyConfiguration(new DeltaTokenConfiguration());
         _ = modelBuilder.ApplyConfiguration(new TransferLogConfiguration());
-
-        // Apply SQLite-friendly conversions for the four entities
+        _ = modelBuilder.ApplyConfiguration(new FileMetadataConfiguration());
+        _ = modelBuilder.ApplyConfiguration(new SyncConfigurationConfiguration());
+        _ = modelBuilder.ApplyConfiguration(new SyncConflictConfiguration());
+        _ = modelBuilder.ApplyConfiguration(new WindowPreferencesConfiguration());
+        
         modelBuilder.UseSqliteFriendlyConversions();
     }
 }

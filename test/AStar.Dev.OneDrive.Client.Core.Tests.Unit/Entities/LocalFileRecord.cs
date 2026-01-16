@@ -28,7 +28,7 @@ public class LocalFileRecordShould
     [Fact]
     public void ContainTheExpectedProperties()
     {
-        var sut = new LocalFileRecord("MockId", "MockRelativePath", "MockHash", 12345, new DateTimeOffset(2025,12,21,1,2,3,TimeSpan.Zero), SyncState.Deleted);
+        var sut = new LocalFileRecord("PlaceholderAccountId", "MockId", "MockRelativePath", "MockHash", 12345, new DateTimeOffset(2025,12,21,1,2,3,TimeSpan.Zero), SyncState.Deleted);
 
         sut.ToJson().ShouldMatchApproved();
     }

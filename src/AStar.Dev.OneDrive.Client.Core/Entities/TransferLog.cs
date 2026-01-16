@@ -1,6 +1,7 @@
 namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 public sealed record TransferLog(
+    string AccountId,
     string Id,
     TransferType Type,
     string ItemId,
@@ -10,6 +11,3 @@ public sealed record TransferLog(
     long? BytesTransferred,
     string? Error
 );
-
-public enum TransferType { Download, Upload, Delete }
-public enum TransferStatus { Pending, InProgress, Success, Failed }

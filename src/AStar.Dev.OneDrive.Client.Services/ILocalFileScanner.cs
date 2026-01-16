@@ -8,5 +8,5 @@ public interface ILocalFileScanner
     /// <summary>
     /// Scans local files, updates sync state, and returns summary statistics.
     /// </summary>
-    Task<(int processedCount, int newFilesCount, int modifiedFilesCount)> ScanAndSyncLocalFilesAsync(CancellationToken cancellationToken);
+    Task<(int processedCount, int newFilesCount, int modifiedFilesCount)> ScanAndSyncLocalFilesAsync(string accountId, CancellationToken cancellationToken);
 }

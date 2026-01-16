@@ -21,7 +21,7 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
             {
                 target.SetStatus("Running initial full sync");
                 target.SetProgress(0);
-                await sync.InitialFullSyncAsync(_currentSyncCancellation.Token);
+                await sync.InitialFullSyncAsync("PlaceholderAccountId", _currentSyncCancellation.Token);
                 target.SetStatus("Initial sync complete");
                 target.SetProgress(100);
                 target.AddRecentTransfer("Initial sync completed successfully");
@@ -57,7 +57,7 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
             {
                 target.SetStatus("Running incremental sync");
                 target.SetProgress(0);
-                await sync.IncrementalSyncAsync(deltaToken, _currentSyncCancellation.Token);
+                await sync.IncrementalSyncAsync("PlaceholderAccountId", deltaToken, _currentSyncCancellation.Token);
                 target.SetStatus("Incremental sync complete");
                 target.SetProgress(100);
                 target.AddRecentTransfer("Incremental sync completed successfully");
@@ -97,7 +97,7 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
                 target.SetStatus("Processing local file sync...");
                 target.SetProgress(0);
                 target.AddRecentTransfer("Processing local file sync...");
-                await sync.ScanLocalFilesAsync(_currentSyncCancellation.Token);
+                await sync.ScanLocalFilesAsync("PlaceholderAccountId", _currentSyncCancellation.Token);
                 target.SetStatus("Local file sync completed successfully");
                 target.SetProgress(100);
                 target.AddRecentTransfer("Local file sync completed successfully");
@@ -132,7 +132,7 @@ public class SyncCommandService(IAuthService auth, ISyncEngine sync, ILogger<Syn
                 target.AddRecentTransfer($"Signed in at {DateTimeOffset.Now}");
                 logger.LogInformation("User successfully signed in");
 
-                DeltaToken? token = sync.GetDeltaTokenAsync(CancellationToken.None).GetAwaiter().GetResult() ?? throw new InvalidOperationException("Delta token missing; run initial sync first.");
+                DeltaToken? token = sync.GetDeltaTokenAsync("PlaceholderAccountId", CancellationToken.None).GetAwaiter().GetResult() ?? throw new InvalidOperationException("Delta token missing; run initial sync first.");
                 if(token != null)
                 {
                     target.SetFullSync(false);

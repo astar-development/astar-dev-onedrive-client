@@ -12,15 +12,15 @@ public class DownloadQueueProducerShould
         // Arrange
         DriveItemRecord[] items =
     [
-        new DriveItemRecord("id1", "did1", "file1.txt", null, null, 100, System.DateTimeOffset.UtcNow, false, false),
-        new DriveItemRecord("id2", "did2", "file2.txt", null, null, 200, System.DateTimeOffset.UtcNow, false, false)
+        new DriveItemRecord(Arg.Any<string>(), "id1", "did1", "file1.txt", null, null, 100, System.DateTimeOffset.UtcNow, false, false),
+        new DriveItemRecord(Arg.Any<string>(), "id2", "did2", "file2.txt", null, null, 200, System.DateTimeOffset.UtcNow, false, false)
     ];
         ISyncRepository repo = NSubstitute.Substitute.For<ISyncRepository>();
-        repo.GetPendingDownloadsAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(items);
+        repo.GetPendingDownloadsAsync(Arg.Any<string>(),Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(items);
         var producer = new DownloadQueueProducer(repo, 15);
         var channel = Channel.CreateUnbounded<DriveItemRecord>();
         // Act
-        await producer.ProduceAsync(channel.Writer, TestContext.Current.CancellationToken);
+        await producer.ProduceAsync(Arg.Any<string>(),channel.Writer, TestContext.Current.CancellationToken);
         channel.Writer.Complete();
         var result = new List<DriveItemRecord>();
         await foreach(DriveItemRecord item in channel.Reader.ReadAllAsync(TestContext.Current.CancellationToken))

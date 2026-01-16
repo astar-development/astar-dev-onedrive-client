@@ -1,6 +1,7 @@
 namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 public sealed record LocalFileRecord(
+    string AccountId,
     string Id,
     string RelativePath,
     string? Hash,
@@ -8,14 +9,3 @@ public sealed record LocalFileRecord(
     DateTimeOffset LastWriteUtc,
     SyncState SyncState
 );
-
-public enum SyncState
-{
-    Unknown,
-    PendingDownload,
-    Downloaded,
-    PendingUpload,
-    Uploaded,
-    Deleted,
-    Error
-}

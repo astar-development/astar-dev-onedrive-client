@@ -7,17 +7,18 @@ namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Configurations;
 
 public sealed class LocalFileRecordConfiguration : IEntityTypeConfiguration<LocalFileRecord>
 {
-    public void Configure(EntityTypeBuilder<LocalFileRecord> b)
+    public void Configure(EntityTypeBuilder<LocalFileRecord> builder)
     {
-        _ = b.ToTable("LocalFiles");
-        _ = b.HasKey(l => l.Id);
+        _ = builder.ToTable("LocalFiles");
+        _ = builder.HasKey(l => l.Id);
 
-        if(PropertyExists(typeof(LocalFileRecord), "RelativePath"))
-            _ = b.Property("RelativePath").IsRequired();
+        _ = builder.Property("RelativePath").IsRequired();
 
-        if(PropertyExists(typeof(LocalFileRecord), "RelativePath"))
-            _ = b.HasIndex("RelativePath");
+        _ = builder.HasIndex("RelativePath");
+
+        _ = builder.HasOne<Account>()
+            .WithMany()
+            .HasForeignKey(e => e.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
-
-    static bool PropertyExists(Type t, string name) => t.GetProperty(name, BindingFlags.Public | BindingFlags.Instance) != null;
 }

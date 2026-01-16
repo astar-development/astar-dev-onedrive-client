@@ -25,10 +25,10 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     private readonly Subject<SyncProgress> _progress = new();
     private IDisposable? _transferProgressSubscription;
 
-    private async Task EmitProgressWithStatsAsync(string message, CancellationToken cancellationToken)
+    private async Task EmitProgressWithStatsAsync(string accountId, string message, CancellationToken cancellationToken)
     {
-        var pendingDownloads = await repo.GetPendingDownloadCountAsync(cancellationToken);
-        var pendingUploads = await repo.GetPendingUploadCountAsync(cancellationToken);
+        var pendingDownloads = await repo.GetPendingDownloadCountAsync(accountId, cancellationToken);
+        var pendingUploads = await repo.GetPendingUploadCountAsync(accountId, cancellationToken);
         _progress.OnNext(new SyncProgress
         {
             OperationType = SyncOperationType.Syncing,
@@ -43,7 +43,7 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     public IObservable<SyncProgress> Progress => _progress;
 
     /// <inheritdoc/>
-    public async Task InitialFullSyncAsync(CancellationToken cancellationToken)
+    public async Task InitialFullSyncAsync(string accountId, CancellationToken cancellationToken)
     {
         AStarLog.OneDriveSync.FullSyncStarted(logger, DateTimeOffset.UtcNow);
         var stopwatch = Stopwatch.StartNew();
@@ -51,16 +51,16 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
         try
         {
             _transferProgressSubscription = transfer.Progress.Subscribe(_progress.OnNext);
-            await EmitProgressWithStatsAsync("Starting delta sync...", cancellationToken);
-            var dummyToken = new DeltaToken(string.Empty, string.Empty,DateTimeOffset.MinValue);
-            (DeltaToken finalDelta, var _, var _) = await deltaPageProcessor.ProcessAllDeltaPagesAsync(dummyToken, cancellationToken, _progress.OnNext);
-            await repo.SaveOrUpdateDeltaTokenAsync(finalDelta, cancellationToken);
+            await EmitProgressWithStatsAsync(accountId,"Starting delta sync...", cancellationToken);
+            var dummyToken = new DeltaToken(accountId,string.Empty, string.Empty,DateTimeOffset.MinValue);
+            (DeltaToken finalDelta, var _, var _) = await deltaPageProcessor.ProcessAllDeltaPagesAsync(accountId, dummyToken, cancellationToken, _progress.OnNext);
+            await repo.SaveOrUpdateDeltaTokenAsync(accountId,finalDelta, cancellationToken);
             logger.LogInformation("[SyncEngine] Delta processing complete, starting downloads");
-            await EmitProgressWithStatsAsync("Downloading files...", cancellationToken);
-            await transfer.ProcessPendingDownloadsAsync(cancellationToken);
-            await EmitProgressWithStatsAsync("Downloads complete, starting uploads...", cancellationToken);
+            await EmitProgressWithStatsAsync(accountId,"Downloading files...", cancellationToken);
+            await transfer.ProcessPendingDownloadsAsync(accountId, cancellationToken);
+            await EmitProgressWithStatsAsync(accountId,"Downloads complete, starting uploads...", cancellationToken);
             logger.LogInformation("[SyncEngine] Downloads complete, starting uploads");
-            await transfer.ProcessPendingUploadsAsync(cancellationToken);
+            await transfer.ProcessPendingUploadsAsync(accountId, cancellationToken);
             stopwatch.Stop();
             _progress.OnNext(new SyncProgress
             {
@@ -89,21 +89,21 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     }
 
     /// <inheritdoc/>
-    public async Task IncrementalSyncAsync(DeltaToken deltaToken, CancellationToken cancellationToken)
+    public async Task IncrementalSyncAsync(string accountId,DeltaToken deltaToken, CancellationToken cancellationToken)
     {
         logger.LogInformation("[SyncEngine] Starting incremental sync");
         try
         {
             _transferProgressSubscription = transfer.Progress.Subscribe(_progress.OnNext);
-            await EmitProgressWithStatsAsync("Starting incremental delta sync...", cancellationToken);
-            (DeltaToken finalDelta, var _, var _) = await deltaPageProcessor.ProcessAllDeltaPagesAsync(deltaToken, cancellationToken, _progress.OnNext);
-            await repo.SaveOrUpdateDeltaTokenAsync(finalDelta, cancellationToken);
+            await EmitProgressWithStatsAsync(accountId,"Starting incremental delta sync...", cancellationToken);
+            (DeltaToken finalDelta, var _, var _) = await deltaPageProcessor.ProcessAllDeltaPagesAsync(accountId, deltaToken, cancellationToken, _progress.OnNext);
+            await repo.SaveOrUpdateDeltaTokenAsync(accountId,finalDelta, cancellationToken);
             logger.LogInformation("[SyncEngine] Delta processing complete, starting downloads");
-            await EmitProgressWithStatsAsync("Downloading files...", cancellationToken);
-            await transfer.ProcessPendingDownloadsAsync(cancellationToken);
-            await EmitProgressWithStatsAsync("Downloads complete, starting uploads...", cancellationToken);
+            await EmitProgressWithStatsAsync(accountId,"Downloading files...", cancellationToken);
+            await transfer.ProcessPendingDownloadsAsync(accountId, cancellationToken);
+            await EmitProgressWithStatsAsync(accountId, "Downloads complete, starting uploads...", cancellationToken);
             logger.LogInformation("[SyncEngine] Downloads complete, starting uploads");
-            await transfer.ProcessPendingUploadsAsync(cancellationToken);
+            await transfer.ProcessPendingUploadsAsync(accountId, cancellationToken);
             _progress.OnNext(new SyncProgress
             {
                 OperationType = SyncOperationType.Completed,
@@ -131,7 +131,7 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     }
 
     /// <inheritdoc/>
-    public async Task ScanLocalFilesAsync(CancellationToken cancellationToken)
+    public async Task ScanLocalFilesAsync(string accountId, CancellationToken cancellationToken)
     {
         logger.LogInformation("[SyncEngine] Starting local file sync");
         try
@@ -142,7 +142,7 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
                 CurrentOperationMessage = "Scanning local files...",
                 Timestamp = DateTimeOffset.Now
             });
-            _ = await localFileScanner.ScanAndSyncLocalFilesAsync(cancellationToken);
+            _ = await localFileScanner.ScanAndSyncLocalFilesAsync(accountId, cancellationToken);
             _progress.OnNext(new SyncProgress
             {
                 OperationType = SyncOperationType.Completed,
@@ -166,5 +166,6 @@ public sealed class SyncEngine(IDeltaPageProcessor deltaPageProcessor, ILocalFil
     }
 
     /// <inheritdoc/>
-    public async Task<DeltaToken?> GetDeltaTokenAsync(CancellationToken cancellationToken) => await repo.GetDeltaTokenAsync(cancellationToken);
+    public async Task<DeltaToken?> GetDeltaTokenAsync(string accountId, CancellationToken cancellationToken)
+        => await repo.GetDeltaTokenAsync(accountId, cancellationToken);
 }

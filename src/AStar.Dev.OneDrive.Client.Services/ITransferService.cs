@@ -15,12 +15,12 @@ public interface ITransferService
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task ProcessPendingDownloadsAsync(CancellationToken cancellationToken);
+    Task ProcessPendingDownloadsAsync(string accountId, CancellationToken cancellationToken);
 
     /// <summary>
     ///     Scans repository for pending uploads and uploads them using upload sessions and chunked uploads.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task ProcessPendingUploadsAsync(CancellationToken cancellationToken);
+    Task ProcessPendingUploadsAsync(string accountId, CancellationToken cancellationToken);
 }

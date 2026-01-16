@@ -10,7 +10,7 @@ public class DeltaPageProcessor(ISyncRepository repo, IGraphClient graph, ILogge
 {
 
     /// <inheritdoc/>
-    public async Task<(string? finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(CancellationToken cancellationToken)
+    public async Task<(string? finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(string accountId, CancellationToken cancellationToken)
     {
         logger.LogInformation("[DeltaPageProcessor] Starting delta page processing");
         string? nextOrDelta = null, finalDelta = null;
@@ -20,9 +20,9 @@ public class DeltaPageProcessor(ISyncRepository repo, IGraphClient graph, ILogge
             do
             {
                 logger.LogDebug("[DeltaPageProcessor] Requesting delta page: nextOrDelta={NextOrDelta}", nextOrDelta);
-                DeltaPage page = await graph.GetDriveDeltaPageAsync(nextOrDelta, cancellationToken);
+                DeltaPage page = await graph.GetDriveDeltaPageAsync(accountId, nextOrDelta, cancellationToken);
                 logger.LogDebug("[DeltaPageProcessor] Received page: items={Count} nextLink={NextLink} deltaLink={DeltaLink}", page.Items.Count(), page.NextLink, page.DeltaLink);
-                await repo.ApplyDriveItemsAsync(page.Items, cancellationToken);
+                await repo.ApplyDriveItemsAsync(accountId, page.Items, cancellationToken);
                 totalItemsProcessed += page.Items.Count();
                 nextOrDelta = page.NextLink;
                 finalDelta = page.DeltaLink ?? finalDelta;
@@ -47,7 +47,7 @@ public class DeltaPageProcessor(ISyncRepository repo, IGraphClient graph, ILogge
     }
 
     /// <inheritdoc/>
-    public async Task<(DeltaToken finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(DeltaToken deltaToken, CancellationToken cancellationToken, Action<SyncProgress>? progressCallback)
+    public async Task<(DeltaToken finalDelta, int pageCount, int totalItemsProcessed)> ProcessAllDeltaPagesAsync(string accountId, DeltaToken deltaToken, CancellationToken cancellationToken, Action<SyncProgress>? progressCallback)
     {
         logger.LogInformation("[DeltaPageProcessor] Starting delta page processing (with progress callback)");
         string? nextOrDelta = null;
@@ -58,20 +58,20 @@ public class DeltaPageProcessor(ISyncRepository repo, IGraphClient graph, ILogge
             do
             {
                 logger.LogDebug("[DeltaPageProcessor] Requesting delta page: nextOrDelta={NextOrDelta}", nextOrDelta);
-                DeltaPage page = await graph.GetDriveDeltaPageAsync(nextOrDelta, cancellationToken);
+                DeltaPage page = await graph.GetDriveDeltaPageAsync(accountId, nextOrDelta, cancellationToken);
                 DriveItemRecord? driveItemRecord = page.Items.FirstOrDefault();
                 if(driveItemRecord is not null)
                 {
-                    deltaToken = new DeltaToken(driveItemRecord.Id.Split('!')[0], page.DeltaLink ?? string.Empty, DateTimeOffset.UtcNow);
+                    deltaToken = new DeltaToken("PlaceholderAccountId", driveItemRecord.Id.Split('!')[0], page.DeltaLink ?? string.Empty, DateTimeOffset.UtcNow);
                 }
 
                 logger.LogDebug("[DeltaPageProcessor] Received page: items={Count} nextLink={NextLink} deltaLink={DeltaLink}", page.Items.Count(), page.NextLink, page.DeltaLink);
-                await repo.ApplyDriveItemsAsync(page.Items, cancellationToken);
+                await repo.ApplyDriveItemsAsync(accountId, page.Items, cancellationToken);
                 totalItemsProcessed += page.Items.Count();
                 nextOrDelta = page.NextLink;
                 if(page.DeltaLink is not null)
                 {
-                    finalToken = new(deltaToken.Id, page.DeltaLink, DateTimeOffset.UtcNow);
+                    finalToken = new("PlaceholderAccountId", deltaToken.Id, page.DeltaLink, DateTimeOffset.UtcNow);
                 }
 
                 pageCount++;

@@ -1,3 +1,4 @@
+
 namespace AStar.Dev.OneDrive.Client;
 
 public static class ApplicationMetadata
@@ -14,10 +15,7 @@ public static class ApplicationMetadata
 
     private static string BuildApplicationVersion()
     {
-        var version = typeof(ApplicationMetadata).Assembly.GetName().Version;
-        if(version is null)
-            return "1.0.0-alpha";
-
-        return $"{version.Major}.{version.Minor}.{version.Build}-alpha";
-    } 
+        Version? version = typeof(ApplicationMetadata).Assembly.GetName().Version;
+        return version is null ? "1.0.0-alpha" : $"{version.Major}.{version.Minor}.{version.Build}-alpha";
+    }
 }

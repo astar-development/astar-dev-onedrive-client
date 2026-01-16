@@ -7,7 +7,7 @@ namespace AStar.Dev.OneDrive.Client.Services;
 public class DownloadQueueConsumer : IDownloadQueueConsumer
 {
     /// <inheritdoc/>
-    public async Task ConsumeAsync(ChannelReader<DriveItemRecord> reader, Func<DriveItemRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken)
+    public async Task ConsumeAsync(string accountId, ChannelReader<DriveItemRecord> reader, Func<DriveItemRecord, Task> processItemAsync, int parallelism, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(processItemAsync);

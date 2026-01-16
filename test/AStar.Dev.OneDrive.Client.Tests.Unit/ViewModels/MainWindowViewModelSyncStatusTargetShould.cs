@@ -80,8 +80,8 @@ public class MainWindowViewModelSyncStatusTargetShould
         MainWindowViewModel vm = CreateViewModelForTarget();
         // Setup repo to return known values
         ISyncRepository repo = Substitute.For<ISyncRepository>();
-        repo.GetPendingDownloadCountAsync(default).ReturnsForAnyArgs(7);
-        repo.GetPendingUploadCountAsync(default).ReturnsForAnyArgs(3);
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId",default).ReturnsForAnyArgs(7);
+        repo.GetPendingUploadCountAsync("PlaceholderAccountId",default).ReturnsForAnyArgs(3);
         FieldInfo? field = typeof(MainWindowViewModel).GetField("_repo", BindingFlags.NonPublic | BindingFlags.Instance);
         field.ShouldNotBeNull();
         field.SetValue(vm, repo);

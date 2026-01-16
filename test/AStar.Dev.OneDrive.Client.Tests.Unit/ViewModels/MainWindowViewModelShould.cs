@@ -64,7 +64,7 @@ public sealed class MainWindowViewModelShould
                         target.SetStatus("Processing local file sync...");
                         target.SetProgress(0);
                         target.AddRecentTransfer("Processing local file sync...");
-                        await _mockSync.ScanLocalFilesAsync(ct);
+                        await _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", ct);
                         target.SetStatus("Local file sync completed successfully");
                         target.SetProgress(100);
                         target.AddRecentTransfer("Local file sync completed successfully");
@@ -101,7 +101,7 @@ public sealed class MainWindowViewModelShould
     public void ScanLocalFilesCommand_CallsSyncEngineScanLocalFilesAsync()
     {
         MainWindowViewModel sut = CreateViewModel();
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         TaskCompletionSource tcs = new();
@@ -110,7 +110,7 @@ public sealed class MainWindowViewModelShould
         sut.ScanLocalFilesCommand.Execute().Subscribe();
         tcs.Task.Wait(TimeSpan.FromSeconds(5));
 
-        _ = _mockSync.Received(1).ScanLocalFilesAsync(Arg.Any<CancellationToken>());
+        _ = _mockSync.Received(1).ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public sealed class MainWindowViewModelShould
     {
         MainWindowViewModel sut = CreateViewModel();
         var started = false;
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(async _ =>
             {
                 started = true;
@@ -133,7 +133,7 @@ public sealed class MainWindowViewModelShould
     public void ScanLocalFilesCommand_UpdatesSyncStatusToCompleteWhenFinished()
     {
         MainWindowViewModel sut = CreateViewModel();
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
         TaskCompletionSource tcs = new();
@@ -149,7 +149,7 @@ public sealed class MainWindowViewModelShould
     public void ScanLocalFilesCommand_AddsSuccessMessageToRecentTransfers()
     {
         MainWindowViewModel sut = CreateViewModel();
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
         TaskCompletionSource tcs = new();
         _ = sut.ScanLocalFilesCommand.Subscribe(_ => tcs.SetResult());
@@ -164,23 +164,23 @@ public sealed class MainWindowViewModelShould
     public void ScanLocalFilesCommand_RefreshesStatsAfterCompletion()
     {
         MainWindowViewModel sut = CreateViewModel();
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        _mockRepo.GetPendingDownloadCountAsync(Arg.Any<CancellationToken>())
+        _mockRepo.GetPendingDownloadCountAsync("PlaceholderAccountId",Arg.Any<CancellationToken>())
             .Returns(5);
-        _mockRepo.GetPendingUploadCountAsync(Arg.Any<CancellationToken>())
+        _mockRepo.GetPendingUploadCountAsync("PlaceholderAccountId",Arg.Any<CancellationToken>())
             .Returns(3);
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
         Task.Delay(200).Wait(); // Give time for async refresh
-        _mockRepo.Received().GetPendingDownloadCountAsync(Arg.Any<CancellationToken>());
-        _mockRepo.Received().GetPendingUploadCountAsync(Arg.Any<CancellationToken>());
+        _mockRepo.Received().GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>());
+        _mockRepo.Received().GetPendingUploadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void ScanLocalFilesCommand_HandlesCancellation()
     {
         MainWindowViewModel sut = CreateViewModel();
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(_ => throw new OperationCanceledException());
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
         sut.SyncStatusMessage.ShouldBe("Local file sync cancelled");
@@ -191,7 +191,7 @@ public sealed class MainWindowViewModelShould
     public void ScanLocalFilesCommand_HandlesExceptions()
     {
         MainWindowViewModel sut = CreateViewModel();
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Throws(new InvalidOperationException("Test error"));
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { }, _ => { });
         Task.Delay(100).Wait();
@@ -226,7 +226,7 @@ public sealed class MainWindowViewModelShould
         TaskCompletionSource<bool> executeStarted = new();
         TaskCompletionSource<bool> tcs = new();
 
-        _mockSync.ScanLocalFilesAsync(Arg.Any<CancellationToken>())
+        _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(async _ =>
             {
                 _syncProgressSubject.OnNext(new SyncProgress

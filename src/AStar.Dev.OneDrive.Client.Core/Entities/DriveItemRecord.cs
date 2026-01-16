@@ -1,6 +1,7 @@
 namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 public sealed record DriveItemRecord(
+    string AccountId,
     string Id,
     string DriveItemId,
     string RelativePath,
