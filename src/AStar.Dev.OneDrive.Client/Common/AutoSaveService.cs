@@ -8,13 +8,13 @@ namespace AStar.Dev.OneDrive.Client.Common;
 ///     Provides automatic persistence of user preferences when specific view model properties change.
 ///     Monitors property change notifications and triggers save actions accordingly.
 /// </summary>
-[Service(ServiceLifetime.Singleton)]
+[AutoRegisterService(ServiceLifetime.Singleton)]
 public class AutoSaveService : IAutoSaveService
 {
     private PropertyChangedEventHandler? _handler;
 
     /// <inheritdoc />
-    public void MonitorForChanges(MainWindowViewModel viewModel, Action saveAction)
+    public void MonitorForChanges(MainWindowViewModel mainWindowViewModel, Action saveAction)
     {
         _handler = (_, e) =>
         {
@@ -22,13 +22,13 @@ public class AutoSaveService : IAutoSaveService
                 saveAction();
         };
 
-        viewModel.PropertyChanged += _handler;
+        mainWindowViewModel.PropertyChanged += _handler;
     }
 
     /// <inheritdoc />
-    public void StopMonitoring(MainWindowViewModel viewModel)
+    public void StopMonitoring(MainWindowViewModel mainWindowViewModel)
     {
         if(_handler is not null)
-            viewModel.PropertyChanged -= _handler;
+            mainWindowViewModel.PropertyChanged -= _handler;
     }
 }

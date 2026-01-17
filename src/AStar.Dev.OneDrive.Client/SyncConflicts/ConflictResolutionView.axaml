@@ -1,8 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:AStar.Dev.OneDrive.Client.ViewModels"
-             xmlns:enums="using:AStar.Dev.OneDrive.Client.FromV3.Models.Enums"
-             x:Class="AStar.Dev.OneDrive.Client.Views.ConflictResolutionView"
+             xmlns:vm="using:AStar.Dev.OneDrive.Client.SyncConflicts"
+             xmlns:enums="using:AStar.Dev.OneDrive.Client.SyncConflicts"
+             x:Class="AStar.Dev.OneDrive.Client.SyncConflicts.ConflictResolutionView"
              x:DataType="vm:ConflictResolutionViewModel">
 
     <Design.DataContext>

@@ -5,10 +5,15 @@ using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using AStar.Dev.OneDrive.Client.FromV3.Repositories;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Services.Syncronisation;
 using AStar.Dev.OneDrive.Client.SettingsAndPreferences;
+using AStar.Dev.OneDrive.Client.SyncConflicts;
+using AStar.Dev.OneDrive.Client.Views;
+using Avalonia.Controls.ApplicationLifetimes;
+using Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
@@ -17,12 +22,73 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 {
     private readonly ISyncronisationCoordinator _syncCoordinator;
     private readonly CompositeDisposable _disposables = [];
+    private readonly ISyncConflictRepository _conflictRepository;
 
     public ReactiveCommand<Unit, Unit> SignInCommand { get; }
     public ReactiveCommand<Unit, Unit> InitialSyncCommand { get; }
     public ReactiveCommand<Unit, Unit> IncrementalSyncCommand { get; }
     public ReactiveCommand<Unit, Unit> CancelSyncCommand { get; }
     public ReactiveCommand<Unit, Unit> ScanLocalFilesCommand { get; }
+
+    /// <summary>
+    /// Gets the sync progress view model (when sync is active).
+    /// </summary>
+    public SyncProgressViewModel? SyncProgress
+    {
+        get;
+#pragma warning disable S1144 // Unused private types or members should be removed - it is used in V3... not implemented here yet
+        private set => this.RaiseAndSetIfChanged(ref field, value);
+#pragma warning restore S1144 // Unused private types or members should be removed - it is used in V3... not implemented here yet
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the selected account has unresolved conflicts.
+    /// </summary>
+    public bool HasUnresolvedConflicts
+    {
+        get;
+        private set => this.RaiseAndSetIfChanged(ref field, value);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether sync progress view should be shown.
+    /// </summary>
+    public bool ShowSyncProgress => SyncProgress is not null && ConflictResolution is null;
+
+    /// <summary>
+    /// Gets a value indicating whether conflict resolution view should be shown.
+    /// </summary>
+    public bool ShowConflictResolution => ConflictResolution is not null;
+
+    /// <summary>
+    /// Gets the command to open the Update Account Details window.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> OpenUpdateAccountDetailsCommand { get; }
+
+    /// <summary>
+    /// Gets the command to close the application.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> CloseApplicationCommand { get; }
+
+    /// <summary>
+    /// Gets the command to open the View Sync History window.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> OpenViewSyncHistoryCommand { get; }
+
+    /// <summary>
+    /// Gets the command to open the Debug Log Viewer window.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> OpenDebugLogViewerCommand { get; }
+
+    /// <summary>
+    /// Gets the command to view unresolved conflicts.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> ViewConflictsCommand { get; }
+
+    /// <summary>
+    /// Gets the account management view model.
+    /// </summary>
+    public AccountManagementViewModel AccountManagement { get; }
 
     public ObservableCollection<string> RecentTransfers { get; } = [];
     public int PendingDownloads { get; set => this.RaiseAndSetIfChanged(ref field, value); }
@@ -38,13 +104,29 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     public string EstimatedTimeRemaining { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
     public string ElapsedTime { get; set => this.RaiseAndSetIfChanged(ref field, value); } = string.Empty;
 
-    public string ApplicationName => ApplicationMetadata.ApplicationName;
+    /// <summary>
+    /// Gets the conflict resolution view model (when viewing conflicts).
+    /// </summary>
+    public ConflictResolutionViewModel? ConflictResolution
+    {
+        get;
+        private set => this.RaiseAndSetIfChanged(ref field, value);
+    }
 
+#pragma warning disable S2325 // Methods and properties that don't access instance data should be static - needed for binding in MainWindow
+    public string ApplicationName => ApplicationMetadata.ApplicationName;
+#pragma warning restore S2325 // Methods and properties that don't access instance data should be static - needed for binding in MainWindow
+    private readonly IServiceProvider _serviceProvider;
     private const int MaxRecentTransfers = 15;
 
     public MainWindowViewModel(ISyncCommandService syncCommandService, ISyncronisationCoordinator syncCoordinator,
-      ISettingsAndPreferencesService settingsAndPreferencesService, IAuthService authService)
+      ISettingsAndPreferencesService settingsAndPreferencesService, IAuthService authService,
+        AccountManagementViewModel accountManagementViewModel, ISyncConflictRepository conflictRepository, IServiceProvider serviceProvider)
     {
+        AccountManagement = accountManagementViewModel;
+
+        _conflictRepository = conflictRepository;
+        _serviceProvider = serviceProvider;
         _syncCoordinator = syncCoordinator;
         UserPreferences = settingsAndPreferencesService.Load();
         SignedIn = authService.IsUserSignedInAsync("PlaceholderAccountId", CancellationToken.None).GetAwaiter().GetResult();
@@ -62,6 +144,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         SetIncrementalSync(fullSync != null);
         SubscribeToSyncProgress();
         SubscribeToTransferProgress(_syncCoordinator);
+        // Commands
+        OpenUpdateAccountDetailsCommand = ReactiveCommand.Create(OpenUpdateAccountDetails);
+        OpenViewSyncHistoryCommand = ReactiveCommand.Create(OpenViewSyncHistory);
+        OpenDebugLogViewerCommand = ReactiveCommand.Create(OpenDebugLogViewer);
+        ViewConflictsCommand = ReactiveCommand.Create(ViewConflicts, this.WhenAnyValue(x => x.HasUnresolvedConflicts));
+        CloseApplicationCommand = ReactiveCommand.Create(CloseApplication);
     }
 
     private void SubscribeToTransferProgress(ISyncronisationCoordinator syncCoordinator) => _ = syncCoordinator.TransferProgress
@@ -181,6 +269,136 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         {
             RecentTransfers.RemoveAt(RecentTransfers.Count - 1);
         }
+    }
+
+    /// <summary>
+    /// Opens the conflict resolution view for the selected account.
+    /// </summary>
+    private void ViewConflicts()
+    {
+        if(AccountManagement.SelectedAccount is not null)
+        {
+            ShowConflictResolutionView(AccountManagement.SelectedAccount.AccountId);
+        }
+    }
+
+    /// <summary>
+    /// Opens the Update Account Details window.
+    /// </summary>
+    private static void OpenUpdateAccountDetails()
+    {
+        var window = new UpdateAccountDetailsWindow();
+
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow is not null)
+        {
+            _ = window.ShowDialog(desktop.MainWindow);
+        }
+    }
+
+    /// <summary>
+    /// Opens the View Sync History window.
+    /// </summary>
+    private static void OpenViewSyncHistory()
+    {
+        var window = new ViewSyncHistoryWindow();
+
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow is not null)
+        {
+            _ = window.ShowDialog(desktop.MainWindow);
+        }
+    }
+
+    /// <summary>
+    /// Opens the Debug Log Viewer window.
+    /// </summary>
+    private static void OpenDebugLogViewer()
+    {
+        var window = new DebugLogWindow();
+
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow is not null)
+        {
+            _ = window.ShowDialog(desktop.MainWindow);
+        }
+    }
+
+    /// <summary>
+    /// Closes the application.
+    /// </summary>
+    private static void CloseApplication()
+    {
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Shutdown();
+        }
+    }
+
+    /// <summary>
+    /// Shows the conflict resolution view for the specified account.
+    /// </summary>
+    /// <param name="accountId">The account ID to show conflicts for.</param>
+    private void ShowConflictResolutionView(string accountId)
+    {
+        ConflictResolution?.Dispose();
+        ConflictResolutionViewModel conflictResolutionVm = ActivatorUtilities.CreateInstance<ConflictResolutionViewModel>(
+            _serviceProvider,
+            accountId);
+
+        // Wire up CancelCommand to return to sync progress
+        _ = conflictResolutionVm.CancelCommand
+            .Subscribe(_ => CloseConflictResolutionView())
+            .DisposeWith(_disposables);
+
+        // Wire up ResolveAllCommand to return to sync progress after resolution
+        _ = conflictResolutionVm.ResolveAllCommand
+            .Subscribe(_ =>
+                // Delay closing to allow user to see the status message
+                Observable.Timer(TimeSpan.FromSeconds(2))
+                    .ObserveOn(RxApp.MainThreadScheduler)
+                    .Subscribe(_ => CloseConflictResolutionView())
+                    .DisposeWith(_disposables))
+            .DisposeWith(_disposables);
+
+        ConflictResolution = conflictResolutionVm;
+        this.RaisePropertyChanged(nameof(ShowSyncProgress));
+        this.RaisePropertyChanged(nameof(ShowConflictResolution));
+    }
+
+    /// <summary>
+    /// Closes the conflict resolution view and returns to sync progress.
+    /// </summary>
+#pragma warning disable S3168 // "async" methods should not return "void"
+    private async void CloseConflictResolutionView()
+#pragma warning restore S3168 // "async" methods should not return "void"
+    {
+        ConflictResolution?.Dispose();
+        ConflictResolution = null;
+        this.RaisePropertyChanged(nameof(ShowSyncProgress));
+        this.RaisePropertyChanged(nameof(ShowConflictResolution));
+
+        // Refresh conflict count after resolving conflicts
+        if(SyncProgress is not null)
+        {
+            await SyncProgress.RefreshConflictCountAsync();
+        }
+
+        // Update main window conflict status
+        if(AccountManagement.SelectedAccount is not null)
+        {
+            await UpdateConflictStatusAsync(AccountManagement.SelectedAccount.AccountId);
+        }
+    }
+
+    /// <summary>
+    /// Updates the conflict status indicator for the specified account.
+    /// </summary>
+    /// <param name="accountId">The account ID to check.</param>
+    private async Task UpdateConflictStatusAsync(string accountId)
+    {
+        IReadOnlyList<FromV3.Models.SyncConflict> conflicts = await _conflictRepository.GetUnresolvedByAccountIdAsync(accountId);
+        HasUnresolvedConflicts = conflicts.Any();
     }
 
     public void Dispose() => _disposables?.Dispose();

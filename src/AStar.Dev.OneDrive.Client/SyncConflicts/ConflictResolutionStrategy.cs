@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
+namespace AStar.Dev.OneDrive.Client.SyncConflicts;
 
 /// <summary>
 /// Represents the strategy for resolving file synchronization conflicts.

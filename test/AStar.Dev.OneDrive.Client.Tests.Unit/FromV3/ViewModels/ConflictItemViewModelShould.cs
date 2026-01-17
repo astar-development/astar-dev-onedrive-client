@@ -1,6 +1,5 @@
 using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
-using AStar.Dev.OneDrive.Client.ViewModels;
+using AStar.Dev.OneDrive.Client.SyncConflicts;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
 

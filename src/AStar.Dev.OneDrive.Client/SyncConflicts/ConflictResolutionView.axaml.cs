@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace AStar.Dev.OneDrive.Client.Views;
+namespace AStar.Dev.OneDrive.Client.SyncConflicts;
 
 /// <summary>
 /// Code-behind for the conflict resolution view.

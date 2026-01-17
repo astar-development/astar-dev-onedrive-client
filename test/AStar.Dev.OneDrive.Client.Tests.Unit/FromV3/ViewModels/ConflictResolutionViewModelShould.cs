@@ -1,9 +1,8 @@
 using System.Reactive.Linq;
 using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3.Sync;
-using AStar.Dev.OneDrive.Client.ViewModels;
+using AStar.Dev.OneDrive.Client.SyncConflicts;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;

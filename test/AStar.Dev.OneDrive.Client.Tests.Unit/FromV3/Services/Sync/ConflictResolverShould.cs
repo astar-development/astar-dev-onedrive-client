@@ -4,6 +4,7 @@ using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
 using AStar.Dev.OneDrive.Client.FromV3.Sync;
+using AStar.Dev.OneDrive.Client.SyncConflicts;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Services.Sync;

@@ -23,7 +23,7 @@ public class MainWindowViewModelSyncStatusTargetShould
         sync.Progress.Returns(new Subject<SyncProgress>());
         transfer.Progress.Returns(new Subject<SyncProgress>());
         ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(sync, repo, transfer);
-        return new MainWindowViewModel(syncCommandService, syncCoordinator, settings, authService);
+        return new MainWindowViewModel(syncCommandService, syncCoordinator, settings, authService, null!, null!, null!);
     }
 
     [Theory]
@@ -80,8 +80,8 @@ public class MainWindowViewModelSyncStatusTargetShould
         MainWindowViewModel vm = CreateViewModelForTarget();
         // Setup repo to return known values
         ISyncRepository repo = Substitute.For<ISyncRepository>();
-        repo.GetPendingDownloadCountAsync("PlaceholderAccountId",default).ReturnsForAnyArgs(7);
-        repo.GetPendingUploadCountAsync("PlaceholderAccountId",default).ReturnsForAnyArgs(3);
+        repo.GetPendingDownloadCountAsync("PlaceholderAccountId", default).ReturnsForAnyArgs(7);
+        repo.GetPendingUploadCountAsync("PlaceholderAccountId", default).ReturnsForAnyArgs(3);
         FieldInfo? field = typeof(MainWindowViewModel).GetField("_repo", BindingFlags.NonPublic | BindingFlags.Instance);
         field.ShouldNotBeNull();
         field.SetValue(vm, repo);

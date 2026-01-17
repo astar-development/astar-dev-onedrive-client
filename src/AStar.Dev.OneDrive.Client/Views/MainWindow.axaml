@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="using:AStar.Dev.OneDrive.Client.Views"
         xmlns:vm="using:AStar.Dev.OneDrive.Client.ViewModels"
+		xmlns:conflicts="using:AStar.Dev.OneDrive.Client.SyncConflicts"
         Icon="avares://AStar.Dev.OneDrive.Client/Assets/astar.png"
         x:Class="AStar.Dev.OneDrive.Client.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -58,7 +59,7 @@
                                     x:Name="SyncProgressView" />
 
             <!-- Conflict Resolution View (top overlay when viewing conflicts) -->
-            <views:ConflictResolutionView DataContext="{Binding ConflictResolution}"
+            <conflicts:ConflictResolutionView DataContext="{Binding ConflictResolution}"
                                           IsVisible="{Binding #ConflictResolutionView.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"
                                           x:Name="ConflictResolutionView" />
         </Panel>

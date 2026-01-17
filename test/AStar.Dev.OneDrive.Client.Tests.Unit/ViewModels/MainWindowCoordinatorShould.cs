@@ -39,7 +39,7 @@ public class MainWindowCoordinatorShould
         mockSync.Progress.Returns(new Subject<SyncProgress>());
         mockTransfer.Progress.Returns(new Subject<SyncProgress>());
         ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(mockSync, mockRepo, mockTransfer);
-        return new MainWindowViewModel(syncCommandService, syncCoordinator, mockSettings, authService);
+        return new MainWindowViewModel(syncCommandService, syncCoordinator, mockSettings, authService, null!, null!, null!);
     }
 
     [Fact]

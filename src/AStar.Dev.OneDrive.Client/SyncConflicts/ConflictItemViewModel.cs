@@ -1,8 +1,7 @@
 using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using ReactiveUI;
 
-namespace AStar.Dev.OneDrive.Client.ViewModels;
+namespace AStar.Dev.OneDrive.Client.SyncConflicts;
 
 /// <summary>
 /// Represents a single sync conflict item in the conflict resolution UI.

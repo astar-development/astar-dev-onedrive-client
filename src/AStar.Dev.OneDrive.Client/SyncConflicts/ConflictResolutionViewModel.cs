@@ -5,15 +5,13 @@ using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3.Sync;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates
-#pragma warning disable CA1873 // Avoid string interpolation in logging - Acceptable for ViewModels
 
-namespace AStar.Dev.OneDrive.Client.ViewModels;
+namespace AStar.Dev.OneDrive.Client.SyncConflicts;
 
 /// <summary>
 /// ViewModel for the conflict resolution UI, displaying all unresolved conflicts

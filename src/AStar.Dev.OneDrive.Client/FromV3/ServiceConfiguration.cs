@@ -3,6 +3,7 @@ using AStar.Dev.OneDrive.Client.FromV3.Authentication;
 using AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
 using AStar.Dev.OneDrive.Client.FromV3.Sync;
+using AStar.Dev.OneDrive.Client.SyncConflicts;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
