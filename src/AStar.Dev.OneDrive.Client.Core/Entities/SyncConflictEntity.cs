@@ -1,6 +1,6 @@
-using AStar.Dev.OneDrive.Client.SyncConflicts;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 
-namespace AStar.Dev.OneDrive.Client.FromV3.Entities;
+namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 /// <summary>
 /// Entity representing a file synchronization conflict in the database.

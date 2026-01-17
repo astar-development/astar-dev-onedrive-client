@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,9 +9,9 @@ namespace AStar.Dev.OneDrive.Client.FromV3;
 /// </summary>
 public sealed class WindowPreferencesService : IWindowPreferencesService
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
 
-    public WindowPreferencesService(SyncDbContext context)
+    public WindowPreferencesService(AppDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;
@@ -66,4 +66,6 @@ public sealed class WindowPreferencesService : IWindowPreferencesService
             entity.Height,
             entity.IsMaximized
         );
+    Task<Models.WindowPreferences?> IWindowPreferencesService.LoadAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task SaveAsync(Models.WindowPreferences preferences, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }

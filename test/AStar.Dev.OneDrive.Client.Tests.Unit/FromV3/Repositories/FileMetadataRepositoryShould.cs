@@ -1,4 +1,3 @@
-using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
@@ -11,7 +10,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task GetFilesByAccountIdCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/doc1.txt"), CancellationToken.None);
         await repository.AddAsync(CreateFileMetadata("file2", "acc1", "/doc2.txt"), CancellationToken.None);
@@ -26,7 +25,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task GetFileByIdCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/doc.txt"), CancellationToken.None);
 
@@ -40,7 +39,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task ReturnNullWhenFileNotFoundById()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
 
         FileMetadata? result = await repository.GetByIdAsync("nonexistent", CancellationToken.None);
@@ -51,7 +50,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task GetFileByPathCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/docs/file.txt"), CancellationToken.None);
 
@@ -64,7 +63,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task ReturnNullWhenFileNotFoundByPath()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
 
         FileMetadata? result = await repository.GetByPathAsync("acc1", "/nonexistent.txt", CancellationToken.None);
@@ -75,7 +74,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task GetFilesByStatusCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/doc1.txt", FileSyncStatus.Synced), CancellationToken.None);
         await repository.AddAsync(CreateFileMetadata("file2", "acc1", "/doc2.txt", FileSyncStatus.PendingUpload), CancellationToken.None);
@@ -90,7 +89,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task AddFileMetadataSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         FileMetadata file = CreateFileMetadata("file1", "acc1", "/doc.txt");
 
@@ -104,7 +103,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task UpdateFileMetadataSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/doc.txt", FileSyncStatus.PendingUpload), CancellationToken.None);
 
@@ -121,7 +120,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task ThrowExceptionWhenUpdatingNonExistentFile()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         FileMetadata file = CreateFileMetadata("nonexistent", "acc1", "/doc.txt");
 
@@ -135,7 +134,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task DeleteFileMetadataSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/doc.txt"), CancellationToken.None);
 
@@ -148,7 +147,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task DeleteAllFilesForAccountSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/doc1.txt"), CancellationToken.None);
         await repository.AddAsync(CreateFileMetadata("file2", "acc1", "/doc2.txt"), CancellationToken.None);
@@ -165,7 +164,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task SaveBatchUpsertFilesCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
         await repository.AddAsync(CreateFileMetadata("file1", "acc1", "/old.txt", FileSyncStatus.Synced), CancellationToken.None);
 
@@ -187,7 +186,7 @@ public class FileMetadataRepositoryShould
     [Fact]
     public async Task ThrowArgumentNullExceptionForNullParameters()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new FileMetadataRepository(context);
 
         _ = await Should.ThrowAsync<ArgumentNullException>(async () => await repository.AddAsync(null!));
@@ -198,12 +197,12 @@ public class FileMetadataRepositoryShould
     private static FileMetadata CreateFileMetadata(string id, string accountId, string path, FileSyncStatus status = FileSyncStatus.Synced)
         => new(id, accountId, Path.GetFileName(path), path, 1024, DateTime.UtcNow, $@"C:\local{path}", "ctag", "etag", "hash", status, null);
 
-    private static SyncDbContext CreateInMemoryContext()
+    private static AppDbContext CreateInMemoryContext()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
             .Options;
 
-        return new SyncDbContext(options);
+        return new AppDbContext(options);
     }
 }

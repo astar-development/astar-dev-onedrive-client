@@ -1,6 +1,6 @@
-using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Repositories;
@@ -10,7 +10,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ReturnEmptyListWhenNoAccountsExist()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         IReadOnlyList<AccountInfo> result = await repository.GetAllAsync();
@@ -21,7 +21,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task AddNewAccountSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         var account = new AccountInfo("acc1", "John Doe", @"C:\Sync1", true, null, null, false, false, 3, 50, null);
 
@@ -37,7 +37,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task GetAllAccountsCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         await repository.AddAsync(new AccountInfo("acc1", "User 1", @"C:\Sync1", true, null, null, false, false, 3, 50, null), CancellationToken.None);
         await repository.AddAsync(new AccountInfo("acc2", "User 2", @"C:\Sync2", false, null, null, false, false, 3, 50, null), CancellationToken.None);
@@ -52,7 +52,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task GetAccountByIdCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         await repository.AddAsync(new AccountInfo("acc1", "User 1", @"C:\Sync1", true, null, "token123", false, false, 3, 50, null), CancellationToken.None);
 
@@ -67,7 +67,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ReturnNullWhenAccountNotFound()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         AccountInfo? result = await repository.GetByIdAsync("nonexistent", CancellationToken.None);
@@ -78,7 +78,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task UpdateExistingAccountSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         await repository.AddAsync(new AccountInfo("acc1", "Old Name", @"C:\Sync1", true, null, null, false, false, 3, 50, null), CancellationToken.None);
 
@@ -96,7 +96,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ThrowExceptionWhenUpdatingNonExistentAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         var account = new AccountInfo("nonexistent", "Name", @"C:\Path", true, null, null, false, false, 3, 50, null);
 
@@ -110,7 +110,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task DeleteAccountSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         await repository.AddAsync(new AccountInfo("acc1", "User", @"C:\Sync", true, null, null, false, false, 3, 50, null), CancellationToken.None);
 
@@ -123,7 +123,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task NotThrowWhenDeletingNonExistentAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         await Should.NotThrowAsync(async () => await repository.DeleteAsync("nonexistent"));
@@ -132,7 +132,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ReturnTrueWhenAccountExists()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
         await repository.AddAsync(new AccountInfo("acc1", "User", @"C:\Sync", true, null, null, false, false, 3, 50, null), CancellationToken.None);
 
@@ -144,7 +144,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ReturnFalseWhenAccountDoesNotExist()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         var result = await repository.ExistsAsync("nonexistent", CancellationToken.None);
@@ -165,7 +165,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ThrowArgumentNullExceptionWhenAddingNullAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         _ = await Should.ThrowAsync<ArgumentNullException>(
@@ -176,7 +176,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ThrowArgumentNullExceptionWhenUpdatingNullAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         _ = await Should.ThrowAsync<ArgumentNullException>(
@@ -187,7 +187,7 @@ public class AccountRepositoryShould
     [Fact]
     public async Task ThrowArgumentNullExceptionWhenGettingByNullId()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new AccountRepository(context);
 
         _ = await Should.ThrowAsync<ArgumentNullException>(
@@ -195,12 +195,12 @@ public class AccountRepositoryShould
         );
     }
 
-    private static SyncDbContext CreateInMemoryContext()
+    private static AppDbContext CreateInMemoryContext()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
             .Options;
 
-        return new SyncDbContext(options);
+        return new AppDbContext(options);
     }
 }

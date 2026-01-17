@@ -1,6 +1,7 @@
 using AStar.Dev.Functional.Extensions;
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.FromV3.Repositories;
@@ -10,9 +11,9 @@ namespace AStar.Dev.OneDrive.Client.FromV3.Repositories;
 /// </summary>
 public sealed class SyncConfigurationRepository : ISyncConfigurationRepository
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
 
-    public SyncConfigurationRepository(SyncDbContext context)
+    public SyncConfigurationRepository(AppDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;

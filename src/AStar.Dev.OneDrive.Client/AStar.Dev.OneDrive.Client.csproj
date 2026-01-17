@@ -51,4 +51,8 @@
     <AvaloniaResource Include="Assets\**" />
     <AvaloniaResource Include="Styles\**" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="FromV3\Entities\" />
+  </ItemGroup>
 </Project>

@@ -14,7 +14,7 @@
 ///// </summary>
 //public class MainWindowViewModelIntegrationShould : IDisposable
 //{
-//    private readonly SyncDbContext _context;
+//    private readonly AppDbContext _context;
 //    private readonly AccountRepository _accountRepository;
 //    private readonly IAuthService _mockAuthService;
 //    private readonly IFolderTreeService _mockFolderTreeService;
@@ -24,10 +24,10 @@
 
 //    public MainWindowViewModelIntegrationShould()
 //    {
-//        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+//        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
 //            .UseInMemoryDatabase($"TestDb_{Guid.CreateVersion7()}")
 //            .Options;
-//        _context = new SyncDbContext(options);
+//        _context = new AppDbContext(options);
 //        _accountRepository = new AccountRepository(_context);
 //        _mockAuthService = Substitute.For<IAuthService>();
 //        _mockFolderTreeService = Substitute.For<IFolderTreeService>();

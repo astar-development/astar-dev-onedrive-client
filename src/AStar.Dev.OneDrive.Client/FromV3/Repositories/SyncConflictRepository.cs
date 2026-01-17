@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,9 +9,9 @@ namespace AStar.Dev.OneDrive.Client.FromV3.Repositories;
 /// </summary>
 public sealed class SyncConflictRepository : ISyncConflictRepository
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
 
-    public SyncConflictRepository(SyncDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
+    public SyncConflictRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
     /// <inheritdoc/>
     public async Task<IReadOnlyList<SyncConflict>> GetByAccountIdAsync(string accountId, CancellationToken cancellationToken = default)

@@ -12,7 +12,7 @@ namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
 /// </summary>
 public class SyncTreeViewModelPersistenceIntegrationShould : IDisposable
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
     private readonly SyncConfigurationRepository _configRepository;
     private readonly SyncSelectionService _selectionService;
     private readonly IFolderTreeService _mockFolderTreeService;
@@ -22,10 +22,10 @@ public class SyncTreeViewModelPersistenceIntegrationShould : IDisposable
 
     public SyncTreeViewModelPersistenceIntegrationShould()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase($"TestDb_{Guid.CreateVersion7()}")
             .Options;
-        _context = new SyncDbContext(options);
+        _context = new AppDbContext(options);
         _configRepository = new SyncConfigurationRepository(_context);
         _selectionService = new SyncSelectionService(_configRepository);
         _mockFolderTreeService = Substitute.For<IFolderTreeService>();

@@ -27,7 +27,7 @@ public static class ServiceConfiguration
         var services = new ServiceCollection();
 
         // Database
-        _ = services.AddDbContext<SyncDbContext>(options =>
+        _ = services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite(DatabaseConfiguration.ConnectionString));
 
         // Repositories
@@ -96,7 +96,7 @@ public static class ServiceConfiguration
     public static void EnsureDatabaseCreated(ServiceProvider serviceProvider)
     {
         using IServiceScope scope = serviceProvider.CreateScope();
-        SyncDbContext context = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
+        AppDbContext context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         try
         {
             context.Database.Migrate();

@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

@@ -1,4 +1,3 @@
-using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +9,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task GetConfigurationsByAccountIdCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         var config1 = new SyncConfiguration(0, "acc1", "/Documents", true, DateTime.UtcNow);
         var config2 = new SyncConfiguration(0, "acc1", "/Photos", false, DateTime.UtcNow);
@@ -29,7 +28,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task GetSelectedFoldersOnlyForAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Documents", true, DateTime.UtcNow), CancellationToken.None);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Photos", false, DateTime.UtcNow), CancellationToken.None);
@@ -46,7 +45,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task AddConfigurationSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         var config = new SyncConfiguration(0, "acc1", "/Documents", true, DateTime.UtcNow);
 
@@ -61,7 +60,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task UpdateConfigurationSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         var config = new SyncConfiguration(0, "acc1", "/Documents", true, DateTime.UtcNow);
         _ = await repository.AddAsync(config, CancellationToken.None);
@@ -77,7 +76,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task ThrowExceptionWhenUpdatingNonExistentConfiguration()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         var config = new SyncConfiguration(999, "acc1", "/Documents", true, DateTime.UtcNow);
 
@@ -91,7 +90,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task DeleteConfigurationByIdSuccessfully()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Documents", true, DateTime.UtcNow), CancellationToken.None);
         SyncConfiguration saved = (await repository.GetByAccountIdAsync("acc1", CancellationToken.None))[0];
@@ -105,7 +104,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task DeleteAllConfigurationsForAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Documents", true, DateTime.UtcNow), CancellationToken.None);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Photos", false, DateTime.UtcNow), CancellationToken.None);
@@ -122,7 +121,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task SaveBatchReplacesExistingConfigurations()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Old1", true, DateTime.UtcNow), CancellationToken.None);
         _ = await repository.AddAsync(new SyncConfiguration(0, "acc1", "/Old2", false, DateTime.UtcNow), CancellationToken.None);
@@ -144,7 +143,7 @@ public class SyncConfigurationRepositoryShould
     [Fact]
     public async Task ThrowArgumentNullExceptionForNullAccountId()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new SyncConfigurationRepository(context);
 
         _ = await Should.ThrowAsync<ArgumentNullException>(
@@ -152,12 +151,12 @@ public class SyncConfigurationRepositoryShould
         );
     }
 
-    private static SyncDbContext CreateInMemoryContext()
+    private static AppDbContext CreateInMemoryContext()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
             .Options;
 
-        return new SyncDbContext(options);
+        return new AppDbContext(options);
     }
 }

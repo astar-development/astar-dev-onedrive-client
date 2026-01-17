@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +10,9 @@ namespace AStar.Dev.OneDrive.Client.FromV3.Repositories;
 /// </summary>
 public sealed class FileOperationLogRepository : IFileOperationLogRepository
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
 
-    public FileOperationLogRepository(SyncDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
+    public FileOperationLogRepository(AppDbContext context) => _context = context ?? throw new ArgumentNullException(nameof(context));
 
     /// <inheritdoc/>
     public async Task<IReadOnlyList<FileOperationLog>> GetBySessionIdAsync(string syncSessionId, CancellationToken cancellationToken = default)

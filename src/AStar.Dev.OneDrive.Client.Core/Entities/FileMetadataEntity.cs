@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.FromV3.Entities;
+namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 /// <summary>
 /// Entity for tracking synced files and their metadata in the database.

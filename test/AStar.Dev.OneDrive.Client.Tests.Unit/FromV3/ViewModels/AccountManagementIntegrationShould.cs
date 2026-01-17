@@ -1,4 +1,3 @@
-using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
@@ -12,18 +11,18 @@ namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
 /// </summary>
 public class AccountManagementIntegrationShould : IDisposable
 {
-    private readonly SyncDbContext _dbContext;
+    private readonly AppDbContext _dbContext;
     private readonly AccountRepository _accountRepository;
     private readonly IAuthService _mockAuthService;
     private bool _disposed;
 
     public AccountManagementIntegrationShould()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase($"TestDb_{Guid.CreateVersion7()}")
             .Options;
 
-        _dbContext = new SyncDbContext(options);
+        _dbContext = new AppDbContext(options);
         _accountRepository = new AccountRepository(_dbContext);
         _mockAuthService = Substitute.For<IAuthService>();
     }

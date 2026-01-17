@@ -1,5 +1,6 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.FromV3.Repositories;
@@ -9,9 +10,9 @@ namespace AStar.Dev.OneDrive.Client.FromV3.Repositories;
 /// </summary>
 public sealed class AccountRepository : IAccountRepository
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
 
-    public AccountRepository(SyncDbContext context)
+    public AccountRepository(AppDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;

@@ -1,6 +1,6 @@
 using System.Reflection;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,14 +9,14 @@ namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Services;
 
 public class LogCleanupBackgroundServiceShould
 {
-    private static (LogCleanupBackgroundService, SyncDbContext, TestLogger) CreateServiceWithDb(params object[] seedEntities)
+    private static (LogCleanupBackgroundService, AppDbContext, TestLogger) CreateServiceWithDb(params object[] seedEntities)
     {
         var services = new ServiceCollection();
         _ = services.AddLogging();
-        _ = services.AddDbContext<SyncDbContext>(options =>
+        _ = services.AddDbContext<AppDbContext>(options =>
             options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         ServiceProvider provider = services.BuildServiceProvider();
-        SyncDbContext db = provider.GetRequiredService<SyncDbContext>();
+        AppDbContext db = provider.GetRequiredService<AppDbContext>();
         foreach(var entity in seedEntities)
         {
             switch(entity)
@@ -44,7 +44,7 @@ public class LogCleanupBackgroundServiceShould
         var newSession = new SyncSessionLogEntity { Id = "2", AccountId = "A", StartedUtc = DateTime.UtcNow };
         var oldDebug = new DebugLogEntity { Id = 1, AccountId = "A", TimestampUtc = DateTime.UtcNow.AddDays(-20), LogLevel = "Info", Source = "Test", Message = "Old" };
         var newDebug = new DebugLogEntity { Id = 2, AccountId = "A", TimestampUtc = DateTime.UtcNow, LogLevel = "Info", Source = "Test", Message = "New" };
-        (LogCleanupBackgroundService? service, SyncDbContext? db, TestLogger? logger) = CreateServiceWithDb(oldSession, newSession, oldDebug, newDebug);
+        (LogCleanupBackgroundService? service, AppDbContext? db, TestLogger? logger) = CreateServiceWithDb(oldSession, newSession, oldDebug, newDebug);
 
         // Act
         await service.TestCleanupOnce();

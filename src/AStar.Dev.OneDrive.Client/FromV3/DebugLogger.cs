@@ -1,6 +1,7 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
 
@@ -9,10 +10,10 @@ namespace AStar.Dev.OneDrive.Client.FromV3;
 /// </summary>
 public sealed class DebugLogger : IDebugLogger
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
     private readonly IAccountRepository _accountRepository;
 
-    public DebugLogger(SyncDbContext context, IAccountRepository accountRepository)
+    public DebugLogger(AppDbContext context, IAccountRepository accountRepository)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(accountRepository);

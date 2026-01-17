@@ -1,4 +1,4 @@
-namespace AStar.Dev.OneDrive.Client.FromV3.Entities;
+namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 /// <summary>
 /// Database entity for file operation log.

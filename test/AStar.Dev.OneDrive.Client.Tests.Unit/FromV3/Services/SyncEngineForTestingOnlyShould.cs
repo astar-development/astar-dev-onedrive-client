@@ -3,7 +3,6 @@ using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
-using AStar.Dev.OneDrive.Client.Services;
 using ILocalFileScanner = AStar.Dev.OneDrive.Client.FromV3.ILocalFileScanner;
 using SyncEngine = AStar.Dev.OneDrive.Client.FromV3.SyncEngine;
 

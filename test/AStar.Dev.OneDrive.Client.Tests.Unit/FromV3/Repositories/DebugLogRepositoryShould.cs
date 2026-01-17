@@ -1,7 +1,7 @@
-using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Models;
 using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Repositories;
@@ -11,7 +11,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task GetByAccountIdWithPagingReturnsCorrectRecords()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
         await SeedDebugLogsAsync(context, "acc1", 10);
 
@@ -23,7 +23,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task GetByAccountIdWithPagingSkipsCorrectRecords()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
         await SeedDebugLogsAsync(context, "acc1", 10);
 
@@ -35,7 +35,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task GetByAccountIdReturnsAllRecordsForAccount()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
         await SeedDebugLogsAsync(context, "acc1", 15);
         await SeedDebugLogsAsync(context, "acc2", 5);
@@ -49,7 +49,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task GetByAccountIdReturnsRecordsOrderedByTimestampDescending()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
 
         // Add logs with different timestamps
@@ -89,7 +89,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task DeleteByAccountIdRemovesOnlySpecifiedAccountLogs()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
         await SeedDebugLogsAsync(context, "acc1", 5);
         await SeedDebugLogsAsync(context, "acc2", 3);
@@ -105,7 +105,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task DeleteOlderThanRemovesOldRecords()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
 
         DateTime cutoff = DateTime.UtcNow.AddDays(-7);
@@ -138,7 +138,7 @@ public class DebugLogRepositoryShould
     [Fact]
     public async Task GetByAccountIdReturnsEmptyListWhenNoRecordsExist()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var repository = new DebugLogRepository(context);
 
         IReadOnlyList<DebugLogEntry> result = await repository.GetByAccountIdAsync("nonexistent", CancellationToken.None);
@@ -146,16 +146,16 @@ public class DebugLogRepositoryShould
         result.ShouldBeEmpty();
     }
 
-    private static SyncDbContext CreateInMemoryContext()
+    private static AppDbContext CreateInMemoryContext()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
             .Options;
 
-        return new SyncDbContext(options);
+        return new AppDbContext(options);
     }
 
-    private static async Task SeedDebugLogsAsync(SyncDbContext context, string accountId, int count)
+    private static async Task SeedDebugLogsAsync(AppDbContext context, string accountId, int count)
     {
         for(var i = 0; i < count; i++)
         {
