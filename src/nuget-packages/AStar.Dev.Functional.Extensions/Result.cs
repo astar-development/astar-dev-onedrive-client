@@ -12,6 +12,18 @@ public abstract class Result<TSuccess, TError>
     }
 
     /// <summary>
+    /// Implicit conversion from a success value to a <see cref="Result{TSuccess,TError}"/> representing <c>Ok</c>.
+    /// </summary>
+    /// <param name="value">The success value.</param>
+    public static implicit operator Result<TSuccess, TError>(TSuccess value) => new Ok(value);
+
+    /// <summary>
+    /// Implicit conversion from an error value to a <see cref="Result{TSuccess,TError}"/> representing <c>Error</c>.
+    /// </summary>
+    /// <param name="error">The error reason.</param>
+    public static implicit operator Result<TSuccess, TError>(TError error) => new Error(error);
+
+    /// <summary>
     ///     Matches the result to the appropriate function based on whether it is a success or failure.
     /// </summary>
     /// <typeparam name="TResult">The result type of the match operation.</typeparam>

@@ -1,0 +1,234 @@
+
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AStar.Dev.OneDrive.Client.ViewModels"
+             xmlns:models="using:AStar.Dev.OneDrive.Client.FromV3.Models"
+             xmlns:converters="using:AStar.Dev.OneDrive.Client.Converters"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AStar.Dev.OneDrive.Client.Views.SyncTreeView"
+             x:DataType="vm:SyncTreeViewModel">
+
+  <UserControl.Resources>
+    <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+  </UserControl.Resources>
+
+  <Design.DataContext>
+    <vm:SyncTreeViewModel />
+  </Design.DataContext>
+
+  <UserControl.Styles>
+    <!-- Spinning animation for loading indicator -->
+    <Style Selector="Path.spinner">
+      <Style.Animations>
+        <Animation Duration="0:0:0.8" IterationCount="Infinite">
+          <KeyFrame Cue="0%">
+            <Setter Property="(RotateTransform.Angle)" Value="0"/>
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="(RotateTransform.Angle)" Value="360"/>
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+      <Setter Property="RenderTransform">
+        <RotateTransform/>
+      </Setter>
+      <Setter Property="RenderTransformOrigin" Value="0.5, 0.5"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto,Auto">
+    <!-- Header -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+            Padding="16,12"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Grid.Column="0">
+          <TextBlock Text="Select Folders to Sync"
+                     FontSize="18"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,4"/>
+          <TextBlock Text="Choose which folders should be synced to your local drive"
+                     FontSize="12"
+                     Opacity="0.7"/>
+        </StackPanel>
+
+        <Button Grid.Column="1"
+                Content="Clear All"
+                Command="{Binding ClearSelectionsCommand}"
+                VerticalAlignment="Center"
+                Margin="8,0,0,0"/>
+      </Grid>
+    </Border>
+
+    <!-- Tree View -->
+    <ScrollViewer Grid.Row="1">
+      <TreeView ItemsSource="{Binding RootFolders}"
+                SelectionMode="Single"
+                Margin="8">
+        <TreeView.Styles>
+          <!-- Bind IsExpanded and handle expansion -->
+          <Style Selector="TreeViewItem" x:DataType="models:OneDriveFolderNode">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+          </Style>
+        </TreeView.Styles>
+
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="models:OneDriveFolderNode">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <!-- Tri-state CheckBox -->
+              <CheckBox IsChecked="{Binding IsSelected}"
+                        IsThreeState="True"
+                        Command="{Binding $parent[UserControl].((vm:SyncTreeViewModel)DataContext).ToggleSelectionCommand}"
+                        CommandParameter="{Binding}"
+                        VerticalAlignment="Center"/>
+
+              <!-- Folder Icon -->
+              <PathIcon Data="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+                        Width="16"
+                        Height="16"
+                        Foreground="{DynamicResource SystemAccentColor}"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding !IsLoading}"/>
+
+              <!-- Loading Spinner -->
+              <Viewbox Width="16" Height="16" VerticalAlignment="Center"
+                       IsVisible="{Binding IsLoading}">
+                <Path Data="M 8,2 A 6,6 0 1 1 2,8"
+                      Stroke="#00E5FF"
+                      StrokeThickness="1.5"
+                      StrokeLineCap="Round"
+                      Classes="spinner"/>
+              </Viewbox>
+
+              <!-- Folder Name -->
+              <TextBlock Text="{Binding Name}"
+                         VerticalAlignment="Center"
+                         FontSize="14"/>
+
+              <!-- Path (subtle) -->
+              <TextBlock Text="{Binding Path}"
+                         VerticalAlignment="Center"
+                         FontSize="11"
+                         Opacity="0.6"
+                         Margin="8,0,0,0"/>
+            </StackPanel>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+    </ScrollViewer>
+
+    <!-- Sync Controls -->
+    <Border Grid.Row="2"
+            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="16,12">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Content="Start Sync"
+          Command="{Binding StartSyncCommand}"
+          Classes="accent"
+          MinWidth="120"
+          IsEnabled="{Binding IsLoading, Converter={StaticResource BooleanNegationConverter}}"/>
+
+        <!-- Open Sync Progress Button -->
+        <Button Content="Show Sync Progress"
+          Command="{Binding OpenSyncProgressCommand}"
+          MinWidth="140"
+          IsVisible="{Binding IsSyncing}"
+          IsEnabled="{Binding IsSyncProgressOpen, Converter={StaticResource BooleanNegationConverter}}"
+          ToolTip.Tip="Show sync progress window"/>
+        <Button Content="Cancel Sync"
+                Command="{Binding CancelSyncCommand}"
+                MinWidth="120"/>
+
+        <!-- Unresolved Conflicts Button -->
+        <Button Content="⚠️ View Conflicts"
+                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ViewConflictsCommand}"
+                Background="#FFF3E0"
+                BorderBrush="#FF6F00"
+                Foreground="#E65100"
+                FontWeight="SemiBold"
+                MinWidth="140"
+                IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).HasUnresolvedConflicts}"
+                ToolTip.Tip="There are unresolved sync conflicts that need your attention"/>
+
+        <!-- Sync Progress -->
+        <StackPanel Orientation="Vertical"
+                    Spacing="4"
+                    Margin="24,0,0,0"
+                    IsVisible="{Binding IsSyncing}">
+          <TextBlock Text="{Binding ProgressText}"
+                     FontSize="12"
+                     FontWeight="SemiBold"/>
+          <ProgressBar Value="{Binding ProgressPercentage}"
+                       Minimum="0"
+                       Maximum="100"
+                       Width="200"
+                       Height="4"/>
+          <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,4,0,0">
+            <TextBlock Text="{Binding EstimatedSecondsRemaining, StringFormat='ETA: {0:N0} sec'}"
+                       FontSize="11"
+                       Foreground="#666"
+                       IsVisible="{Binding EstimatedSecondsRemaining, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+            <TextBlock Text="{Binding MegabytesPerSecond, StringFormat='Speed: {0:N2} MB/sec'}"
+                       FontSize="11"
+                       Foreground="#666"
+                       Margin="16,0,0,0"/>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Last Sync Result -->
+        <TextBlock Text="{Binding LastSyncResult}"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource SystemAccentColor}"
+                   Margin="24,0,0,0"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding LastSyncResult, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+      <!-- Loading -->
+      <StackPanel Orientation="Horizontal"
+                  Spacing="8"
+                  IsVisible="{Binding IsLoading}">
+        <ProgressBar IsIndeterminate="True"
+                     Width="200"
+                     Height="4"
+                     VerticalAlignment="Center"
+                     Foreground="#00E5FF"/>
+        <TextBlock Text="Loading folders..."
+                   VerticalAlignment="Center"
+                   FontSize="12"
+                   Opacity="0.7"/>
+      </StackPanel>
+
+      <!-- Error -->
+      <Border Background="#FFEBEE"
+              BorderBrush="#C62828"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="12,8"
+              IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <PathIcon Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                    Width="16"
+                    Height="16"
+                    Foreground="#C62828"/>
+          <TextBlock Text="{Binding ErrorMessage}"
+                     TextWrapping="Wrap"
+                     Foreground="#C62828"
+                     FontSize="12"/>
+        </StackPanel>
+      </Border>
+      </StackPanel>
+    </Border>
+
+    <!-- Loading Indicator & Error Message -->
+    <StackPanel Grid.Row="3"
+                Spacing="8"
+                Margin="16,8">
+    </StackPanel>
+  </Grid>
+</UserControl>

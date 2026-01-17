@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using AStar.Dev.OneDrive.Client.Data;
 using Avalonia;
 using Microsoft.Extensions.Configuration;
