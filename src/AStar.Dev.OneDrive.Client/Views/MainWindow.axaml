@@ -1,0 +1,67 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:AStar.Dev.OneDrive.Client.Views"
+        xmlns:vm="using:AStar.Dev.OneDrive.Client.ViewModels"
+        Icon="avares://AStar.Dev.OneDrive.Client/Assets/astar.png"
+        x:Class="AStar.Dev.OneDrive.Client.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="AStar Dev - OneDrive Multi-Account Sync"
+        Width="1200"
+        Height="700"
+        MinWidth="800"
+        MinHeight="500">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="F2" Command="{Binding OpenUpdateAccountDetailsCommand}" />
+        <KeyBinding Gesture="Alt+F4" Command="{Binding CloseApplicationCommand}" />
+    </Window.KeyBindings>
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Update Account Details"
+                          Command="{Binding OpenUpdateAccountDetailsCommand}"
+                          InputGesture="F2" />
+                <MenuItem Header="_View Sync History"
+                          Command="{Binding OpenViewSyncHistoryCommand}" />
+                <MenuItem Header="_View Debug Logs"
+                          Command="{Binding OpenDebugLogViewerCommand}" />
+                <Separator />
+                <MenuItem Header="_Close Application"
+                          Command="{Binding CloseApplicationCommand}"
+                          InputGesture="Alt+F4" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Main Content -->
+        <Grid ColumnDefinitions="350,*">
+        <!-- Left Panel: Account Management -->
+        <Border Grid.Column="0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="0,0,1,0">
+            <views:AccountManagementView DataContext="{Binding AccountManagement}" />
+        </Border>
+
+        <!-- Right Panel: Content Area (Sync Tree, Progress, or Conflicts) -->
+        <Panel Grid.Column="1">
+            <!-- Sync Tree View (base layer) -->
+            <views:SyncTreeView DataContext="{Binding SyncTree}" />
+
+            <!-- Sync Progress View (overlay when syncing) -->
+            <views:SyncProgressView DataContext="{Binding SyncProgress}"
+                                    IsVisible="{Binding #SyncProgressView.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    x:Name="SyncProgressView" />
+
+            <!-- Conflict Resolution View (top overlay when viewing conflicts) -->
+            <views:ConflictResolutionView DataContext="{Binding ConflictResolution}"
+                                          IsVisible="{Binding #ConflictResolutionView.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                          x:Name="ConflictResolutionView" />
+        </Panel>
+    </Grid>
+    </DockPanel>
+</Window>

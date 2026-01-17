@@ -1,0 +1,137 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AStar.Dev.OneDrive.Client.ViewModels"
+        x:Class="AStar.Dev.OneDrive.Client.Views.ViewSyncHistoryWindow"
+        x:DataType="vm:ViewSyncHistoryViewModel"
+        Title="View Sync History"
+        Width="1200"
+        Height="700"
+        MinWidth="900"
+        MinHeight="600"
+        WindowStartupLocation="CenterOwner">
+
+    <Design.DataContext>
+        <vm:ViewSyncHistoryViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*" Margin="10">
+        <!-- Account Selection -->
+        <StackPanel Grid.Row="0" Spacing="5" Margin="0,0,0,10">
+            <TextBlock Text="Select Account:"
+                       FontSize="14"
+                       FontWeight="SemiBold" />
+            <ListBox ItemsSource="{Binding Accounts}"
+                     SelectedItem="{Binding SelectedAccount}"
+                     Height="120"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="10" Margin="5">
+                            <TextBlock Text="{Binding DisplayName}"
+                                       FontWeight="Bold"
+                                       FontSize="13"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+
+        <!-- Sync History Grid -->
+        <DockPanel Grid.Row="1">
+            <!-- Paging Controls -->
+            <Border DockPanel.Dock="Bottom"
+                    Padding="10"
+                    Margin="0,10,0,0"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Button Grid.Column="0"
+                            Content="Previous"
+                            Command="{Binding LoadPreviousPageCommand}"
+                            IsEnabled="{Binding CanGoToPreviousPage}"
+                            Width="100" />
+                    <TextBlock Grid.Column="1"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="13">
+                        <Run Text="Page " />
+                        <Run Text="{Binding CurrentPage}" FontWeight="Bold" />
+                        <Run Text=" • " />
+                        <Run Text="{Binding SyncHistory.Count}" FontWeight="Bold" />
+                        <Run Text=" records" />
+                    </TextBlock>
+                    <Button Grid.Column="2"
+                            Content="Next"
+                            Command="{Binding LoadNextPageCommand}"
+                            IsEnabled="{Binding CanGoToNextPage}"
+                            Width="100" />
+                </Grid>
+            </Border>
+
+            <!-- History Grid -->
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="5">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding SyncHistory}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                        BorderThickness="0,0,0,1"
+                                        Padding="10,8">
+                                    <Grid ColumnDefinitions="150,100,*,*,120,120,120,150,150,150,*" RowDefinitions="Auto">
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Timestamp" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" FontSize="12" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="Operation" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding Operation}" FontSize="12" FontWeight="Bold" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="5,0">
+                                            <TextBlock Text="File Path" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding FilePath}" FontSize="11" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="3" Margin="5,0">
+                                            <TextBlock Text="Local Path" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding LocalPath}" FontSize="11" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="4">
+                                            <TextBlock Text="File Size" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding FileSize, StringFormat='{}{0:N0} bytes'}" FontSize="11" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="5">
+                                            <TextBlock Text="Session ID" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding SyncSessionId}" FontSize="10" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="6">
+                                            <TextBlock Text="OneDrive ID" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding OneDriveId}" FontSize="10" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="7">
+                                            <TextBlock Text="Local Hash" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding LocalHash}" FontSize="10" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="8">
+                                            <TextBlock Text="Remote Hash" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding RemoteHash}" FontSize="10" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="9">
+                                            <TextBlock Text="Last Modified" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding LastModifiedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" FontSize="11" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="10" Margin="5,0">
+                                            <TextBlock Text="Reason" FontSize="10" Opacity="0.6" />
+                                            <TextBlock Text="{Binding Reason}" FontSize="11" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </DockPanel>
+    </Grid>
+</Window>

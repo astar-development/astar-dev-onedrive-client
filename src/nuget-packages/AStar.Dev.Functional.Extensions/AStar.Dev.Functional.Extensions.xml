@@ -473,6 +473,18 @@
             <typeparam name="TSuccess">The type of the success value.</typeparam>
             <typeparam name="TError">The type of the error reason.</typeparam>
         </member>
+        <member name="M:AStar.Dev.Functional.Extensions.Result`2.op_Implicit(`0)~AStar.Dev.Functional.Extensions.Result{`0,`1}">
+            <summary>
+            Implicit conversion from a success value to a <see cref="T:AStar.Dev.Functional.Extensions.Result`2"/> representing <c>Ok</c>.
+            </summary>
+            <param name="value">The success value.</param>
+        </member>
+        <member name="M:AStar.Dev.Functional.Extensions.Result`2.op_Implicit(`1)~AStar.Dev.Functional.Extensions.Result{`0,`1}">
+            <summary>
+            Implicit conversion from an error value to a <see cref="T:AStar.Dev.Functional.Extensions.Result`2"/> representing <c>Error</c>.
+            </summary>
+            <param name="error">The error reason.</param>
+        </member>
         <member name="M:AStar.Dev.Functional.Extensions.Result`2.Match``1(System.Func{`0,``0},System.Func{`1,``0})">
             <summary>
                 Matches the result to the appropriate function based on whether it is a success or failure.

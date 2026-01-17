@@ -6,7 +6,6 @@ using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client;
 using Polly;
 
 namespace AStar.Dev.OneDrive.Client.Services;

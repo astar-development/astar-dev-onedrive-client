@@ -1,4 +1,3 @@
-using AStar.Dev.OneDrive.Client;
 using AStar.Dev.OneDrive.Client.Common;
 using AStar.Dev.OneDrive.Client.Theme;
 using Avalonia.Controls;

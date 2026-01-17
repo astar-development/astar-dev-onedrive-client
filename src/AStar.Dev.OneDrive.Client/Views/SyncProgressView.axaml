@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AStar.Dev.OneDrive.Client.ViewModels"
+             x:Class="AStar.Dev.OneDrive.Client.Views.SyncProgressView"
+             x:DataType="vm:SyncProgressViewModel">
+
+    <Design.DataContext>
+        <vm:SyncProgressViewModel />
+    </Design.DataContext>
+
+    <!-- Semi-transparent background overlay (80% opacity) -->
+    <Border Background="#CC000000">
+        <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="20">
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
+            <TextBlock Text="Sync Progress"
+                       FontSize="24"
+                       FontWeight="Bold" />
+            <TextBlock Text="{Binding StatusMessage}"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource SystemAccentColor}" />
+        </StackPanel>
+
+        <!-- Progress Section -->
+        <StackPanel Grid.Row="1" Spacing="20" VerticalAlignment="Center">
+
+            <!-- Progress Bar -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="{Binding FilesProgressText}"
+                           HorizontalAlignment="Center"
+                           FontSize="18"
+                           FontWeight="SemiBold" />
+                <ProgressBar Value="{Binding ProgressPercentage}"
+                             Minimum="0"
+                             Maximum="100"
+                             Height="30"
+                             IsIndeterminate="{Binding IsProgressIndeterminate}"
+                             ShowProgressText="True"
+                             Foreground="#00E5FF" />
+            </StackPanel>
+
+            <!-- Transfer Details -->
+            <StackPanel Spacing="8" IsVisible="{Binding CurrentProgress, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <TextBlock Text="{Binding TransferDetailsText}"
+                           HorizontalAlignment="Center"
+                           FontSize="14"
+                           Opacity="0.8" />
+            </StackPanel>
+
+            <!-- Conflicts Warning -->
+            <Border Background="#30F44336"
+                    BorderBrush="#FFCC3300"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Padding="15"
+                    IsVisible="{Binding HasConflicts}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding ConflictsText}"
+                               FontWeight="Bold"
+                               Foreground="#FFCC3300"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Some files have conflicts and require manual resolution"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Opacity="0.9" />
+                </StackPanel>
+            </Border>
+
+            <!-- No Progress Message -->
+            <TextBlock Text="Click 'Start Sync' to begin synchronization"
+                       HorizontalAlignment="Center"
+                       FontSize="16"
+                       Opacity="0.6"
+                       IsVisible="{Binding CurrentProgress, Converter={x:Static ObjectConverters.IsNull}}" />
+        </StackPanel>
+
+        <!-- Control Buttons -->
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Spacing="10"
+                    Margin="0,20,0,0">
+            <Button Content="Start Sync"
+                    Command="{Binding StartSyncCommand}"
+                    IsVisible="{Binding !IsSyncing}"
+                    Width="120"
+                    Classes="accent" />
+            <Button Content="Pause"
+                    Command="{Binding PauseSyncCommand}"
+                    IsVisible="{Binding IsSyncing}"
+                    Width="120" />
+            <Button Content="View Conflicts"
+                    Command="{Binding ViewConflictsCommand}"
+                    IsVisible="{Binding HasConflicts}"
+                    Width="120" />
+            <Button Content="Close"
+                    Command="{Binding CloseCommand}"
+                    ToolTip.Tip="Close Sync Progress Window - this does not affect the current syncing progress"
+                    Width="120" />
+        </StackPanel>
+
+        <!-- Status Footer -->
+        <Border Grid.Row="3"
+                Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                Padding="10"
+                Margin="0,20,0,0"
+                CornerRadius="4">
+            <TextBlock Text="{Binding StatusMessage}"
+                       HorizontalAlignment="Center"
+                       FontSize="14"
+                       TextWrapping="Wrap" />
+        </Border>
+        </Grid>
+    </Border>
+</UserControl>
