@@ -18,10 +18,7 @@ public sealed class GraphApiHealthCheck(IAuthService authService) : IHealthCheck
         try
         {
             var signedIn = await authService.IsUserSignedInAsync("PlaceholderAccountId", cancellationToken);
-            if(!signedIn)
-            {
-                return HealthCheckResult.Degraded("User is not authenticated with Microsoft Graph API");
-            }
+            if(!signedIn) return HealthCheckResult.Degraded("User is not authenticated with Microsoft Graph API");
 
             var token = await authService.GetAccessTokenAsync("PlaceholderAccountId", cancellationToken);
 

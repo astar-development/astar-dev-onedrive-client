@@ -3,9 +3,8 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Sync;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
@@ -128,12 +127,9 @@ public sealed class ConflictResolutionViewModel : ReactiveObject, IDisposable
             StatusMessage = "Loading conflicts...";
             Conflicts.Clear();
 
-            IReadOnlyList<SyncConflict> conflicts = await _syncEngine.GetConflictsAsync(_accountId, cancellationToken);
+            IReadOnlyList<Core.Entities.SyncConflict> conflicts = await _syncEngine.GetConflictsAsync(_accountId, cancellationToken);
 
-            foreach(SyncConflict conflict in conflicts)
-            {
-                Conflicts.Add(new ConflictItemViewModel(conflict));
-            }
+            foreach(Core.Entities.SyncConflict conflict in conflicts) Conflicts.Add(new ConflictItemViewModel(new SyncConflict(conflict.Id, conflict.AccountId, conflict.FilePath, conflict.LocalModifiedUtc, conflict.RemoteModifiedUtc, conflict.LocalSize, conflict.RemoteSize, conflict.DetectedUtc, conflict.ResolutionStrategy, conflict.IsResolved)));
 
             StatusMessage = Conflicts.Count > 0
                 ? $"Found {Conflicts.Count} conflict(s) requiring resolution."
@@ -179,7 +175,7 @@ public sealed class ConflictResolutionViewModel : ReactiveObject, IDisposable
 
                 StatusMessage = $"Resolving {conflictVm.FilePath}... ({resolvedCount + skippedCount + 1}/{totalConflicts})";
 
-                var conflict = new SyncConflict(
+                var conflict = new Core.Entities.SyncConflict(
                     conflictVm.Id,
                     conflictVm.AccountId,
                     conflictVm.FilePath,

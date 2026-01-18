@@ -2,10 +2,12 @@ using System.IO.Abstractions.TestingHelpers;
 using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 
 using Microsoft.Extensions.Logging;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 
@@ -261,9 +263,7 @@ public class TransferServiceShould
             aggEx.InnerExceptions.ShouldContain(e => e is IOException);
         }
         else
-        {
             ex.ShouldBeOfType<IOException>();
-        }
     }
 
     [Fact(Skip = "Skipped due to complex channel/producer/consumer test setup issues. Requires refactor or integration test.")]

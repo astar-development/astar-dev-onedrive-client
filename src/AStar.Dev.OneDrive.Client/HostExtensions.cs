@@ -6,8 +6,7 @@ using AStar.Dev.OneDrive.Client.Core.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.FromV3;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
 using AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
-using AStar.Dev.OneDrive.Client.FromV3.Sync;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.Infrastructure.DependencyInjection;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Services.DependencyInjection;
@@ -125,10 +124,7 @@ internal static class HostExtensions
                 _ = Directory.CreateDirectory(appSettings.FullUserSyncPath);
                 _ = Directory.CreateDirectory(ApplicationSettings.FullDatabaseDirectory);
                 _ = Directory.CreateDirectory(ApplicationSettings.FullUserPreferencesDirectory);
-                if(!File.Exists(appSettings.FullUserPreferencesPath))
-                {
-                    File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());
-                }
+                if(!File.Exists(appSettings.FullUserPreferencesPath)) File.WriteAllText(appSettings.FullUserPreferencesPath, new UserPreferences().ToJson());
             })
             .TapError(ex => AStarLog.Application.ApplicationFailedToStart(log, ApplicationMetadata.ApplicationName, ex.Message));
 }

@@ -12,10 +12,7 @@ public class UploadQueueProducer : IUploadQueueProducer
     public async Task ProduceAsync(string accountId, ChannelWriter<LocalFileRecord> writer, CancellationToken cancellationToken)
     {
         IEnumerable<LocalFileRecord> uploads = await _repo.GetPendingUploadsAsync(accountId, int.MaxValue, cancellationToken);
-        foreach(LocalFileRecord item in uploads)
-        {
-            await writer.WriteAsync(item, cancellationToken);
-        }
+        foreach(LocalFileRecord item in uploads) await writer.WriteAsync(item, cancellationToken);
 
         writer.Complete();
     }

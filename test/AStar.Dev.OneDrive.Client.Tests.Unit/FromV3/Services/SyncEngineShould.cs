@@ -1,8 +1,8 @@
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.SyncConflicts;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Services;
@@ -536,7 +536,7 @@ public class SyncEngineShould
     public async Task GetConflictsAsyncReturnsUnresolvedConflicts()
     {
         (SyncEngine? engine, TestMocks? mocks) = CreateTestEngine();
-        var conflict1 = new SyncConflict(
+        var conflict1 = new Core.Entities.SyncConflict(
             Id: "conflict1",
             AccountId: "acc1",
             FilePath: "/Documents/conflict.txt",
@@ -548,11 +548,11 @@ public class SyncEngineShould
             ResolutionStrategy: ConflictResolutionStrategy.None,
             IsResolved: false);
 
-        var conflicts = new List<SyncConflict> { conflict1 };
+        var conflicts = new List<Core.Entities.SyncConflict> { conflict1 };
         _ = mocks.SyncConflictRepo.GetUnresolvedByAccountIdAsync("acc1", Arg.Any<CancellationToken>())
             .Returns(conflicts);
 
-        IReadOnlyList<SyncConflict> result = await engine.GetConflictsAsync("acc1", CancellationToken.None);
+        IReadOnlyList<Core.Entities.SyncConflict> result = await engine.GetConflictsAsync("acc1", CancellationToken.None);
 
         _ = result.ShouldHaveSingleItem();
         result[0].FilePath.ShouldBe("/Documents/conflict.txt");
@@ -622,13 +622,9 @@ public class SyncEngineShould
         var result = SyncEngine.FormatScanningFolderForDisplay(input);
 
         if(expected is not null)
-        {
             result.ShouldBe($"OneDrive: {expected}");
-        }
         else
-        {
             result.ShouldBe(expected);
-        }
     }
 
     [Fact]
@@ -877,7 +873,7 @@ public class SyncEngineShould
             baseTime, @"C:\Sync\Documents\conflict.txt", "oldctag", "oldetag", "oldhash",
             FileSyncStatus.Synced, SyncDirection.Upload);
 
-        var existingConflict = new SyncConflict(
+        var existingConflict = new Core.Entities.SyncConflict(
             Id: "conflict1",
             AccountId: "acc1",
             FilePath: "/Documents/conflict.txt",
@@ -944,7 +940,7 @@ public class SyncEngineShould
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<CancellationToken>())
-            .Returns((SyncConflict?)null);
+            .Returns((Core.Entities.SyncConflict?)null);
 
         ISyncSessionLogRepository syncSessionLogRepo = Substitute.For<ISyncSessionLogRepository>();
         IFileOperationLogRepository fileOperationLogRepo = Substitute.For<IFileOperationLogRepository>();

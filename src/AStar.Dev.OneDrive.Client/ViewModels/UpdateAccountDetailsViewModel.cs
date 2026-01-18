@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Avalonia.Platform.Storage;
 using ReactiveUI;
 
@@ -200,10 +200,7 @@ public sealed class UpdateAccountDetailsViewModel : ReactiveObject
 
     private async Task UpdateAccountAsync()
     {
-        if(SelectedAccount is null)
-        {
-            return;
-        }
+        if(SelectedAccount is null) return;
 
         // Validate LocalSyncPath exists
         if(!Directory.Exists(LocalSyncPath))
@@ -260,8 +257,7 @@ public sealed class UpdateAccountDetailsViewModel : ReactiveObject
     private async Task BrowseFolderAsync()
     {
         // Get the top level from the current application
-        if(Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop &&
-            desktop.MainWindow?.StorageProvider is { } storageProvider)
+        if(Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime { MainWindow.StorageProvider: { } storageProvider })
         {
             IReadOnlyList<IStorageFolder> result = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
@@ -269,10 +265,7 @@ public sealed class UpdateAccountDetailsViewModel : ReactiveObject
                 AllowMultiple = false
             });
 
-            if(result.Count > 0)
-            {
-                LocalSyncPath = result[0].Path.LocalPath;
-            }
+            if(result.Count > 0) LocalSyncPath = result[0].Path.LocalPath;
         }
     }
 }

@@ -1,6 +1,8 @@
 using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Unit;
 

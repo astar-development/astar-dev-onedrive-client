@@ -1,7 +1,8 @@
 using System.Reactive.Subjects;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
+using AStar.Dev.OneDrive.Client.Models;
 using AStar.Dev.OneDrive.Client.ViewModels;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
@@ -11,7 +12,7 @@ public class SyncTreeViewModelShould : IDisposable
     [Fact]
     public void ExposeEstimatedSecondsRemainingFromSyncState()
     {
-        var syncState = new SyncState(
+        var syncState = new AStar.Dev.OneDrive.Client.Core.Entities.SyncState(
             AccountId: "acc1",
             Status: SyncStatus.Running,
             TotalFiles: 10,
@@ -33,7 +34,7 @@ public class SyncTreeViewModelShould : IDisposable
     [Fact]
     public void ExposeMegabytesPerSecondFromSyncState()
     {
-        var syncState = new SyncState(
+        var syncState = new AStar.Dev.OneDrive.Client.Core.Entities.SyncState(
             AccountId: "acc1",
             Status: SyncStatus.Running,
             TotalFiles: 10,
@@ -54,7 +55,7 @@ public class SyncTreeViewModelShould : IDisposable
     private readonly IFolderTreeService _mockFolderService;
     private readonly ISyncSelectionService _mockSelectionService;
     private readonly ISyncEngine _mockSyncEngine;
-    private readonly Subject<SyncState> _progressSubject;
+    private readonly Subject<AStar.Dev.OneDrive.Client.Core.Entities.SyncState> _progressSubject;
     private readonly SyncTreeViewModel _viewModel;
     private bool disposedValue;
 
@@ -64,7 +65,7 @@ public class SyncTreeViewModelShould : IDisposable
         _mockSelectionService = Substitute.For<ISyncSelectionService>();
         _mockSyncEngine = Substitute.For<ISyncEngine>();
 
-        _progressSubject = new Subject<SyncState>();
+        _progressSubject = new Subject<AStar.Dev.OneDrive.Client.Core.Entities.SyncState>();
         _ = _mockSyncEngine.Progress.Returns(_progressSubject);
 
         _viewModel = new SyncTreeViewModel(_mockFolderService, _mockSelectionService, _mockSyncEngine);
@@ -121,10 +122,7 @@ public class SyncTreeViewModelShould : IDisposable
         var isLoadingValues = new List<bool>();
         _viewModel.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(SyncTreeViewModel.IsLoading))
-            {
-                isLoadingValues.Add(_viewModel.IsLoading);
-            }
+            if(args.PropertyName == nameof(SyncTreeViewModel.IsLoading)) isLoadingValues.Add(_viewModel.IsLoading);
         };
 
         _viewModel.SelectedAccountId = "account123";
@@ -299,10 +297,7 @@ public class SyncTreeViewModelShould : IDisposable
         var propertyChangedRaised = false;
         _viewModel.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(SyncTreeViewModel.SelectedAccountId))
-            {
-                propertyChangedRaised = true;
-            }
+            if(args.PropertyName == nameof(SyncTreeViewModel.SelectedAccountId)) propertyChangedRaised = true;
         };
 
         _viewModel.SelectedAccountId = "newAccount";

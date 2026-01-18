@@ -124,12 +124,7 @@ public sealed class GraphClientWrapper(IAuthService auth, HttpClient http, MsalC
     {
         var items = new List<DriveItemRecord>();
         if(doc.RootElement.TryGetProperty("value", out JsonElement arr))
-        {
-            foreach(JsonElement el in arr.EnumerateArray())
-            {
-                items.Add(ParseDriveItemRecord(accountId, el));
-            }
-        }
+            foreach(JsonElement el in arr.EnumerateArray()) items.Add(ParseDriveItemRecord(accountId, el));
 
         return items;
     }

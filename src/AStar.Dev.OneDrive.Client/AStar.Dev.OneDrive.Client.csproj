@@ -53,6 +53,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="FromV3\Entities\" />
+    <Folder Include="FromV3\Sync\" />
   </ItemGroup>
 </Project>

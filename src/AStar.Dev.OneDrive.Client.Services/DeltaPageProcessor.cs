@@ -60,19 +60,13 @@ public class DeltaPageProcessor(ISyncRepository repo, IGraphClient graph, ILogge
                 logger.LogDebug("[DeltaPageProcessor] Requesting delta page: nextOrDelta={NextOrDelta}", nextOrDelta);
                 DeltaPage page = await graph.GetDriveDeltaPageAsync(accountId, nextOrDelta, cancellationToken);
                 DriveItemRecord? driveItemRecord = page.Items.FirstOrDefault();
-                if(driveItemRecord is not null)
-                {
-                    deltaToken = new DeltaToken("PlaceholderAccountId", driveItemRecord.Id.Split('!')[0], page.DeltaLink ?? string.Empty, DateTimeOffset.UtcNow);
-                }
+                if(driveItemRecord is not null) deltaToken = new DeltaToken("PlaceholderAccountId", driveItemRecord.Id.Split('!')[0], page.DeltaLink ?? string.Empty, DateTimeOffset.UtcNow);
 
                 logger.LogDebug("[DeltaPageProcessor] Received page: items={Count} nextLink={NextLink} deltaLink={DeltaLink}", page.Items.Count(), page.NextLink, page.DeltaLink);
                 await repo.ApplyDriveItemsAsync(accountId, page.Items, cancellationToken);
                 totalItemsProcessed += page.Items.Count();
                 nextOrDelta = page.NextLink;
-                if(page.DeltaLink is not null)
-                {
-                    finalToken = new("PlaceholderAccountId", deltaToken.Id, page.DeltaLink, DateTimeOffset.UtcNow);
-                }
+                if(page.DeltaLink is not null) finalToken = new("PlaceholderAccountId", deltaToken.Id, page.DeltaLink, DateTimeOffset.UtcNow);
 
                 pageCount++;
                 logger.LogInformation("[DeltaPageProcessor] Applied page {PageNum}: items={Count} totalItems={Total} next={Next}",

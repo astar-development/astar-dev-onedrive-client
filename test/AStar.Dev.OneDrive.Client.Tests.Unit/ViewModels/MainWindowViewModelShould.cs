@@ -245,9 +245,7 @@ public sealed class MainWindowViewModelShould
         {
             if(e.PropertyName == nameof(MainWindowViewModel.SyncStatusMessage) &&
                 sut.SyncStatusMessage.Contains("Scanning local files"))
-            {
                 progressReceived = true;
-            }
         };
 
         sut.ScanLocalFilesCommand.Execute().Subscribe();

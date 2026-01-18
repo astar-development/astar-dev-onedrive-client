@@ -5,7 +5,7 @@ using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
 using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.Services;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using AStar.Dev.OneDrive.Client.Services.Syncronisation;
@@ -163,10 +163,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 
                     UpdatePerformanceMetrics(progress);
 
-                    if(progress.ProcessedFiles % 100 == 0)
-                    {
-                        AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperationMessage}");
-                    }
+                    if(progress.ProcessedFiles % 100 == 0) AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperationMessage}");
                 })
                 .DisposeWith(_disposables);
 
@@ -265,10 +262,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     private void AddRecentTransferInternal(string message)
     {
         RecentTransfers.Insert(0, message);
-        while(RecentTransfers.Count > MaxRecentTransfers)
-        {
-            RecentTransfers.RemoveAt(RecentTransfers.Count - 1);
-        }
+        while(RecentTransfers.Count > MaxRecentTransfers) RecentTransfers.RemoveAt(RecentTransfers.Count - 1);
     }
 
     /// <summary>
@@ -276,10 +270,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     /// </summary>
     private void ViewConflicts()
     {
-        if(AccountManagement.SelectedAccount is not null)
-        {
-            ShowConflictResolutionView(AccountManagement.SelectedAccount.AccountId);
-        }
+        if(AccountManagement.SelectedAccount is not null) ShowConflictResolutionView(AccountManagement.SelectedAccount.AccountId);
     }
 
     /// <summary>
@@ -289,11 +280,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     {
         var window = new UpdateAccountDetailsWindow();
 
-        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-            desktop.MainWindow is not null)
-        {
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: not null } desktop)
             _ = window.ShowDialog(desktop.MainWindow);
-        }
     }
 
     /// <summary>
@@ -303,11 +291,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     {
         var window = new ViewSyncHistoryWindow();
 
-        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-            desktop.MainWindow is not null)
-        {
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: not null } desktop)
             _ = window.ShowDialog(desktop.MainWindow);
-        }
     }
 
     /// <summary>
@@ -317,11 +302,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     {
         var window = new DebugLogWindow();
 
-        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-            desktop.MainWindow is not null)
-        {
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: not null } desktop)
             _ = window.ShowDialog(desktop.MainWindow);
-        }
     }
 
     /// <summary>
@@ -329,10 +311,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     /// </summary>
     private static void CloseApplication()
     {
-        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            desktop.Shutdown();
-        }
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
     }
 
     /// <summary>
@@ -379,16 +358,10 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         this.RaisePropertyChanged(nameof(ShowConflictResolution));
 
         // Refresh conflict count after resolving conflicts
-        if(SyncProgress is not null)
-        {
-            await SyncProgress.RefreshConflictCountAsync();
-        }
+        if(SyncProgress is not null) await SyncProgress.RefreshConflictCountAsync();
 
         // Update main window conflict status
-        if(AccountManagement.SelectedAccount is not null)
-        {
-            await UpdateConflictStatusAsync(AccountManagement.SelectedAccount.AccountId);
-        }
+        if(AccountManagement.SelectedAccount is not null) await UpdateConflictStatusAsync(AccountManagement.SelectedAccount.AccountId);
     }
 
     /// <summary>
@@ -397,7 +370,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     /// <param name="accountId">The account ID to check.</param>
     private async Task UpdateConflictStatusAsync(string accountId)
     {
-        IReadOnlyList<FromV3.Models.SyncConflict> conflicts = await _conflictRepository.GetUnresolvedByAccountIdAsync(accountId);
+        IReadOnlyList<Core.Entities.SyncConflict> conflicts = await _conflictRepository.GetUnresolvedByAccountIdAsync(accountId);
         HasUnresolvedConflicts = conflicts.Any();
     }
 

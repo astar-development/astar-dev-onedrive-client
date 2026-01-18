@@ -3,10 +3,12 @@ using System.IO.Abstractions;
 using System.Threading.Channels;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Services.ConfigurationSettings;
 using Microsoft.Extensions.Logging;
 using Polly;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Services;
 

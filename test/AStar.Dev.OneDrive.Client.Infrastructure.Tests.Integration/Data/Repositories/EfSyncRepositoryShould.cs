@@ -1,9 +1,11 @@
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Tests.Integration.Data.Repositories;
 
@@ -340,7 +342,7 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         var original = new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash123", 100, DateTimeOffset.UtcNow.AddHours(-1), SyncState.PendingDownload);
         await repository.AddOrUpdateLocalFileAsync("PlaceholderAccountId", original, CancellationToken.None);
-    var updated = new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash456", 150, DateTimeOffset.UtcNow, SyncState.Downloaded);
+        var updated = new LocalFileRecord("PlaceholderAccountId", "id1", "file1.txt", "hash456", 150, DateTimeOffset.UtcNow, SyncState.Downloaded);
         await repository.AddOrUpdateLocalFileAsync("PlaceholderAccountId", updated, CancellationToken.None);
         using var assertionContext = new AppDbContext(options);
         LocalFileRecord? result = await assertionContext.LocalFiles.FindAsync(["id1"], TestContext.Current.CancellationToken);
@@ -412,10 +414,7 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
             new LocalFileRecord("PlaceholderAccountId", "id3", "file3.txt", null, 150, DateTimeOffset.UtcNow, SyncState.PendingUpload),
             new LocalFileRecord("PlaceholderAccountId", "id4", "file4.txt", null, 250, DateTimeOffset.UtcNow, SyncState.Uploaded)
         ];
-        foreach(LocalFileRecord? file in files)
-        {
-            await repository.AddOrUpdateLocalFileAsync("PlaceholderAccountId", file, CancellationToken.None);
-        }
+        foreach(LocalFileRecord? file in files) await repository.AddOrUpdateLocalFileAsync("PlaceholderAccountId", file, CancellationToken.None);
 
         IEnumerable<LocalFileRecord> result = await repository.GetPendingUploadsAsync("PlaceholderAccountId", 10, CancellationToken.None);
         var resultList = result.ToList();
@@ -430,10 +429,7 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
         TestDbContextFactory factory = new(options);
         var repository = new EfSyncRepository(factory, NullLogger<EfSyncRepository>.Instance);
         LocalFileRecord[] files = Enumerable.Range(1, 5).Select(i => new LocalFileRecord("PlaceholderAccountId", $"id{i}", $"file{i}.txt", null, i * 100, DateTimeOffset.UtcNow, SyncState.PendingUpload)).ToArray();
-        foreach(LocalFileRecord? file in files)
-        {
-            await repository.AddOrUpdateLocalFileAsync("PlaceholderAccountId", file, CancellationToken.None);
-        }
+        foreach(LocalFileRecord? file in files) await repository.AddOrUpdateLocalFileAsync("PlaceholderAccountId", file, CancellationToken.None);
 
         IEnumerable<LocalFileRecord> result = await repository.GetPendingUploadsAsync("PlaceholderAccountId", 3, CancellationToken.None);
         result.Count().ShouldBe(3);
@@ -523,10 +519,7 @@ public sealed class EfSyncRepositoryShould : IAsyncLifetime
             new TransferLog("PlaceholderAccountId", "log2", TransferType.Upload, "item2", DateTimeOffset.UtcNow, null, TransferStatus.InProgress, null, null),
             new TransferLog("PlaceholderAccountId", "log3", TransferType.Delete, "item3", DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, TransferStatus.Success, null, null)
         ];
-        foreach(TransferLog? log in logs)
-        {
-            await repository.LogTransferAsync("PlaceholderAccountId", log, CancellationToken.None);
-        }
+        foreach(TransferLog? log in logs) await repository.LogTransferAsync("PlaceholderAccountId", log, CancellationToken.None);
 
         using var assertionContext = new AppDbContext(options);
         List<TransferLog> allLogs = await assertionContext.TransferLogs.ToListAsync(TestContext.Current.CancellationToken);

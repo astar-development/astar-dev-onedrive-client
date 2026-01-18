@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.ViewModels;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
@@ -65,10 +65,7 @@ public class AccountManagementViewModelShould
 
         viewModel.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(AccountManagementViewModel.SelectedAccount))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(AccountManagementViewModel.SelectedAccount)) propertyChanged = true;
         };
 
         viewModel.SelectedAccount = account;
@@ -112,10 +109,7 @@ public class AccountManagementViewModelShould
 
         viewModel.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(AccountManagementViewModel.IsLoading))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(AccountManagementViewModel.IsLoading)) propertyChanged = true;
         };
 
         viewModel.IsLoading = true;

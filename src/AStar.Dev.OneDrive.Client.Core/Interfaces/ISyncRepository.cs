@@ -1,4 +1,5 @@
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Core.Interfaces;
 

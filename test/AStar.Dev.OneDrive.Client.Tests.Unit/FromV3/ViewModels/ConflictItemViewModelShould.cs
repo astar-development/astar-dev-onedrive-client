@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.SyncConflicts;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
@@ -52,10 +52,7 @@ public class ConflictItemViewModelShould
 
         viewModel.PropertyChanged += (_, e) =>
         {
-            if(e.PropertyName == nameof(ConflictItemViewModel.SelectedStrategy))
-            {
-                propertyChanged = true;
-            }
+            if(e.PropertyName == nameof(ConflictItemViewModel.SelectedStrategy)) propertyChanged = true;
         };
 
         viewModel.SelectedStrategy = ConflictResolutionStrategy.KeepRemote;
@@ -73,10 +70,7 @@ public class ConflictItemViewModelShould
 
         viewModel.PropertyChanged += (_, e) =>
         {
-            if(e.PropertyName == nameof(ConflictItemViewModel.SelectedStrategy))
-            {
-                propertyChangedCount++;
-            }
+            if(e.PropertyName == nameof(ConflictItemViewModel.SelectedStrategy)) propertyChangedCount++;
         };
 
         viewModel.SelectedStrategy = ConflictResolutionStrategy.None;

@@ -57,7 +57,7 @@ public static class ServiceCollectionExtensions
         _ = services.AddSingleton<IUploadQueueConsumer, UploadQueueConsumer>();
 
         // Update TransferService registration to inject upload queue dependencies
-        _ = services.AddSingleton<TransferService>(sp =>
+        _ = services.AddSingleton(sp =>
             new TransferService(
                 sp.GetRequiredService<IFileSystemAdapter>(),
                 sp.GetRequiredService<IGraphClient>(),

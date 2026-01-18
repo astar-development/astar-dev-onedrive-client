@@ -25,6 +25,7 @@
     </ItemGroup>
 
     <ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.2" />
         <PackageReference Include="coverlet.collector" Version="6.0.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -40,6 +41,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\AStar.Dev.OneDrive.Client.Core\AStar.Dev.OneDrive.Client.Core.csproj" />
+      <ProjectReference Include="..\..\src\AStar.Dev.OneDrive.Client.Infrastructure\AStar.Dev.OneDrive.Client.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\src\AStar.Dev.OneDrive.Client\AStar.Dev.OneDrive.Client.csproj" />
       <ProjectReference Include="..\..\src\nuget-packages\AStar.Dev.Utilities\AStar.Dev.Utilities.csproj" />
     </ItemGroup>
 

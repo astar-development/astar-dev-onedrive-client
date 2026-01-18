@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
@@ -121,10 +121,7 @@ public sealed class ViewSyncHistoryViewModel : ReactiveObject
         {
             IReadOnlyList<AccountInfo> accounts = await _accountRepository.GetAllAsync();
             Accounts.Clear();
-            foreach(AccountInfo account in accounts)
-            {
-                Accounts.Add(account);
-            }
+            foreach(AccountInfo account in accounts) Accounts.Add(account);
         }
         catch
         {
@@ -154,10 +151,7 @@ public sealed class ViewSyncHistoryViewModel : ReactiveObject
 
             // Only add PageSize records (exclude the extra one used for hasMore check)
             IEnumerable<FileOperationLog> recordsToShow = HasMoreRecords ? records.Take(PageSize) : records;
-            foreach(FileOperationLog? record in recordsToShow)
-            {
-                SyncHistory.Add(record);
-            }
+            foreach(FileOperationLog? record in recordsToShow) SyncHistory.Add(record);
 
             this.RaisePropertyChanged(nameof(CanGoToPreviousPage));
             this.RaisePropertyChanged(nameof(CanGoToNextPage));
@@ -174,10 +168,7 @@ public sealed class ViewSyncHistoryViewModel : ReactiveObject
 
     private async Task LoadNextPageAsync()
     {
-        if(!HasMoreRecords || SelectedAccount is null)
-        {
-            return;
-        }
+        if(!HasMoreRecords || SelectedAccount is null) return;
 
         CurrentPage++;
         await LoadSyncHistoryAsync();
@@ -185,10 +176,7 @@ public sealed class ViewSyncHistoryViewModel : ReactiveObject
 
     private async Task LoadPreviousPageAsync()
     {
-        if(CurrentPage <= 1 || SelectedAccount is null)
-        {
-            return;
-        }
+        if(CurrentPage <= 1 || SelectedAccount is null) return;
 
         CurrentPage--;
         await LoadSyncHistoryAsync();

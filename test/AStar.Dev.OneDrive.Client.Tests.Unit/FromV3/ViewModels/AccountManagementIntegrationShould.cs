@@ -1,6 +1,7 @@
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -191,15 +192,9 @@ public class AccountManagementIntegrationShould : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if(_disposed)
-        {
-            return;
-        }
+        if(_disposed) return;
 
-        if(disposing)
-        {
-            _dbContext?.Dispose();
-        }
+        if(disposing) _dbContext?.Dispose();
 
         _disposed = true;
     }

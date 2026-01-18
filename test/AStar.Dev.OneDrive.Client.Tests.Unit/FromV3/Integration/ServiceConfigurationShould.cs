@@ -1,5 +1,5 @@
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Integration;
@@ -66,15 +66,9 @@ public class ServiceConfigurationShould
         IAccountRepository? repo1;
         IAccountRepository? repo2;
 
-        using(IServiceScope scope1 = serviceProvider.CreateScope())
-        {
-            repo1 = scope1.ServiceProvider.GetService<IAccountRepository>();
-        }
+        using(IServiceScope scope1 = serviceProvider.CreateScope()) repo1 = scope1.ServiceProvider.GetService<IAccountRepository>();
 
-        using(IServiceScope scope2 = serviceProvider.CreateScope())
-        {
-            repo2 = scope2.ServiceProvider.GetService<IAccountRepository>();
-        }
+        using(IServiceScope scope2 = serviceProvider.CreateScope()) repo2 = scope2.ServiceProvider.GetService<IAccountRepository>();
 
         _ = repo1.ShouldNotBeNull();
         _ = repo2.ShouldNotBeNull();

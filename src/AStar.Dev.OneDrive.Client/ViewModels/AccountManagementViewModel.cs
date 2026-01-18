@@ -3,9 +3,9 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
@@ -140,10 +140,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
         {
             IReadOnlyList<AccountInfo> accounts = await _accountRepository.GetAllAsync();
             Accounts.Clear();
-            foreach(AccountInfo account in accounts)
-            {
-                Accounts.Add(account);
-            }
+            foreach(AccountInfo account in accounts) Accounts.Add(account);
         }
         finally
         {
@@ -157,12 +154,12 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
         try
         {
             // Clear any existing toast and start fresh
-            _toastCts?.Cancel();
+            await _toastCts?.CancelAsync()!;
             ToastMessage = null;
             ToastVisible = false;
 
             AuthenticationResult result = await _authService.LoginAsync();
-            if(result.Success && result.AccountId is not null && result.DisplayName is not null)
+            if(result is { Success: true, AccountId: not null, DisplayName: not null })
             {
                 // Create new account with default sync path
                 var defaultPath = Path.Combine(
@@ -187,10 +184,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
                 Accounts.Add(newAccount);
                 SelectedAccount = newAccount;
             }
-            else if(!result.Success && result.ErrorMessage is not null)
-            {
-                _ = ShowToastAsync(result.ErrorMessage);
-            }
+            else if(result is { Success: false, ErrorMessage: not null }) _ = ShowToastAsync(result.ErrorMessage);
         }
         finally
         {
@@ -200,10 +194,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
 
     private async Task RemoveAccountAsync()
     {
-        if(SelectedAccount is null)
-        {
-            return;
-        }
+        if(SelectedAccount is null) return;
 
         IsLoading = true;
         try
@@ -220,16 +211,13 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
 
     private async Task LoginAsync()
     {
-        if(SelectedAccount is null)
-        {
-            return;
-        }
+        if(SelectedAccount is null) return;
 
         IsLoading = true;
         try
         {
             // Clear any existing toast and start fresh
-            _toastCts?.Cancel();
+            await _toastCts?.CancelAsync()!;
             ToastMessage = null;
             ToastVisible = false;
 
@@ -246,10 +234,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
                     SelectedAccount = updatedAccount;
                 }
             }
-            else if(!result.Success && result.ErrorMessage is not null)
-            {
-                _ = ShowToastAsync(result.ErrorMessage);
-            }
+            else if(result is { Success: false, ErrorMessage: not null }) _ = ShowToastAsync(result.ErrorMessage);
         }
         finally
         {
@@ -261,7 +246,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
     {
         try
         {
-            _toastCts?.Cancel();
+            await _toastCts?.CancelAsync()!;
             _toastCts = new CancellationTokenSource();
             ToastMessage = message;
             ToastVisible = true;
@@ -285,10 +270,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
 
     private async Task LogoutAsync()
     {
-        if(SelectedAccount is null)
-        {
-            return;
-        }
+        if(SelectedAccount is null) return;
 
         IsLoading = true;
         try

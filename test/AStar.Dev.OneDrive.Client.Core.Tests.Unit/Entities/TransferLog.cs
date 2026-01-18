@@ -1,4 +1,5 @@
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.Utilities;
 
 namespace AStar.Dev.OneDrive.Client.Core.Tests.Unit.Entities;

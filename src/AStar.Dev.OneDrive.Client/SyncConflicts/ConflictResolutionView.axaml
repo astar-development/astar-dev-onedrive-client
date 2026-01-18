@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:AStar.Dev.OneDrive.Client.SyncConflicts"
              xmlns:enums="using:AStar.Dev.OneDrive.Client.SyncConflicts"
+             xmlns:enums1="clr-namespace:AStar.Dev.OneDrive.Client.Core.Models.Enums;assembly=AStar.Dev.OneDrive.Client.Core"
              x:Class="AStar.Dev.OneDrive.Client.SyncConflicts.ConflictResolutionView"
              x:DataType="vm:ConflictResolutionViewModel">
 
@@ -73,16 +74,16 @@
                                 <StackPanel Grid.Row="3" Spacing="8">
                                     <RadioButton Content="Keep Local (upload local version)"
                                                  GroupName="{Binding Id}"
-                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums:ConflictResolutionStrategy.KeepLocal}}" />
+                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums1:ConflictResolutionStrategy.KeepLocal}}" />
                                     <RadioButton Content="Keep Remote (download remote version)"
                                                  GroupName="{Binding Id}"
-                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums:ConflictResolutionStrategy.KeepRemote}}" />
+                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums1:ConflictResolutionStrategy.KeepRemote}}" />
                                     <RadioButton Content="Keep Both (rename local, download remote)"
                                                  GroupName="{Binding Id}"
-                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums:ConflictResolutionStrategy.KeepBoth}}" />
+                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums1:ConflictResolutionStrategy.KeepBoth}}" />
                                     <RadioButton Content="Skip (don't resolve now)"
                                                  GroupName="{Binding Id}"
-                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums:ConflictResolutionStrategy.None}}" />
+                                                 IsChecked="{Binding SelectedStrategy, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static enums1:ConflictResolutionStrategy.None}}" />
                                 </StackPanel>
                             </Grid>
                         </Border>

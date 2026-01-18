@@ -17,10 +17,7 @@ public sealed class AppPathHelperShould
     public void GetAppDataPathOnWindowsContainsAppData()
     {
         // Only run on Windows
-        if(!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        if(!OperatingSystem.IsWindows()) return;
 
         var result = AppPathHelper.GetAppDataPath("TestApp");
 
@@ -33,10 +30,7 @@ public sealed class AppPathHelperShould
     public void GetAppDataPathOnMacOsContainsLibraryApplicationSupport()
     {
         // Only run on macOS
-        if(!OperatingSystem.IsMacOS())
-        {
-            return;
-        }
+        if(!OperatingSystem.IsMacOS()) return;
 
         var result = AppPathHelper.GetAppDataPath("TestApp");
 
@@ -49,10 +43,7 @@ public sealed class AppPathHelperShould
     public void GetAppDataPathOnLinuxContainsConfigDirectory()
     {
         // Only run on Linux
-        if(!OperatingSystem.IsLinux())
-        {
-            return;
-        }
+        if(!OperatingSystem.IsLinux()) return;
 
         var result = AppPathHelper.GetAppDataPath("TestApp");
 
@@ -145,10 +136,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_OnWindows_UsesCorrectPathSeparator()
     {
-        if(!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        if(!OperatingSystem.IsWindows()) return;
 
         var result = AppPathHelper.GetAppDataPath("TestApp");
 
@@ -159,10 +147,7 @@ public sealed class AppPathHelperShould
     [Fact]
     public void GetAppDataPath_OnUnix_UsesCorrectPathSeparator()
     {
-        if(OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        if(OperatingSystem.IsWindows()) return;
 
         var result = AppPathHelper.GetAppDataPath("TestApp");
 
@@ -201,10 +186,7 @@ public sealed class AppPathHelperShould
         finally
         {
             // Cleanup
-            if(Directory.Exists(appDataPath))
-            {
-                Directory.Delete(appDataPath);
-            }
+            if(Directory.Exists(appDataPath)) Directory.Delete(appDataPath);
         }
     }
 }

@@ -29,10 +29,7 @@ public sealed class GraphApiClient : IGraphApiClient
 
     private async Task<GraphServiceClient> CreateGraphClientAsync(string accountId, CancellationToken cancellationToken)
     {
-        if(string.IsNullOrEmpty(accountId))
-        {
-            throw new ArgumentException("Account ID cannot be null or empty", nameof(accountId));
-        }
+        if(string.IsNullOrEmpty(accountId)) throw new ArgumentException("Account ID cannot be null or empty", nameof(accountId));
 
         // Create a token provider that uses the auth service
         var authProvider = new BaseBearerTokenAuthenticationProvider(
@@ -105,7 +102,7 @@ public sealed class GraphApiClient : IGraphApiClient
         {
             DriveItemCollectionResponse? response = nextLink is null
                 ? await graphClient.Drives[drive.Id].Items[itemId].Children.GetAsync(q => q.QueryParameters.Top = maxItemsInBatch, cancellationToken: cancellationToken)
-                : await graphClient.RequestAdapter.SendAsync<Microsoft.Graph.Models.DriveItemCollectionResponse>(
+                : await graphClient.RequestAdapter.SendAsync(
                     new Microsoft.Kiota.Abstractions.RequestInformation
                     {
                         HttpMethod = Microsoft.Kiota.Abstractions.Method.GET,
@@ -143,16 +140,10 @@ public sealed class GraphApiClient : IGraphApiClient
     {
         GraphServiceClient graphClient = await CreateGraphClientAsync(accountId, cancellationToken);
         Drive? drive = await graphClient.Me.Drive.GetAsync(cancellationToken: cancellationToken);
-        if(drive?.Id is null)
-        {
-            return [];
-        }
+        if(drive?.Id is null) return [];
 
         DriveItem? root = await graphClient.Drives[drive.Id].Root.GetAsync(cancellationToken: cancellationToken);
-        if(root?.Id is null)
-        {
-            return [];
-        }
+        if(root?.Id is null) return [];
 
         DriveItemCollectionResponse? response = await graphClient.Drives[drive.Id].Items[root.Id].Children.GetAsync(cancellationToken: cancellationToken);
         return response?.Value ?? Enumerable.Empty<DriveItem>();
@@ -166,20 +157,14 @@ public sealed class GraphApiClient : IGraphApiClient
 
         GraphServiceClient graphClient = await CreateGraphClientAsync(accountId, cancellationToken);
         Drive? drive = await graphClient.Me.Drive.GetAsync(cancellationToken: cancellationToken);
-        if(drive?.Id is null)
-        {
-            throw new InvalidOperationException("Unable to access user's drive");
-        }
+        if(drive?.Id is null) throw new InvalidOperationException("Unable to access user's drive");
 
         // Download file content stream from OneDrive
         Stream contentStream = await graphClient.Drives[drive.Id].Items[itemId].Content.GetAsync(cancellationToken: cancellationToken) ?? throw new InvalidOperationException($"Failed to download file content for item {itemId}");
 
         // Ensure the directory exists
         var directory = Path.GetDirectoryName(localFilePath);
-        if(!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            _ = Directory.CreateDirectory(directory);
-        }
+        if(!string.IsNullOrEmpty(directory) && !Directory.Exists(directory)) _ = Directory.CreateDirectory(directory);
 
         // Write the stream to local file
         using var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -192,17 +177,11 @@ public sealed class GraphApiClient : IGraphApiClient
         ArgumentNullException.ThrowIfNull(localFilePath);
         ArgumentNullException.ThrowIfNull(remotePath);
 
-        if(!File.Exists(localFilePath))
-        {
-            throw new FileNotFoundException($"Local file not found: {localFilePath}", localFilePath);
-        }
+        if(!File.Exists(localFilePath)) throw new FileNotFoundException($"Local file not found: {localFilePath}", localFilePath);
 
         GraphServiceClient graphClient = await CreateGraphClientAsync(accountId, cancellationToken);
         Drive? drive = await graphClient.Me.Drive.GetAsync(cancellationToken: cancellationToken);
-        if(drive?.Id is null)
-        {
-            throw new InvalidOperationException("Unable to access user's drive");
-        }
+        if(drive?.Id is null) throw new InvalidOperationException("Unable to access user's drive");
 
         var fileInfo = new FileInfo(localFilePath);
         const long SmallFileThreshold = 4 * 1024 * 1024; // 4MB - Graph API threshold for simple upload
@@ -245,10 +224,7 @@ public sealed class GraphApiClient : IGraphApiClient
                 .CreateUploadSession
                 .PostAsync(requestBody, cancellationToken: cancellationToken);
 
-            if(uploadSession?.UploadUrl is null)
-            {
-                throw new InvalidOperationException($"Failed to create upload session for file: {localFilePath}");
-            }
+            if(uploadSession?.UploadUrl is null) throw new InvalidOperationException($"Failed to create upload session for file: {localFilePath}");
 
             // Upload in chunks (recommended 5-10MB per chunk for optimal performance)
             const int ChunkSize = 5 * 1024 * 1024; // 5MB chunks
@@ -267,10 +243,7 @@ public sealed class GraphApiClient : IGraphApiClient
                 var chunk = new byte[chunkSize];
                 var bytesRead = await fileStream.ReadAsync(chunk.AsMemory(0, chunkSize), cancellationToken);
 
-                if(bytesRead != chunkSize)
-                {
-                    throw new InvalidOperationException($"Failed to read expected bytes from file. Expected: {chunkSize}, Read: {bytesRead}");
-                }
+                if(bytesRead != chunkSize) throw new InvalidOperationException($"Failed to read expected bytes from file. Expected: {chunkSize}, Read: {bytesRead}");
 
                 var contentRange = $"bytes {position}-{position + chunkSize - 1}/{totalLength}";
 
@@ -280,10 +253,7 @@ public sealed class GraphApiClient : IGraphApiClient
 
                 HttpResponseMessage response = await httpClient.PutAsync(uploadSession.UploadUrl, content, cancellationToken);
 
-                if(!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.Accepted)
-                {
-                    throw new InvalidOperationException($"Chunk upload failed. Status: {response.StatusCode}, Range: {contentRange}");
-                }
+                if(!response.IsSuccessStatusCode && response.StatusCode != System.Net.HttpStatusCode.Accepted) throw new InvalidOperationException($"Chunk upload failed. Status: {response.StatusCode}, Range: {contentRange}");
 
                 position += chunkSize;
 

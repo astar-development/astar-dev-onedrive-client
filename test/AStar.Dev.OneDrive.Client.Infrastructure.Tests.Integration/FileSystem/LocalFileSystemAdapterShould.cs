@@ -17,10 +17,7 @@ public sealed class LocalFileSystemAdapterShould : IDisposable
 
     public void Dispose()
     {
-        if(Directory.Exists(_testRoot))
-        {
-            Directory.Delete(_testRoot, recursive: true);
-        }
+        if(Directory.Exists(_testRoot)) Directory.Delete(_testRoot, recursive: true);
     }
 
     [Fact]
