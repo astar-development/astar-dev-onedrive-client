@@ -58,14 +58,6 @@ public class AppDbContext : DbContext
 
     public DbSet<TransferLog> TransferLogs { get; init; } = null!;
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if(!optionsBuilder.IsConfigured)
-        {
-            _ = optionsBuilder.UseSqlite(@"Data Source=C:\Users\jbarden\AppData\Roaming\astar-dev-onedrive-client\database\onedrive-sync.db");
-        }
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         _ = modelBuilder.ApplyConfiguration(new AccountConfiguration());
