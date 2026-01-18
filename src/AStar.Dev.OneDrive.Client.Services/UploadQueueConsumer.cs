@@ -12,10 +12,7 @@ public class UploadQueueConsumer : IUploadQueueConsumer
         {
             tasks.Add(Task.Run(async () =>
             {
-                await foreach(LocalFileRecord item in reader.ReadAllAsync(cancellationToken))
-                {
-                    await processItemAsync(item);
-                }
+                await foreach(LocalFileRecord item in reader.ReadAllAsync(cancellationToken)) await processItemAsync(item);
             }, cancellationToken));
         }
 

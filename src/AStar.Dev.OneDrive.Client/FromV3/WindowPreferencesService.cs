@@ -1,5 +1,5 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
@@ -9,9 +9,9 @@ namespace AStar.Dev.OneDrive.Client.FromV3;
 /// </summary>
 public sealed class WindowPreferencesService : IWindowPreferencesService
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
 
-    public WindowPreferencesService(SyncDbContext context)
+    public WindowPreferencesService(AppDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;

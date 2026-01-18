@@ -16,10 +16,7 @@ public class DownloadQueueProducer(ISyncRepository repo, int batchSize) : IDownl
             var items = (await repo.GetPendingDownloadsAsync(accountId, batchSize, page, cancellationToken)).ToList();
             if(items.Count == 0)
                 break;
-            foreach(DriveItemRecord? item in items)
-            {
-                await writer.WriteAsync(item, cancellationToken);
-            }
+            foreach(DriveItemRecord? item in items) await writer.WriteAsync(item, cancellationToken);
 
             page++;
         }

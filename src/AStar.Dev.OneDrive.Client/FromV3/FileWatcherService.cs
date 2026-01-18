@@ -1,11 +1,10 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates
-#pragma warning disable CA1873 // Avoid string interpolation in logging - Acceptable for file watcher service
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
 
@@ -43,10 +42,7 @@ public sealed class FileWatcherService : IFileWatcherService
         ArgumentNullException.ThrowIfNull(accountId);
         ArgumentNullException.ThrowIfNull(localPath);
 
-        if(!Directory.Exists(localPath))
-        {
-            throw new DirectoryNotFoundException($"Directory not found: {localPath}");
-        }
+        if(!Directory.Exists(localPath)) throw new DirectoryNotFoundException($"Directory not found: {localPath}");
 
         if(_watchers.ContainsKey(accountId))
         {
@@ -149,15 +145,9 @@ public sealed class FileWatcherService : IFileWatcherService
     /// </summary>
     public void Dispose()
     {
-        if(_disposed)
-        {
-            return;
-        }
+        if(_disposed) return;
 
-        foreach(WatcherContext context in _watchers.Values)
-        {
-            context.Dispose();
-        }
+        foreach(WatcherContext context in _watchers.Values) context.Dispose();
 
         _watchers.Clear();
         _fileChanges.Dispose();

@@ -1,7 +1,7 @@
 using System.IO.Abstractions;
 using System.Security.Cryptography;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
 
@@ -42,10 +42,7 @@ public sealed class LocalFileScanner : ILocalFileScanner
         ArgumentNullException.ThrowIfNull(localFolderPath);
         ArgumentNullException.ThrowIfNull(oneDriveFolderPath);
 
-        if(!_fileSystem.Directory.Exists(localFolderPath))
-        {
-            return [];
-        }
+        if(!_fileSystem.Directory.Exists(localFolderPath)) return [];
 
         await DebugLog.InfoAsync("LocalFileScanner.ScanFolderAsync", $"Scanning folder: {localFolderPath}", cancellationToken);
         var fileMetadataList = new List<FileMetadata>();
@@ -80,10 +77,7 @@ public sealed class LocalFileScanner : ILocalFileScanner
                 try
                 {
                     IFileInfo fileInfo = _fileSystem.FileInfo.New(filePath);
-                    if(!fileInfo.Exists)
-                    {
-                        continue;
-                    }
+                    if(!fileInfo.Exists) continue;
 
                     var relativePath = GetRelativePath(currentLocalPath, filePath);
                     var oneDrivePath = CombinePaths(currentOneDrivePath, relativePath);
@@ -108,12 +102,16 @@ public sealed class LocalFileScanner : ILocalFileScanner
                 catch(UnauthorizedAccessException)
                 {
                     // Skip files we don't have access to
+#pragma warning disable S3626 // Jump statements should not be redundant
                     continue;
+#pragma warning restore S3626 // Jump statements should not be redundant
                 }
                 catch(IOException)
                 {
                     // Skip files that are locked or in use
+#pragma warning disable S3626 // Jump statements should not be redundant
                     continue;
+#pragma warning restore S3626 // Jump statements should not be redundant
                 }
             }
 
@@ -144,7 +142,7 @@ public sealed class LocalFileScanner : ILocalFileScanner
     }
 
     /// <inheritdoc/>
-    public async Task<string> ComputeFileHashAsync(string filePath, CancellationToken cancellationToken)
+    public async Task<string> ComputeFileHashAsync(string filePath, CancellationToken cancellationToken = default)
     {
         using FileSystemStream stream = _fileSystem.File.OpenRead(filePath);
         var hashBytes = await SHA256.HashDataAsync(stream, cancellationToken);
@@ -169,15 +167,9 @@ public sealed class LocalFileScanner : ILocalFileScanner
         basePath = basePath.Replace('\\', '/');
         relativePath = relativePath.Replace('\\', '/');
 
-        if(!basePath.EndsWith('/'))
-        {
-            basePath += '/';
-        }
+        if(!basePath.EndsWith('/')) basePath += '/';
 
-        if(relativePath.StartsWith('/'))
-        {
-            relativePath = relativePath[1..];
-        }
+        if(relativePath.StartsWith('/')) relativePath = relativePath[1..];
 
         return basePath + relativePath;
     }

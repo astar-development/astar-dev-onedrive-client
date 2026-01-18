@@ -1,6 +1,6 @@
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Services;
@@ -10,7 +10,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task ReturnNullWhenNoPreferencesExist()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
 
         WindowPreferences? result = await service.LoadAsync(CancellationToken.None);
@@ -21,7 +21,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task SaveNewPreferencesWhenNoneExist()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
         var preferences = new WindowPreferences(0, 100, 200, 1024, 768, false);
 
@@ -39,7 +39,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task UpdateExistingPreferencesWhenTheyExist()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
         var initialPrefs = new WindowPreferences(0, 100, 200, 800, 600, false);
         await service.SaveAsync(initialPrefs, CancellationToken.None);
@@ -61,7 +61,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task LoadSavedPreferencesCorrectly()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
         var preferences = new WindowPreferences(0, 300, 400, 1920, 1080, false);
         await service.SaveAsync(preferences, CancellationToken.None);
@@ -79,7 +79,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task SavePreferencesWithNullPositionWhenMaximized()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
         var preferences = new WindowPreferences(0, null, null, 1024, 768, true);
 
@@ -97,7 +97,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task ThrowArgumentNullExceptionWhenSavingNullPreferences()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
 
         ArgumentNullException exception = await Should.ThrowAsync<ArgumentNullException>(
@@ -120,7 +120,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task RespectCancellationTokenWhenLoading()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -133,7 +133,7 @@ public class WindowPreferencesServiceShould
     [Fact]
     public async Task RespectCancellationTokenWhenSaving()
     {
-        using SyncDbContext context = CreateInMemoryContext();
+        using AppDbContext context = CreateInMemoryContext();
         var service = new WindowPreferencesService(context);
         var preferences = new WindowPreferences(0, 100, 200, 800, 600, false);
         using var cts = new CancellationTokenSource();
@@ -144,12 +144,12 @@ public class WindowPreferencesServiceShould
         );
     }
 
-    private static SyncDbContext CreateInMemoryContext()
+    private static AppDbContext CreateInMemoryContext()
     {
-        DbContextOptions<SyncDbContext> options = new DbContextOptionsBuilder<SyncDbContext>()
+        DbContextOptions<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.CreateVersion7().ToString())
             .Options;
 
-        return new SyncDbContext(options);
+        return new AppDbContext(options);
     }
 }

@@ -156,6 +156,6 @@ public class AutoSaveServiceShould
         transfer.Progress.Returns(new Subject<SyncProgress>());
         ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(sync, repo, transfer);
 
-        return new MainWindowViewModel(syncCommandService, syncCoordinator, settings, authService);
+        return new MainWindowViewModel(syncCommandService, syncCoordinator, settings, authService, null!, null!, null!);
     }
 }

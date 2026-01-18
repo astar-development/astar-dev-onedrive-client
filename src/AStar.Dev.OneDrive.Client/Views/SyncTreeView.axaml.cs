@@ -1,5 +1,5 @@
 using System.Collections.Specialized;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Models;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia.Controls;
 
@@ -28,27 +28,16 @@ public partial class SyncTreeView : UserControl
             viewModel.RootFolders.CollectionChanged += OnRootFoldersChanged;
 
             // Attach to existing items
-            foreach(OneDriveFolderNode node in viewModel.RootFolders)
-            {
-                AttachNodeExpansionHandler(node, viewModel);
-            }
+            foreach(OneDriveFolderNode node in viewModel.RootFolders) AttachNodeExpansionHandler(node, viewModel);
         }
     }
 
     private void OnRootFoldersChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if(DataContext is not SyncTreeViewModel viewModel)
-        {
-            return;
-        }
+        if(DataContext is not SyncTreeViewModel viewModel) return;
 
         if(e.NewItems != null)
-        {
-            foreach(OneDriveFolderNode node in e.NewItems)
-            {
-                AttachNodeExpansionHandler(node, viewModel);
-            }
-        }
+            foreach(OneDriveFolderNode node in e.NewItems) AttachNodeExpansionHandler(node, viewModel);
     }
 
     private static void AttachNodeExpansionHandler(OneDriveFolderNode node, SyncTreeViewModel viewModel)
@@ -56,8 +45,7 @@ public partial class SyncTreeView : UserControl
         node.PropertyChanged += (s, e) =>
         {
             if(e.PropertyName == nameof(OneDriveFolderNode.IsExpanded) &&
-                node.IsExpanded &&
-                !node.ChildrenLoaded)
+               node is { IsExpanded: true, ChildrenLoaded: false })
             {
                 // Trigger lazy loading when expanded for the first time
                 _ = viewModel.LoadChildrenCommand.Execute(node).Subscribe();
@@ -68,12 +56,7 @@ public partial class SyncTreeView : UserControl
         node.Children.CollectionChanged += (s, e) =>
         {
             if(e.NewItems != null)
-            {
-                foreach(OneDriveFolderNode child in e.NewItems)
-                {
-                    AttachNodeExpansionHandler(child, viewModel);
-                }
-            }
+                foreach(OneDriveFolderNode child in e.NewItems) AttachNodeExpansionHandler(child, viewModel);
         };
     }
 }

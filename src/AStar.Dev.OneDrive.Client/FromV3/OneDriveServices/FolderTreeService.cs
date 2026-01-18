@@ -1,6 +1,7 @@
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
+using AStar.Dev.OneDrive.Client.Models;
 using Microsoft.Graph.Models;
 
 namespace AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
@@ -36,10 +37,7 @@ public sealed class FolderTreeService : IFolderTreeService
 
         // Verify account is authenticated
         var isAuthenticated = await _authService.IsAuthenticatedAsync(accountId, cancellationToken);
-        if(!isAuthenticated)
-        {
-            return [];
-        }
+        if(!isAuthenticated) return [];
 
         IEnumerable<DriveItem> driveItems = await _graphApiClient.GetRootChildrenAsync(accountId, cancellationToken);
         IEnumerable<DriveItem> folders = driveItems.Where(item => item.Folder is not null);
@@ -47,10 +45,7 @@ public sealed class FolderTreeService : IFolderTreeService
         var nodes = new List<OneDriveFolderNode>();
         foreach(DriveItem? item in folders)
         {
-            if(item.Id is null || item.Name is null)
-            {
-                continue;
-            }
+            if(item.Id is null || item.Name is null) continue;
 
             var node = new OneDriveFolderNode(
                 id: item.Id,
@@ -66,14 +61,14 @@ public sealed class FolderTreeService : IFolderTreeService
             node.Children.Add(new OneDriveFolderNode());
 
             nodes.Add(node);
-            _syncConfigurationRepository.AddAsync(new SyncConfiguration
+            await ((Task)_syncConfigurationRepository.AddAsync(new SyncConfiguration
             (
-                Id: 0,
-                AccountId: accountId,
-                FolderPath: node.Path,
-                IsSelected: false,
-                LastModifiedUtc: DateTime.UtcNow
-            ), cancellationToken).Wait(cancellationToken);
+                0,
+                accountId,
+                node.Path,
+                false,
+                DateTime.UtcNow
+            ), cancellationToken)).WaitAsync(cancellationToken);
         }
 
         return nodes;
@@ -87,10 +82,7 @@ public sealed class FolderTreeService : IFolderTreeService
 
         // Verify account is authenticated
         var isAuthenticated = await _authService.IsAuthenticatedAsync(accountId, cancellationToken);
-        if(!isAuthenticated)
-        {
-            return [];
-        }
+        if(!isAuthenticated) return [];
 
         // Get parent folder to build paths
         DriveItem? parentItem = await _graphApiClient.GetDriveItemAsync(accountId, parentFolderId, cancellationToken);
@@ -104,19 +96,16 @@ public sealed class FolderTreeService : IFolderTreeService
         var nodes = new List<OneDriveFolderNode>();
         foreach(DriveItem? item in folders)
         {
-            if(item.Id is null || item.Name is null)
-            {
-                continue;
-            }
+            if(item.Id is null || item.Name is null) continue;
 
             // Retrieve or create sync config for this folder
             SyncConfiguration updatedSyncConfiguration = await _syncConfigurationRepository.AddAsync(new SyncConfiguration
             (
-                Id: 0,
-                AccountId: accountId,
-                FolderPath: $"{parentPath}/{item.Name}",
-                IsSelected: false,
-                LastModifiedUtc: DateTime.UtcNow
+                 0,
+                 accountId,
+                 $"{parentPath}/{item.Name}",
+                 false,
+                 DateTime.UtcNow
             ), cancellationToken);
 
             // If parent is selected, propagate selection to children
@@ -148,21 +137,13 @@ public sealed class FolderTreeService : IFolderTreeService
 
         // Verify account is authenticated
         var isAuthenticated = await _authService.IsAuthenticatedAsync(accountId, cancellationToken);
-        if(!isAuthenticated)
-        {
-            return [];
-        }
+        if(!isAuthenticated) return [];
 
         IReadOnlyList<OneDriveFolderNode> rootFolders = await GetRootFoldersAsync(accountId, cancellationToken);
         var rootList = rootFolders.ToList();
 
         if(maxDepth is null or > 0)
-        {
-            foreach(OneDriveFolderNode? folder in rootList)
-            {
-                await LoadChildrenRecursiveAsync(accountId, folder, maxDepth, 1, cancellationToken);
-            }
-        }
+            foreach(OneDriveFolderNode? folder in rootList) await LoadChildrenRecursiveAsync(accountId, folder, maxDepth, 1, cancellationToken);
 
         return rootList;
     }
@@ -174,10 +155,7 @@ public sealed class FolderTreeService : IFolderTreeService
         int currentDepth,
         CancellationToken cancellationToken)
     {
-        if(maxDepth.HasValue && currentDepth >= maxDepth.Value)
-        {
-            return;
-        }
+        if(maxDepth.HasValue && currentDepth >= maxDepth.Value) return;
 
         IReadOnlyList<OneDriveFolderNode> children = await GetChildFoldersAsync(accountId, parentNode.Id, parentNode.IsSelected, cancellationToken);
         foreach(OneDriveFolderNode child in children)

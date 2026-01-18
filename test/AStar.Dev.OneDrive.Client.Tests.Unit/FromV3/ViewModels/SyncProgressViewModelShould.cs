@@ -1,8 +1,8 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.Extensions.Logging;
 
@@ -271,9 +271,7 @@ public class SyncProgressViewModelShould
         viewModel.PropertyChanged += (_, e) =>
         {
             if(e.PropertyName == nameof(SyncProgressViewModel.IsSyncing))
-            {
                 isSyncingValues.Add(viewModel.IsSyncing);
-            }
         };
 
         _ = syncEngine.StartSyncAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -430,9 +428,7 @@ public class SyncProgressViewModelShould
         viewModel.PropertyChanged += (_, e) =>
         {
             if(e.PropertyName is not null)
-            {
                 changedProperties.Add(e.PropertyName);
-            }
         };
 
         var progress = new SyncState(

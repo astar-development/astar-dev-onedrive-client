@@ -18,10 +18,7 @@ public class DownloadQueueConsumer : IDownloadQueueConsumer
         {
             consumers[i] = Task.Run(async () =>
             {
-                await foreach(DriveItemRecord item in reader.ReadAllAsync(cancellationToken))
-                {
-                    await processItemAsync(item);
-                }
+                await foreach(DriveItemRecord item in reader.ReadAllAsync(cancellationToken)) await processItemAsync(item);
             }, cancellationToken);
         }
 

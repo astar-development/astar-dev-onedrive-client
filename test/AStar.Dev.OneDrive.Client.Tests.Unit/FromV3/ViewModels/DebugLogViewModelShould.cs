@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.ViewModels;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
@@ -108,10 +108,7 @@ public class DebugLogViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(DebugLogViewModel.SelectedAccount))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(DebugLogViewModel.SelectedAccount)) propertyChanged = true;
         };
 
         var account = new AccountInfo("acc1", "Test", @"C:\Path", true, null, null, false, false, 3, 50, null);
@@ -134,10 +131,7 @@ public class DebugLogViewModelShould
         _ = mockAccountRepo.GetAllAsync(Arg.Any<CancellationToken>()).Returns([account]);
 
         var logs = new List<DebugLogEntry>();
-        for(var i = 0; i < 51; i++)
-        {
-            logs.Add(new DebugLogEntry(i, "acc1", DateTime.UtcNow, "Info", "Test", $"Message {i}", null));
-        }
+        for(var i = 0; i < 51; i++) logs.Add(new DebugLogEntry(i, "acc1", DateTime.UtcNow, "Info", "Test", $"Message {i}", null));
 
         _ = mockDebugLogRepo.GetByAccountIdAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(logs);
@@ -147,10 +141,7 @@ public class DebugLogViewModelShould
         // Now subscribe to property changes
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(DebugLogViewModel.CurrentPage))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(DebugLogViewModel.CurrentPage)) propertyChanged = true;
         };
 
         // Trigger page change by going to next page - need to await the observable

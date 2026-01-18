@@ -22,23 +22,14 @@ public sealed class DbInitializerShould : IDisposable
 
         try
         {
-            if(File.Exists(_dbPath))
-            {
-                File.Delete(_dbPath);
-            }
+            if(File.Exists(_dbPath)) File.Delete(_dbPath);
 
             // Clean up WAL and SHM files
             var walPath = _dbPath + "-wal";
-            if(File.Exists(walPath))
-            {
-                File.Delete(walPath);
-            }
+            if(File.Exists(walPath)) File.Delete(walPath);
 
             var shmPath = _dbPath + "-shm";
-            if(File.Exists(shmPath))
-            {
-                File.Delete(shmPath);
-            }
+            if(File.Exists(shmPath)) File.Delete(shmPath);
         }
         catch(IOException)
         {
@@ -52,10 +43,7 @@ public sealed class DbInitializerShould : IDisposable
         DbContextOptionsBuilder<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite($"Data Source={_dbPath}");
 
-        using(AppDbContext context = new(options.Options))
-        {
-            DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
-        }
+        using(AppDbContext context = new(options.Options)) DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
 
         File.Exists(_dbPath).ShouldBeTrue();
     }
@@ -66,10 +54,7 @@ public sealed class DbInitializerShould : IDisposable
         DbContextOptionsBuilder<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite($"Data Source={_dbPath}");
 
-        using(AppDbContext context = new(options.Options))
-        {
-            DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
-        }
+        using(AppDbContext context = new(options.Options)) DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
 
         // Query the journal_mode to verify WAL is enabled
         _connection = new SqliteConnection($"Data Source={_dbPath}");
@@ -89,10 +74,7 @@ public sealed class DbInitializerShould : IDisposable
         DbContextOptionsBuilder<AppDbContext> options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite($"Data Source={_dbPath}");
 
-        using(AppDbContext context = new(options.Options))
-        {
-            DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
-        }
+        using(AppDbContext context = new(options.Options)) DbInitializer.EnsureDatabaseCreatedAndConfigured(context);
 
         // Verify all tables exist
         _connection = new SqliteConnection($"Data Source={_dbPath}");
@@ -103,10 +85,7 @@ public sealed class DbInitializerShould : IDisposable
         using SqliteDataReader reader = cmd.ExecuteReader();
 
         List<string> tables = [];
-        while(reader.Read())
-        {
-            tables.Add(reader.GetString(0));
-        }
+        while(reader.Read()) tables.Add(reader.GetString(0));
 
         tables.ShouldContain("DriveItems");
         tables.ShouldContain("LocalFiles");

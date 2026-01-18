@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.ViewModels;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.ViewModels;
@@ -220,10 +220,7 @@ public class UpdateAccountDetailsViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.SelectedAccount))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.SelectedAccount)) propertyChanged = true;
         };
 
         var account = new AccountInfo(
@@ -254,10 +251,7 @@ public class UpdateAccountDetailsViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.LocalSyncPath))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.LocalSyncPath)) propertyChanged = true;
         };
 
         sut.LocalSyncPath = @"C:\NewPath";
@@ -276,10 +270,7 @@ public class UpdateAccountDetailsViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.EnableDetailedSyncLogging))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.EnableDetailedSyncLogging)) propertyChanged = true;
         };
 
         sut.EnableDetailedSyncLogging = true;
@@ -298,10 +289,7 @@ public class UpdateAccountDetailsViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.EnableDebugLogging))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.EnableDebugLogging)) propertyChanged = true;
         };
 
         sut.EnableDebugLogging = true;
@@ -320,10 +308,7 @@ public class UpdateAccountDetailsViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.StatusMessage))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.StatusMessage)) propertyChanged = true;
         };
 
         sut.StatusMessage = "Test message";
@@ -342,10 +327,7 @@ public class UpdateAccountDetailsViewModelShould
 
         sut.PropertyChanged += (_, args) =>
         {
-            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.IsSuccess))
-            {
-                propertyChanged = true;
-            }
+            if(args.PropertyName == nameof(UpdateAccountDetailsViewModel.IsSuccess)) propertyChanged = true;
         };
 
         sut.IsSuccess = true;

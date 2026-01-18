@@ -2,6 +2,7 @@ using System.IO.Abstractions.TestingHelpers;
 using System.Reactive.Linq;
 using AStar.Dev.OneDrive.Client.Core.Dtos;
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data;
 using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Services.Tests.Integration;
 

@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Models;
+using AStar.Dev.OneDrive.Client.Core.Entities;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
 

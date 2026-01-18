@@ -2,11 +2,12 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.SyncState;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates
 
@@ -67,9 +68,7 @@ public sealed class SyncProgressViewModel : ReactiveObject, IDisposable
         get
         {
             if(CurrentProgress is null)
-            {
                 return string.Empty;
-            }
 
             var parts = new List<string>();
 
@@ -85,9 +84,7 @@ public sealed class SyncProgressViewModel : ReactiveObject, IDisposable
 
                 // Add transfer speed if available
                 if(CurrentProgress.MegabytesPerSecond > 0.01)
-                {
                     parts.Add($"{CurrentProgress.MegabytesPerSecond:F2} MB/s");
-                }
 
                 // Add ETA if available
                 if(CurrentProgress.EstimatedSecondsRemaining.HasValue)
@@ -295,9 +292,7 @@ public sealed class SyncProgressViewModel : ReactiveObject, IDisposable
     public async Task RefreshConflictCountAsync(CancellationToken cancellationToken = default)
     {
         if(CurrentProgress is null)
-        {
             return;
-        }
 
         IReadOnlyList<SyncConflict> conflicts = await _syncEngine.GetConflictsAsync(AccountId, cancellationToken);
         var conflictCount = conflicts.Count;
@@ -321,9 +316,7 @@ public sealed class SyncProgressViewModel : ReactiveObject, IDisposable
     private static string FormatTimeRemaining(int seconds)
     {
         if(seconds < 60)
-        {
             return $"{seconds}s";
-        }
 
         if(seconds < 3600)
         {

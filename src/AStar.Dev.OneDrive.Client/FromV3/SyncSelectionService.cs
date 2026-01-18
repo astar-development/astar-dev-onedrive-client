@@ -1,5 +1,7 @@
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
+using AStar.Dev.OneDrive.Client.Models;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
 
@@ -8,6 +10,7 @@ namespace AStar.Dev.OneDrive.Client.FromV3;
 /// </summary>
 public sealed partial class SyncSelectionService : ISyncSelectionService
 {
+    private const string Delimiter = "/";
     private readonly ISyncConfigurationRepository? _configurationRepository;
 
     /// <summary>
@@ -42,16 +45,10 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
         ArgumentNullException.ThrowIfNull(folder);
         ArgumentNullException.ThrowIfNull(rootFolders);
 
-        if(folder.ParentId is null)
-        {
-            return;
-        }
+        if(folder.ParentId is null) return;
 
         OneDriveFolderNode? parent = FindNodeById(rootFolders, folder.ParentId);
-        if(parent is null)
-        {
-            return;
-        }
+        if(parent is null) return;
 
         SelectionState calculatedState = CalculateStateFromChildren(parent);
         parent.SelectionState = calculatedState;
@@ -82,10 +79,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
     {
         ArgumentNullException.ThrowIfNull(rootFolders);
 
-        foreach(OneDriveFolderNode folder in rootFolders)
-        {
-            SetSelection(folder, false);
-        }
+        foreach(OneDriveFolderNode folder in rootFolders) SetSelection(folder, false);
     }
 
     /// <inheritdoc/>
@@ -93,10 +87,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
     {
         ArgumentNullException.ThrowIfNull(folder);
 
-        if(folder.Children.Count == 0)
-        {
-            return folder.SelectionState;
-        }
+        if(folder.Children.Count == 0) return folder.SelectionState;
 
         var checkedCount = 0;
         var uncheckedCount = 0;
@@ -121,22 +112,13 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
         }
 
         // If any child is indeterminate, parent is indeterminate
-        if(indeterminateCount > 0)
-        {
-            return SelectionState.Indeterminate;
-        }
+        if(indeterminateCount > 0) return SelectionState.Indeterminate;
 
         // If all children are checked, parent is checked
-        if(checkedCount == folder.Children.Count)
-        {
-            return SelectionState.Checked;
-        }
+        if(checkedCount == folder.Children.Count) return SelectionState.Checked;
 
         // If all children are unchecked, parent is unchecked
-        if(uncheckedCount == folder.Children.Count && folder.IsSelected == false)
-        {
-            return SelectionState.Unchecked;
-        }
+        if(uncheckedCount == folder.Children.Count && folder.IsSelected == false) return SelectionState.Unchecked;
 
         // Mixed state = indeterminate
         return SelectionState.Indeterminate;
@@ -166,9 +148,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
             if(folder.SelectionState == SelectionState.Checked &&
                 !string.IsNullOrEmpty(folder.Path) &&
                 !string.IsNullOrEmpty(folder.Name))
-            {
                 result.Add(folder);
-            }
 
             CollectSelectedFolders([.. folder.Children], result);
         }
@@ -178,16 +158,10 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
     {
         foreach(OneDriveFolderNode folder in folders)
         {
-            if(folder.Id == nodeId)
-            {
-                return folder;
-            }
+            if(folder.Id == nodeId) return folder;
 
             OneDriveFolderNode? foundInChildren = FindNodeById([.. folder.Children], nodeId);
-            if(foundInChildren is not null)
-            {
-                return foundInChildren;
-            }
+            if(foundInChildren is not null) return foundInChildren;
         }
 
         return null;
@@ -199,21 +173,18 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
         ArgumentNullException.ThrowIfNull(accountId);
         ArgumentNullException.ThrowIfNull(rootFolders);
 
-        if(_configurationRepository is null)
-        {
-            return; // No persistence configured
-        }
+        if(_configurationRepository is null) return; // No persistence configured
 
         // Get all checked folders
         List<OneDriveFolderNode> selectedFolders = GetSelectedFolders(rootFolders);
 
         // Convert to SyncConfiguration records
         IEnumerable<SyncConfiguration> configurations = selectedFolders.Select(folder => new SyncConfiguration(
-            Id: 0, // Will be auto-generated
-            AccountId: accountId,
-            FolderPath: folder.Path,
-            IsSelected: true,
-            LastModifiedUtc: DateTime.UtcNow
+            0, // Will be auto-generated
+            accountId,
+            folder.Path,
+            true,
+            DateTime.UtcNow
         ));
 
         // Save batch (replaces all existing selections for this account)
@@ -229,20 +200,14 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
         // Set account context for debug logging
         DebugLogContext.SetAccountId(accountId);
 
-        if(_configurationRepository is null)
-        {
-            return; // No persistence configured
-        }
+        if(_configurationRepository is null) return; // No persistence configured
 
         // Get saved folder paths
         IReadOnlyList<string> savedFolderPaths = await _configurationRepository.GetSelectedFoldersAsync(accountId, cancellationToken);
 
         await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"Loading selections for account {accountId}", cancellationToken);
         await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"Found {savedFolderPaths.Count} saved paths in database", cancellationToken);
-        foreach(var path in savedFolderPaths)
-        {
-            await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"DB Path: {path}", cancellationToken);
-        }
+        foreach(var path in savedFolderPaths) await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"DB Path: {path}", cancellationToken);
 
         // Normalize paths by removing Graph API prefixes for comparison
         var normalizedSavedPaths = savedFolderPaths
@@ -250,10 +215,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
             .ToList();
 
         await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", "Normalized paths:", cancellationToken);
-        foreach(var path in normalizedSavedPaths)
-        {
-            await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"Normalized: {path}", cancellationToken);
-        }
+        foreach(var path in normalizedSavedPaths) await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"Normalized: {path}", cancellationToken);
 
         // Build lookup dictionary for fast path-to-node resolution, using normalized paths
         var pathToNodeMap = new Dictionary<string, OneDriveFolderNode>(StringComparer.OrdinalIgnoreCase);
@@ -264,10 +226,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
         foreach(KeyValuePair<string, OneDriveFolderNode> kvp in pathToNodeMap)
         {
             var normalized = NormalizePathForComparison(kvp.Key);
-            if(!normalizedPathToNodeMap.ContainsKey(normalized))
-            {
-                normalizedPathToNodeMap[normalized] = kvp.Value;
-            }
+            if(!normalizedPathToNodeMap.ContainsKey(normalized)) normalizedPathToNodeMap[normalized] = kvp.Value;
         }
 
         // Initialize ALL folders to Unchecked first
@@ -283,10 +242,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
             for(var i = 0; i < savedFolderPaths.Count; i++)
             {
                 var normalizedPath = normalizedSavedPaths[i];
-                if(normalizedPathToNodeMap.TryGetValue(normalizedPath, out OneDriveFolderNode? folder))
-                {
-                    SetSelection(folder, true);
-                }
+                if(normalizedPathToNodeMap.TryGetValue(normalizedPath, out OneDriveFolderNode? folder)) SetSelection(folder, true);
                 // Silently ignore folders that no longer exist (deleted or renamed)
             }
 
@@ -310,8 +266,8 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
 
                 // Check if any saved path is a descendant of this root
                 var hasSelectedDescendants = normalizedSavedPaths.Any(path =>
-                    path.StartsWith(normalizedRootPath + "/", StringComparison.OrdinalIgnoreCase) ||
-                    (normalizedRootPath == "/" && path.StartsWith("/", StringComparison.OrdinalIgnoreCase) && path != "/"));
+                    path.StartsWith(normalizedRootPath + Delimiter, StringComparison.OrdinalIgnoreCase) ||
+                    (normalizedRootPath == Delimiter && path.StartsWith(Delimiter, StringComparison.OrdinalIgnoreCase) && path != Delimiter));
 
                 await DebugLog.InfoAsync("SyncSelectionService.LoadSelectionsFromDatabaseAsync", $"Has selected descendants: {hasSelectedDescendants}", cancellationToken);
 
@@ -336,17 +292,11 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
     {
         foreach(OneDriveFolderNode folder in folders)
         {
-            if(string.IsNullOrEmpty(folder.Path))
-            {
-                continue;
-            }
+            if(string.IsNullOrEmpty(folder.Path)) continue;
 
             pathMap[folder.Path] = folder;
 
-            if(folder.Children.Count > 0)
-            {
-                BuildPathLookup([.. folder.Children], pathMap);
-            }
+            if(folder.Children.Count > 0) BuildPathLookup([.. folder.Children], pathMap);
         }
     }
 
@@ -355,10 +305,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
     {
         ArgumentNullException.ThrowIfNull(folder);
 
-        if(folder.Children.Count == 0)
-        {
-            return; // No children, nothing to calculate
-        }
+        if(folder.Children.Count == 0) return; // No children, nothing to calculate
 
         SelectionState calculatedState = CalculateStateFromChildren(folder);
         folder.SelectionState = calculatedState;
@@ -378,29 +325,17 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
     /// <returns>The normalized path without Graph API prefixes.</returns>
     private static string NormalizePathForComparison(string path)
     {
-        if(string.IsNullOrEmpty(path))
-        {
-            return path;
-        }
+        if(string.IsNullOrEmpty(path)) return path;
 
         // Remove /drives/{id}/root: prefix
         var drivesPattern = @"^/drives/[^/]+/root:";
-        if(System.Text.RegularExpressions.Regex.IsMatch(path, drivesPattern))
-        {
-            path = System.Text.RegularExpressions.Regex.Replace(path, drivesPattern, string.Empty);
-        }
+        if(System.Text.RegularExpressions.Regex.IsMatch(path, drivesPattern)) path = System.Text.RegularExpressions.Regex.Replace(path, drivesPattern, string.Empty);
 
         // Remove /drive/root: prefix
-        if(path.StartsWith("/drive/root:", StringComparison.OrdinalIgnoreCase))
-        {
-            path = path["/drive/root:".Length..];
-        }
+        if(path.StartsWith("/drive/root:", StringComparison.OrdinalIgnoreCase)) path = path["/drive/root:".Length..];
 
         // Ensure path starts with /
-        if(!path.StartsWith('/'))
-        {
-            path = "/" + path;
-        }
+        if(!path.StartsWith('/')) path = Delimiter + path;
 
         return path;
     }
@@ -410,10 +345,7 @@ public sealed partial class SyncSelectionService : ISyncSelectionService
         if(folder.Children.Count > 0)
         {
             // Recursively update children first
-            foreach(OneDriveFolderNode child in folder.Children)
-            {
-                RecalculateParentStates(child);
-            }
+            foreach(OneDriveFolderNode child in folder.Children) RecalculateParentStates(child);
 
             // Then update this folder's state based on children
             SelectionState calculatedState = CalculateStateFromChildren(folder);

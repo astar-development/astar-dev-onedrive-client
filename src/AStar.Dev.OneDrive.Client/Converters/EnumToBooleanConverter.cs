@@ -27,5 +27,5 @@ public sealed class EnumToBooleanConverter : IValueConverter
     /// <param name="parameter">The enum value to return if true.</param>
     /// <param name="culture">The culture to use (ignored).</param>
     /// <returns>The parameter value if <paramref name="value"/> is true; otherwise, <c>null</c>.</returns>
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value is bool boolValue && boolValue && parameter is not null ? parameter : null;
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value is bool and true && parameter is not null ? parameter : null;
 }

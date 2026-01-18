@@ -14,21 +14,21 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
         return fileSystem.FileInfo.New(full);
     }
 
-    public async Task WriteFileAsync(string relativePath, Stream content, CancellationToken ct)
+    public async Task WriteFileAsync(string relativePath, Stream content, CancellationToken cancellationToken)
     {
         var full = FullPath(relativePath);
         _ = fileSystem.Directory.CreateDirectory(fileSystem.Path.GetDirectoryName(full)!);
         await using Stream fs = fileSystem.File.Create(full);
-        await content.CopyToAsync(fs, ct);
+        await content.CopyToAsync(fs, cancellationToken);
     }
 
-    public Task<Stream?> OpenReadAsync(string relativePath, CancellationToken ct)
+    public Task<Stream?> OpenReadAsync(string relativePath, CancellationToken cancellationToken)
     {
         var full = FullPath(relativePath);
         return !fileSystem.File.Exists(full) ? Task.FromResult<Stream?>(null) : Task.FromResult<Stream?>(fileSystem.File.OpenRead(full));
     }
 
-    public Task DeleteFileAsync(string relativePath, CancellationToken ct)
+    public Task DeleteFileAsync(string relativePath, CancellationToken cancellationToken)
     {
         var full = FullPath(relativePath);
         if(fileSystem.File.Exists(full))
@@ -37,7 +37,7 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
         return Task.CompletedTask;
     }
 
-    public Task<IEnumerable<LocalFileInfo>> EnumerateFilesAsync(CancellationToken ct)
+    public Task<IEnumerable<LocalFileInfo>> EnumerateFilesAsync(CancellationToken cancellationToken)
     {
         var list = new List<LocalFileInfo>();
         if(!fileSystem.Directory.Exists(root))
@@ -52,7 +52,7 @@ public sealed class LocalFileSystemAdapter(string root, IFileSystem fileSystem) 
         return Task.FromResult<IEnumerable<LocalFileInfo>>(list);
     }
 
-    public Task<Stream> OpenWriteAsync(string relativePath, CancellationToken ct)
+    public Task<Stream> OpenWriteAsync(string relativePath, CancellationToken cancellationToken)
     {
         var full = FullPath(relativePath);
         _ = fileSystem.Directory.CreateDirectory(fileSystem.Path.GetDirectoryName(full)!);

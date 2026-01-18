@@ -49,10 +49,7 @@ public sealed class MsalAuthService(MsalConfigurationSettings msalConfigurationS
     {
         IEnumerable<IAccount> accounts = await _pca.GetAccountsAsync();
 
-        foreach(IAccount? account in accounts)
-        {
-            await _pca.RemoveAsync(account);
-        }
+        foreach(IAccount? account in accounts) await _pca.RemoveAsync(account);
 
         _account = null;
     }

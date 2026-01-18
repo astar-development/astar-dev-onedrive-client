@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Services;
@@ -98,8 +98,7 @@ public class FileWatcherServiceShould : IDisposable
         events.ShouldNotBeEmpty();
 
         FileChangeEvent? modifiedEvent = events.FirstOrDefault(e =>
-            e.ChangeType == FileChangeType.Modified &&
-            e.RelativePath == "modify.txt");
+            e is { ChangeType: FileChangeType.Modified, RelativePath: "modify.txt" });
 
         _ = modifiedEvent.ShouldNotBeNull();
         modifiedEvent.AccountId.ShouldBe("account1");
@@ -127,8 +126,7 @@ public class FileWatcherServiceShould : IDisposable
         events.ShouldNotBeEmpty();
 
         FileChangeEvent? deletedEvent = events.FirstOrDefault(e =>
-            e.ChangeType == FileChangeType.Deleted &&
-            e.RelativePath == "delete.txt");
+            e is { ChangeType: FileChangeType.Deleted, RelativePath: "delete.txt" });
 
         _ = deletedEvent.ShouldNotBeNull();
         deletedEvent.AccountId.ShouldBe("account1");
@@ -293,12 +291,7 @@ public class FileWatcherServiceShould : IDisposable
         if(!disposedValue)
         {
             if(disposing)
-            {
-                if(Directory.Exists(_testDirectory))
-                {
-                    Directory.Delete(_testDirectory, recursive: true);
-                }
-            }
+                if(Directory.Exists(_testDirectory)) Directory.Delete(_testDirectory, recursive: true);
 
             disposedValue = true;
         }

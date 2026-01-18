@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates for high-performance logging
@@ -46,12 +46,7 @@ public sealed class AutoSyncSchedulerService : IAutoSyncSchedulerService
 
         IReadOnlyList<AccountInfo> accounts = await _accountRepository.GetAllAsync(cancellationToken);
         foreach(AccountInfo account in accounts)
-        {
-            if(account.AutoSyncIntervalMinutes.HasValue && account.IsAuthenticated)
-            {
-                UpdateSchedule(account.AccountId, account.AutoSyncIntervalMinutes.Value);
-            }
-        }
+            if(account is { AutoSyncIntervalMinutes: not null, IsAuthenticated: true }) UpdateSchedule(account.AccountId, account.AutoSyncIntervalMinutes.Value);
 
         _logger.LogInformation("Auto-sync scheduler started with {Count} scheduled accounts", _timers.Count);
     }
@@ -135,10 +130,7 @@ public sealed class AutoSyncSchedulerService : IAutoSyncSchedulerService
     /// <inheritdoc/>
     public void Dispose()
     {
-        if(_isDisposed)
-        {
-            return;
-        }
+        if(_isDisposed) return;
 
         StopAsync().GetAwaiter().GetResult();
         _isDisposed = true;

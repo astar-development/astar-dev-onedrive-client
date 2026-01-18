@@ -1,6 +1,8 @@
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
+using AStar.Dev.OneDrive.Client.Models;
 
 namespace AStar.Dev.OneDrive.Client.Tests.Unit.FromV3.Services;
 

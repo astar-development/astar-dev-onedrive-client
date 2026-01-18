@@ -1,3 +1,5 @@
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
+
 namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 public sealed record TransferLog(

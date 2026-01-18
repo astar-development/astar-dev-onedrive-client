@@ -85,8 +85,7 @@ public sealed class MainWindowViewModelShould
             });
         ISyncronisationCoordinator syncCoordinator = new SyncronisationCoordinator(_mockSync, _mockRepo, _mockTransfer);
 
-        return new MainWindowViewModel(mockSyncCommandService, syncCoordinator, _mockSettings, authService
-        );
+        return new MainWindowViewModel(mockSyncCommandService, syncCoordinator, _mockSettings, authService, null!, null!, null!);
     }
 
     [Fact]
@@ -166,9 +165,9 @@ public sealed class MainWindowViewModelShould
         MainWindowViewModel sut = CreateViewModel();
         _mockSync.ScanLocalFilesAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
-        _mockRepo.GetPendingDownloadCountAsync("PlaceholderAccountId",Arg.Any<CancellationToken>())
+        _mockRepo.GetPendingDownloadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(5);
-        _mockRepo.GetPendingUploadCountAsync("PlaceholderAccountId",Arg.Any<CancellationToken>())
+        _mockRepo.GetPendingUploadCountAsync("PlaceholderAccountId", Arg.Any<CancellationToken>())
             .Returns(3);
         sut.ScanLocalFilesCommand.Execute().Subscribe(_ => { });
         Task.Delay(200).Wait(); // Give time for async refresh
@@ -246,9 +245,7 @@ public sealed class MainWindowViewModelShould
         {
             if(e.PropertyName == nameof(MainWindowViewModel.SyncStatusMessage) &&
                 sut.SyncStatusMessage.Contains("Scanning local files"))
-            {
                 progressReceived = true;
-            }
         };
 
         sut.ScanLocalFilesCommand.Execute().Subscribe();

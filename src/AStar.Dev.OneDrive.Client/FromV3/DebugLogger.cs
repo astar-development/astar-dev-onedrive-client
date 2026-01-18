@@ -1,6 +1,6 @@
-using AStar.Dev.OneDrive.Client.FromV3.Entities;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
 
@@ -9,10 +9,10 @@ namespace AStar.Dev.OneDrive.Client.FromV3;
 /// </summary>
 public sealed class DebugLogger : IDebugLogger
 {
-    private readonly SyncDbContext _context;
+    private readonly AppDbContext _context;
     private readonly IAccountRepository _accountRepository;
 
-    public DebugLogger(SyncDbContext context, IAccountRepository accountRepository)
+    public DebugLogger(AppDbContext context, IAccountRepository accountRepository)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(accountRepository);
@@ -35,17 +35,11 @@ public sealed class DebugLogger : IDebugLogger
     private async Task LogAsync(string logLevel, string source, string message, Exception? exception, CancellationToken cancellationToken)
     {
         var accountId = DebugLogContext.CurrentAccountId;
-        if(string.IsNullOrEmpty(accountId))
-        {
-            return; // No account context, skip logging
-        }
+        if(string.IsNullOrEmpty(accountId)) return; // No account context, skip logging
 
         // Check if debug logging is enabled for this account
         AccountInfo? account = await _accountRepository.GetByIdAsync(accountId, cancellationToken);
-        if(account is null || !account.EnableDebugLogging)
-        {
-            return; // Debug logging not enabled for this account
-        }
+        if(account is null || !account.EnableDebugLogging) return; // Debug logging not enabled for this account
 
         var logEntry = new DebugLogEntity
         {

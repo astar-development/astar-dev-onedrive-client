@@ -4,9 +4,10 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using System.Reactive.Linq;
+using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
 using AStar.Dev.OneDrive.Client.FromV3;
-using AStar.Dev.OneDrive.Client.FromV3.Models;
-using AStar.Dev.OneDrive.Client.FromV3.Models.Enums;
+using AStar.Dev.OneDrive.Client.Models;
 using ReactiveUI;
 
 namespace AStar.Dev.OneDrive.Client.ViewModels;
@@ -248,10 +249,7 @@ public sealed class SyncTreeViewModel : ReactiveObject, IDisposable
 
             // Now add folders to UI with correct selection states already applied
             RootFolders.Clear();
-            foreach(OneDriveFolderNode? folder in folderList)
-            {
-                RootFolders.Add(folder);
-            }
+            foreach(OneDriveFolderNode? folder in folderList) RootFolders.Add(folder);
         }
         catch(Exception ex)
         {
@@ -271,10 +269,7 @@ public sealed class SyncTreeViewModel : ReactiveObject, IDisposable
     {
         ArgumentNullException.ThrowIfNull(folder);
 
-        if(folder.ChildrenLoaded || string.IsNullOrEmpty(SelectedAccountId))
-        {
-            return;
-        }
+        if(folder.ChildrenLoaded || string.IsNullOrEmpty(SelectedAccountId)) return;
 
         try
         {
@@ -284,10 +279,7 @@ public sealed class SyncTreeViewModel : ReactiveObject, IDisposable
             folder.Children.Clear();
 
             IReadOnlyList<OneDriveFolderNode> children = await _folderTreeService.GetChildFoldersAsync(SelectedAccountId, folder.Id, folder.IsSelected, cancellationToken);
-            foreach(OneDriveFolderNode child in children)
-            {
-                folder.Children.Add(child);
-            }
+            foreach(OneDriveFolderNode child in children) folder.Children.Add(child);
 
             // Apply saved selections from database to the newly loaded children
             // This ensures that sub-folder selections persist correctly
@@ -319,9 +311,9 @@ public sealed class SyncTreeViewModel : ReactiveObject, IDisposable
 
         var newState = folder.SelectionState switch
         {
-            SelectionState.Unchecked => true,
-            SelectionState.Checked => false,
-            SelectionState.Indeterminate => true,
+            Core.Entities.Enums.SelectionState.Unchecked => true,
+            Core.Entities.Enums.SelectionState.Checked => false,
+            Core.Entities.Enums.SelectionState.Indeterminate => true,
             _ => true
         };
 
@@ -380,10 +372,7 @@ public sealed class SyncTreeViewModel : ReactiveObject, IDisposable
     /// </summary>
     private async Task StartSyncAsync()
     {
-        if(string.IsNullOrEmpty(SelectedAccountId))
-        {
-            return;
-        }
+        if(string.IsNullOrEmpty(SelectedAccountId)) return;
 
         try
         {

@@ -1,8 +1,10 @@
 using AStar.Dev.OneDrive.Client.Core.Entities;
+using AStar.Dev.OneDrive.Client.Core.Entities.Enums;
 using AStar.Dev.OneDrive.Client.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using SyncState = AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState;
 
 namespace AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 
@@ -126,13 +128,9 @@ public sealed class EfSyncRepository : ISyncRepository
 
         LocalFileRecord? local = await db.LocalFiles.FindAsync(accountId, driveItemId, cancellationToken);
         if(local is null)
-        {
             _ = db.LocalFiles.Add(new LocalFileRecord(accountId, driveItemId, drive.RelativePath, null, drive.Size, drive.LastModifiedUtc, state));
-        }
         else
-        {
             db.Entry(local).CurrentValues.SetValues(local with { SyncState = state, LastWriteUtc = drive.LastModifiedUtc, Size = drive.Size });
-        }
 
         _ = await db.SaveChangesAsync(cancellationToken);
     }

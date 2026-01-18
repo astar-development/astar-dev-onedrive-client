@@ -1,21 +1,32 @@
+using AStar.Dev.OneDrive.Client.Core.Models.Enums;
+
 namespace AStar.Dev.OneDrive.Client.Core.Entities;
 
 /// <summary>
 /// Database entity for file operation log.
 /// </summary>
-public class FileOperationLog
+public record FileOperationLog(
+    string Id, string SyncSessionId, string AccountId, DateTime Timestamp, FileOperation Operation, string FilePath, string LocalPath,
+    string? OneDriveId, long FileSize, string? LocalHash, string? RemoteHash, DateTime LastModifiedUtc, string Reason)
 {
-    public string Id { get; set; } = string.Empty;
-    public string SyncSessionId { get; set; } = string.Empty;
-    public string AccountId { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-    public int Operation { get; set; }
-    public string FilePath { get; set; } = string.Empty;
-    public string LocalPath { get; set; } = string.Empty;
-    public string? OneDriveId { get; set; }
-    public long FileSize { get; set; }
-    public string? LocalHash { get; set; }
-    public string? RemoteHash { get; set; }
-    public DateTime LastModifiedUtc { get; set; }
-    public string Reason { get; set; } = string.Empty;
+    public static FileOperationLog CreateSyncConflictLog(string syncSessionId, string accountId, string filePath, string localPath,
+        string oneDriveId, string? localHash, long fileSize, DateTime lastModifiedUtc, DateTime remoteFileLastModifiedUtc) => new(
+            Id: Guid.NewGuid().ToString(), SyncSessionId: syncSessionId, AccountId: accountId, Timestamp: DateTime.UtcNow,
+            Operation: FileOperation.ConflictDetected, FilePath: filePath, LocalPath: localPath, OneDriveId: oneDriveId,
+            FileSize: fileSize, LocalHash: localHash, RemoteHash: null, LastModifiedUtc: lastModifiedUtc,
+            Reason: $"Conflict: Both local and remote changed. Local modified: {lastModifiedUtc:yyyy-MM-dd HH:mm:ss}, Remote modified: {remoteFileLastModifiedUtc:yyyy-MM-dd HH:mm:ss}");
+
+    public static FileOperationLog CreateDownloadLog(string syncSessionId, string accountId, string filePath, string localPath,
+        string? oneDriveId, string? localHash, long fileSize, DateTime lastModifiedUtc, string reason) => new(
+            Id: Guid.NewGuid().ToString(), SyncSessionId: syncSessionId, AccountId: accountId, Timestamp: DateTime.UtcNow,
+            Operation: FileOperation.Download, FilePath: filePath, LocalPath: localPath, OneDriveId: oneDriveId,
+            FileSize: fileSize, LocalHash: localHash, RemoteHash: null, LastModifiedUtc: lastModifiedUtc,
+            Reason: reason);
+
+    public static FileOperationLog CreateUploadLog(string syncSessionId, string accountId, string filePath, string localPath,
+        string? oneDriveId, string? localHash, long fileSize, DateTime lastModifiedUtc, string reason) => new(
+            Id: Guid.NewGuid().ToString(), SyncSessionId: syncSessionId, AccountId: accountId, Timestamp: DateTime.UtcNow,
+            Operation: FileOperation.Upload, FilePath: filePath, LocalPath: localPath, OneDriveId: oneDriveId,
+            FileSize: fileSize, LocalHash: localHash, RemoteHash: null, LastModifiedUtc: lastModifiedUtc,
+            Reason: reason);
 }

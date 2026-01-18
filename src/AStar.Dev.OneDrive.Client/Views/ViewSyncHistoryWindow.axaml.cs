@@ -1,4 +1,4 @@
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Avalonia.Controls;
 using Microsoft.Extensions.DependencyInjection;

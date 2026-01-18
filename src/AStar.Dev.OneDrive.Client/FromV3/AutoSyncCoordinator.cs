@@ -1,6 +1,6 @@
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace AStar.Dev.OneDrive.Client.FromV3;
@@ -122,10 +122,7 @@ public sealed class AutoSyncCoordinator : IAutoSyncCoordinator
     /// </summary>
     public void StopAll()
     {
-        foreach(var accountId in _accountSubscriptions.Keys.ToList())
-        {
-            StopMonitoring(accountId);
-        }
+        foreach(var accountId in _accountSubscriptions.Keys.ToList()) StopMonitoring(accountId);
     }
 
     /// <summary>

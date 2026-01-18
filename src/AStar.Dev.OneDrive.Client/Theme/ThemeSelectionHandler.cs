@@ -10,19 +10,19 @@ namespace AStar.Dev.OneDrive.Client.Theme;
 public class ThemeSelectionHandler(IThemeMapper themeMapper, IThemeService themeService) : IThemeSelectionHandler
 {
     /// <inheritdoc />
-    public void Initialize(ComboBox themeSelector, UserPreferences preferences)
+    public void Initialize(ComboBox themeSelector, UserPreferences userPreferences)
     {
-        themeSelector.SelectedIndex = themeMapper.MapThemeToIndex(preferences.UiSettings.Theme);
-        themeSelector.SelectionChanged += (s, _) => OnSelectionChanged(s, preferences);
-        themeService.ApplyThemePreference(preferences);
+        themeSelector.SelectedIndex = themeMapper.MapThemeToIndex(userPreferences.UiSettings.Theme);
+        themeSelector.SelectionChanged += (s, _) => OnSelectionChanged(s, userPreferences);
+        themeService.ApplyThemePreference(userPreferences);
     }
 
     /// <inheritdoc />
-    public void UpdatePreferenceOnChange(int selectedIndex, UserPreferences preferences)
+    public void UpdatePreferenceOnChange(int selectedIndex, UserPreferences userPreferences)
     {
         var selectedTheme = themeMapper.MapIndexToTheme(selectedIndex);
-        preferences.UiSettings.Theme = selectedTheme;
-        themeService.ApplyThemePreference(preferences);
+        userPreferences.UiSettings.Theme = selectedTheme;
+        themeService.ApplyThemePreference(userPreferences);
     }
 
     private void OnSelectionChanged(object? sender, UserPreferences preferences)

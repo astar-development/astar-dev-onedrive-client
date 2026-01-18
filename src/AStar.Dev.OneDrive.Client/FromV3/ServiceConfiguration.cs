@@ -1,8 +1,9 @@
 using System.IO.Abstractions;
 using AStar.Dev.OneDrive.Client.FromV3.Authentication;
 using AStar.Dev.OneDrive.Client.FromV3.OneDriveServices;
-using AStar.Dev.OneDrive.Client.FromV3.Repositories;
-using AStar.Dev.OneDrive.Client.FromV3.Sync;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data;
+using AStar.Dev.OneDrive.Client.Infrastructure.Data.Repositories;
+using AStar.Dev.OneDrive.Client.SyncConflicts;
 using AStar.Dev.OneDrive.Client.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,7 +27,7 @@ public static class ServiceConfiguration
         var services = new ServiceCollection();
 
         // Database
-        _ = services.AddDbContext<SyncDbContext>(options =>
+        _ = services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite(DatabaseConfiguration.ConnectionString));
 
         // Repositories
@@ -95,7 +96,7 @@ public static class ServiceConfiguration
     public static void EnsureDatabaseCreated(ServiceProvider serviceProvider)
     {
         using IServiceScope scope = serviceProvider.CreateScope();
-        SyncDbContext context = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
+        AppDbContext context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         try
         {
             context.Database.Migrate();
