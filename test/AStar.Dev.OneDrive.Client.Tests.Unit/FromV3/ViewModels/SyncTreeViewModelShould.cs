@@ -12,7 +12,7 @@ public class SyncTreeViewModelShould : IDisposable
     [Fact]
     public void ExposeEstimatedSecondsRemainingFromSyncState()
     {
-        var syncState = new AStar.Dev.OneDrive.Client.Core.Entities.SyncState(
+        var syncState = new Core.Entities.SyncState(
             AccountId: "acc1",
             Status: SyncStatus.Running,
             TotalFiles: 10,
@@ -34,7 +34,7 @@ public class SyncTreeViewModelShould : IDisposable
     [Fact]
     public void ExposeMegabytesPerSecondFromSyncState()
     {
-        var syncState = new AStar.Dev.OneDrive.Client.Core.Entities.SyncState(
+        var syncState = new Core.Entities.SyncState(
             AccountId: "acc1",
             Status: SyncStatus.Running,
             TotalFiles: 10,
@@ -55,7 +55,7 @@ public class SyncTreeViewModelShould : IDisposable
     private readonly IFolderTreeService _mockFolderService;
     private readonly ISyncSelectionService _mockSelectionService;
     private readonly ISyncEngine _mockSyncEngine;
-    private readonly Subject<AStar.Dev.OneDrive.Client.Core.Entities.SyncState> _progressSubject;
+    private readonly Subject<Core.Entities.SyncState> _progressSubject;
     private readonly SyncTreeViewModel _viewModel;
     private bool disposedValue;
 
@@ -65,7 +65,7 @@ public class SyncTreeViewModelShould : IDisposable
         _mockSelectionService = Substitute.For<ISyncSelectionService>();
         _mockSyncEngine = Substitute.For<ISyncEngine>();
 
-        _progressSubject = new Subject<AStar.Dev.OneDrive.Client.Core.Entities.SyncState>();
+        _progressSubject = new Subject<Core.Entities.SyncState>();
         _ = _mockSyncEngine.Progress.Returns(_progressSubject);
 
         _viewModel = new SyncTreeViewModel(_mockFolderService, _mockSelectionService, _mockSyncEngine);

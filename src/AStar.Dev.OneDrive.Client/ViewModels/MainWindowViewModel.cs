@@ -66,6 +66,11 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     public ReactiveCommand<Unit, Unit> OpenUpdateAccountDetailsCommand { get; }
 
     /// <summary>
+    /// Gets the command to open the Manage Account Details window.
+    /// </summary>
+    public ReactiveCommand<Unit, Unit> OpenManageAccountDetailsCommand { get; }
+
+    /// <summary>
     /// Gets the command to close the application.
     /// </summary>
     public ReactiveCommand<Unit, Unit> CloseApplicationCommand { get; }
@@ -146,6 +151,7 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         SubscribeToTransferProgress(_syncCoordinator);
         // Commands
         OpenUpdateAccountDetailsCommand = ReactiveCommand.Create(OpenUpdateAccountDetails);
+        OpenManageAccountDetailsCommand = ReactiveCommand.Create(OpenManageAccountDetails);
         OpenViewSyncHistoryCommand = ReactiveCommand.Create(OpenViewSyncHistory);
         OpenDebugLogViewerCommand = ReactiveCommand.Create(OpenDebugLogViewer);
         ViewConflictsCommand = ReactiveCommand.Create(ViewConflicts, this.WhenAnyValue(x => x.HasUnresolvedConflicts));
@@ -163,7 +169,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 
                     UpdatePerformanceMetrics(progress);
 
-                    if(progress.ProcessedFiles % 100 == 0) AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperationMessage}");
+                    if(progress.ProcessedFiles % 100 == 0)
+                        AddRecentTransfer($"{progress.Timestamp:HH:mm:ss} - {progress.CurrentOperationMessage}");
                 })
                 .DisposeWith(_disposables);
 
@@ -262,7 +269,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     private void AddRecentTransferInternal(string message)
     {
         RecentTransfers.Insert(0, message);
-        while(RecentTransfers.Count > MaxRecentTransfers) RecentTransfers.RemoveAt(RecentTransfers.Count - 1);
+        while(RecentTransfers.Count > MaxRecentTransfers)
+            RecentTransfers.RemoveAt(RecentTransfers.Count - 1);
     }
 
     /// <summary>
@@ -270,7 +278,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     /// </summary>
     private void ViewConflicts()
     {
-        if(AccountManagement.SelectedAccount is not null) ShowConflictResolutionView(AccountManagement.SelectedAccount.AccountId);
+        if(AccountManagement.SelectedAccount is not null)
+            ShowConflictResolutionView(AccountManagement.SelectedAccount.AccountId);
     }
 
     /// <summary>
@@ -282,6 +291,20 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
 
         if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: not null } desktop)
             _ = window.ShowDialog(desktop.MainWindow);
+    }
+
+    /// <summary>
+    /// Opens the Update Account Details window.
+    /// </summary>
+    private static void OpenManageAccountDetails()
+    {
+        // Get the current MainWindowViewModel instance
+        var lifetime = Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+        if (lifetime?.MainWindow?.DataContext is MainWindowViewModel mainVm)
+        {
+            var window = new AccountManagementView(mainVm.AccountManagement);
+            _ = window.ShowDialog(lifetime.MainWindow);
+        }
     }
 
     /// <summary>
@@ -311,7 +334,8 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
     /// </summary>
     private static void CloseApplication()
     {
-        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) desktop.Shutdown();
+        if(Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Shutdown();
     }
 
     /// <summary>
@@ -358,10 +382,12 @@ public sealed class MainWindowViewModel : ViewModelBase, IDisposable, ISyncStatu
         this.RaisePropertyChanged(nameof(ShowConflictResolution));
 
         // Refresh conflict count after resolving conflicts
-        if(SyncProgress is not null) await SyncProgress.RefreshConflictCountAsync();
+        if(SyncProgress is not null)
+            await SyncProgress.RefreshConflictCountAsync();
 
         // Update main window conflict status
-        if(AccountManagement.SelectedAccount is not null) await UpdateConflictStatusAsync(AccountManagement.SelectedAccount.AccountId);
+        if(AccountManagement.SelectedAccount is not null)
+            await UpdateConflictStatusAsync(AccountManagement.SelectedAccount.AccountId);
     }
 
     /// <summary>

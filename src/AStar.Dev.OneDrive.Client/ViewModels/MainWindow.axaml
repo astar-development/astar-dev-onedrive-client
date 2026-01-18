@@ -38,6 +38,8 @@
 	  <!-- Menu Bar -->
 	  <Menu DockPanel.Dock="Top">
 		  <MenuItem Header="_File">
+			  <MenuItem Header="_Manage Account Details"
+						Command="{Binding OpenManageAccountDetailsCommand}" />
 			  <MenuItem Header="_Update Account Details"
 						Command="{Binding OpenUpdateAccountDetailsCommand}"
 						InputGesture="F2" />

@@ -7,5 +7,5 @@ public sealed record LocalFileRecord(
     string? Hash,
     long Size,
     DateTimeOffset LastWriteUtc,
-    AStar.Dev.OneDrive.Client.Core.Entities.Enums.SyncState SyncState
+    Enums.SyncState SyncState
 );

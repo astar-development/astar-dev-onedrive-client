@@ -27,7 +27,7 @@ public sealed partial class SyncEngine : ISyncEngine, IDisposable
     private readonly ISyncConflictRepository _syncConflictRepository;
     private readonly ISyncSessionLogRepository _syncSessionLogRepository;
     private readonly IFileOperationLogRepository _fileOperationLogRepository;
-    private readonly BehaviorSubject<AStar.Dev.OneDrive.Client.Core.Entities.SyncState> _progressSubject;
+    private readonly BehaviorSubject<Core.Entities.SyncState> _progressSubject;
     private CancellationTokenSource? _syncCancellation;
     private string? _currentSessionId;
     private int _syncInProgress;
