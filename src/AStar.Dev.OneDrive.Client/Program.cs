@@ -19,7 +19,8 @@ internal class Program
 
     private static ILogger<Program> LocalLogger = null!;
 
-    public static async Task Main(string[] args)
+    [STAThread]
+    public static void Main(string[] args)
     {
         ApplicationName applicationName = SetApplicationName();
         Log.Logger = CreateMinimalLogger();
@@ -27,7 +28,7 @@ internal class Program
         try
         {
             using IHost host = CreateHostBuilder(args).Build();
-            await host.StartAsync();
+            host.Start();
             App.Services = host.Services;
             LocalLogger = host.Services.GetRequiredService<ILogger<Program>>();
             ApplicationStarted(LocalLogger, applicationName);
@@ -42,7 +43,7 @@ internal class Program
         finally
         {
             ApplicationStopped(LocalLogger, applicationName);
-            await Log.CloseAndFlushAsync();
+            Log.CloseAndFlush();
         }
     }
 

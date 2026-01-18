@@ -132,6 +132,10 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
     /// Gets the command to logout from the selected account.
     /// </summary>
     public ReactiveCommand<Unit, Unit> LogoutCommand { get; }
+    /// <summary>
+    /// Reloads the accounts from the repository.
+    /// </summary>
+    public async Task ReloadAccountsAsync() => await LoadAccountsAsync();
 
     private async Task LoadAccountsAsync()
     {
@@ -140,7 +144,8 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
         {
             IReadOnlyList<AccountInfo> accounts = await _accountRepository.GetAllAsync();
             Accounts.Clear();
-            foreach(AccountInfo account in accounts) Accounts.Add(account);
+            foreach(AccountInfo account in accounts)
+                Accounts.Add(account);
         }
         finally
         {
@@ -154,7 +159,11 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
         try
         {
             // Clear any existing toast and start fresh
-            await _toastCts?.CancelAsync()!;
+            if(_toastCts is not null)
+            {
+                await _toastCts.CancelAsync();
+            }
+
             ToastMessage = null;
             ToastVisible = false;
 
@@ -164,8 +173,8 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
                 // Create new account with default sync path
                 var defaultPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    "AStarOneDrive",
-                    result.DisplayName.Replace("@", "_").Replace(".", "_"));
+                    ApplicationMetadata.ApplicationFolder,
+                    result.DisplayName.Replace("@", "-").Replace(".", "-"));
 
                 var newAccount = new AccountInfo(
                     AccountId: result.AccountId,
@@ -176,7 +185,7 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
                     DeltaToken: null,
                     EnableDetailedSyncLogging: false,
                     EnableDebugLogging: false,
-                    MaxParallelUpDownloads: 3,
+                    MaxParallelUpDownloads: 5,
                     MaxItemsInBatch: 50,
                     AutoSyncIntervalMinutes: null);
 
@@ -184,7 +193,10 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
                 Accounts.Add(newAccount);
                 SelectedAccount = newAccount;
             }
-            else if(result is { Success: false, ErrorMessage: not null }) _ = ShowToastAsync(result.ErrorMessage);
+            else if(result is { Success: false, ErrorMessage: not null })
+            {
+                _ = ShowToastAsync(result.ErrorMessage);
+            }
         }
         finally
         {
@@ -194,7 +206,8 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
 
     private async Task RemoveAccountAsync()
     {
-        if(SelectedAccount is null) return;
+        if(SelectedAccount is null)
+            return;
 
         IsLoading = true;
         try
@@ -211,13 +224,18 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
 
     private async Task LoginAsync()
     {
-        if(SelectedAccount is null) return;
+        if(SelectedAccount is null)
+            return;
 
         IsLoading = true;
         try
         {
             // Clear any existing toast and start fresh
-            await _toastCts?.CancelAsync()!;
+            if(_toastCts is not null)
+            {
+                await _toastCts.CancelAsync();
+            }
+
             ToastMessage = null;
             ToastVisible = false;
 
@@ -234,7 +252,10 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
                     SelectedAccount = updatedAccount;
                 }
             }
-            else if(result is { Success: false, ErrorMessage: not null }) _ = ShowToastAsync(result.ErrorMessage);
+            else if(result is { Success: false, ErrorMessage: not null })
+            {
+                _ = ShowToastAsync(result.ErrorMessage);
+            }
         }
         finally
         {
@@ -246,7 +267,12 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
     {
         try
         {
-            await _toastCts?.CancelAsync()!;
+            // Clear any existing toast and start fresh
+            if(_toastCts is not null)
+            {
+                await _toastCts.CancelAsync();
+            }
+
             _toastCts = new CancellationTokenSource();
             ToastMessage = message;
             ToastVisible = true;
@@ -270,7 +296,8 @@ public sealed class AccountManagementViewModel : ReactiveObject, IDisposable
 
     private async Task LogoutAsync()
     {
-        if(SelectedAccount is null) return;
+        if(SelectedAccount is null)
+            return;
 
         IsLoading = true;
         try

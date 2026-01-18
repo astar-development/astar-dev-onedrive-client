@@ -93,7 +93,7 @@ public sealed class SyncConflictRepository : ISyncConflictRepository
             .ExecuteDeleteAsync(cancellationToken);
 
     private static SyncConflict MapToDomain(SyncConflictEntity entity)
-        => new Core.Entities.SyncConflict( 
+        => new SyncConflict( 
             entity.Id,
              entity.AccountId,
              entity.FilePath,

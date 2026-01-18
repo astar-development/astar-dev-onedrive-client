@@ -8,7 +8,7 @@ public interface ISyncEngine
     /// <summary>
     /// Gets an observable stream of sync progress updates.
     /// </summary>
-    IObservable<AStar.Dev.OneDrive.Client.Core.Entities.SyncState> Progress { get; }
+    IObservable<Core.Entities.SyncState> Progress { get; }
 
     /// <summary>
     /// Starts synchronization for the specified account.
@@ -28,5 +28,5 @@ public interface ISyncEngine
     /// <param name="accountId">The account identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of unresolved conflicts.</returns>
-    Task<IReadOnlyList<AStar.Dev.OneDrive.Client.Core.Entities.SyncConflict>> GetConflictsAsync(string accountId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Core.Entities.SyncConflict>> GetConflictsAsync(string accountId, CancellationToken cancellationToken = default);
 }

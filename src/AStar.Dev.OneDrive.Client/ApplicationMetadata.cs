@@ -7,6 +7,7 @@ public static class ApplicationMetadata
     /// The name of the application.
     /// </summary>
     public const string ApplicationName = "AStar Dev OneDrive Sync Client";
+    public static readonly string ApplicationFolder = ApplicationName.Replace(" ", "-").ToLowerInvariant();
 
     /// <summary>
     /// The version of the application.
